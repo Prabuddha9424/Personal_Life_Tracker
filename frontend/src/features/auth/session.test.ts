@@ -2,7 +2,7 @@ import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '@/shared/lib/queryClient'
 import * as authApi from './api/authApi'
-import { logoutUser, refreshSession, updateSessionUser } from './session'
+import { logoutUser, refreshSession, startSession, updateSessionUser } from './session'
 import { useAuthStore } from './store/authStore'
 
 vi.mock('./api/authApi')
@@ -91,6 +91,51 @@ describe('refreshSession', () => {
     expect(await refreshSession()).toBe(false)
 
     expect(useAuthStore.getState().status).toBe('anonymous')
+  })
+})
+
+describe('a refresh that finishes after the session changed', () => {
+  function deferredRefresh() {
+    let resolve: (value: typeof session) => void = () => undefined
+    let reject: (reason: unknown) => void = () => undefined
+    vi.mocked(authApi.refresh).mockReturnValue(
+      new Promise((res, rej) => {
+        resolve = res
+        reject = rej
+      }),
+    )
+    return { resolve, reject }
+  }
+
+  it('does not bring back a session the user has since logged out of', async () => {
+    startSession({ ...session, accessToken: 'old' })
+    const late = deferredRefresh()
+    vi.mocked(authApi.logout).mockResolvedValue()
+    const pending = refreshSession()
+
+    await logoutUser()
+    late.resolve(session)
+
+    expect(await pending).toBe(false)
+    expect(useAuthStore.getState()).toMatchObject({
+      status: 'anonymous',
+      accessToken: null,
+      user: null,
+    })
+  })
+
+  it('does not wipe the session or cache a newer login has since established', async () => {
+    startSession({ ...session, accessToken: 'old' })
+    const late = deferredRefresh()
+    const pending = refreshSession()
+
+    startSession({ ...session, accessToken: 'new' })
+    queryClient.setQueryData(['tasks'], ['new login data'])
+    late.reject(httpError(401))
+
+    expect(await pending).toBe(true)
+    expect(useAuthStore.getState()).toMatchObject({ status: 'authenticated', accessToken: 'new' })
+    expect(queryClient.getQueryData(['tasks'])).toEqual(['new login data'])
   })
 })
 

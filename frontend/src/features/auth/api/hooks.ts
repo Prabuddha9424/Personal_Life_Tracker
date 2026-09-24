@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { queryClient } from '@/shared/lib/queryClient'
-import { logoutUser } from '../session'
+import { logoutUser, startSession } from '../session'
 import { useAuthStore } from '../store/authStore'
 import type { SessionUser } from '../types'
 import * as authApi from './authApi'
@@ -27,7 +27,7 @@ export function useLogin() {
     onSuccess: (session) => {
       // A different person may be logging in on a browser the previous user just left.
       queryClient.clear()
-      useAuthStore.getState().setSession(session)
+      startSession(session)
     },
   })
 }
@@ -47,7 +47,7 @@ export function useResetPassword() {
 export function useChangePassword() {
   return useMutation({
     mutationFn: authApi.changePassword,
-    onSuccess: (session) => useAuthStore.getState().setSession(session),
+    onSuccess: startSession,
   })
 }
 
