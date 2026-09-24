@@ -15,11 +15,15 @@ export function SessionGate({ children }: { children: ReactNode }) {
     void bootstrapSession()
   }, [])
 
-  if (status === 'unavailable') {
+  if (status === 'unavailable' || status === 'rateLimited') {
     return (
       <div className="auth">
         <ErrorState
-          message="We could not reach the server. It may still be starting up."
+          message={
+            status === 'rateLimited'
+              ? 'Too many attempts. Please wait a few minutes and try again.'
+              : 'We could not reach the server. It may still be starting up.'
+          }
           onRetry={() => void retryBootstrap()}
         />
       </div>

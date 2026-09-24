@@ -43,4 +43,19 @@ describe('SessionGate', () => {
     expect(await screen.findByText('App content')).toBeInTheDocument()
     expect(useAuthStore.getState().status).toBe('authenticated')
   })
+
+  it('says to wait when the server refused because of too many attempts', async () => {
+    useAuthStore.setState({ status: 'rateLimited' })
+    vi.mocked(authApi.refresh).mockResolvedValue(session)
+    renderWithProviders(<SessionGate>App content</SessionGate>)
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Too many attempts. Please wait a few minutes and try again.',
+    )
+    expect(screen.queryByText('App content')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByText('App content')).toBeInTheDocument()
+  })
 })

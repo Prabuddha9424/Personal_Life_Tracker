@@ -347,6 +347,16 @@ describe('bootstrapSession', () => {
     expect(useAuthStore.getState().status).toBe('anonymous')
   })
 
+  it('does not retry when the server says too many attempts', async () => {
+    vi.mocked(authApi.refresh).mockRejectedValue(httpError(429))
+
+    await retryBootstrap()
+
+    expect(authApi.refresh).toHaveBeenCalledTimes(1)
+    expect(useAuthStore.getState().status).toBe('rateLimited')
+    expect(useServerStatus.getState().waking).toBe(false)
+  })
+
   it('tries again from scratch when asked, after the server was unavailable', async () => {
     useAuthStore.setState({ status: 'unavailable' })
     vi.mocked(authApi.refresh).mockResolvedValue(session)

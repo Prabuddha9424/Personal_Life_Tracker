@@ -7,7 +7,7 @@ import * as authApi from './api/authApi'
 import { useAuthStore } from './store/authStore'
 import type { SessionResponse, SessionUser } from './types'
 
-type RefreshOutcome = 'renewed' | 'rejected' | 'unavailable'
+type RefreshOutcome = 'renewed' | 'rejected' | 'unavailable' | 'rateLimited'
 
 const BOOTSTRAP_ATTEMPTS = 4
 const BOOTSTRAP_RETRY_DELAY_MS = 5000
@@ -59,6 +59,7 @@ async function runRefresh(): Promise<RefreshOutcome> {
       endSession()
       return 'rejected'
     }
+    if (axios.isAxiosError(error) && error.response?.status === 429) return 'rateLimited'
     return 'unavailable'
   }
 }
@@ -96,7 +97,9 @@ async function restoreSession(): Promise<void> {
   setWaking(false)
   // Whatever happened, never leave the app waiting on an answer that is not coming.
   if (useAuthStore.getState().status === 'unknown') {
-    useAuthStore.setState({ status: outcome === 'unavailable' ? 'unavailable' : 'anonymous' })
+    useAuthStore.setState({
+      status: outcome === 'rejected' || outcome === 'renewed' ? 'anonymous' : outcome,
+    })
   }
 }
 

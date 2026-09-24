@@ -1,8 +1,11 @@
 import { create } from 'zustand'
 import type { SessionResponse, SessionUser } from '../types'
 
-/** `unavailable`: start-up could not reach the server, so it is unknown whether a session exists. */
-type Status = 'unknown' | 'authenticated' | 'anonymous' | 'unavailable'
+/**
+ * `unavailable` and `rateLimited`: start-up could not learn whether a session exists, because the
+ * server was unreachable or refused the request for too many attempts.
+ */
+type Status = 'unknown' | 'authenticated' | 'anonymous' | 'unavailable' | 'rateLimited'
 
 interface AuthState {
   status: Status
