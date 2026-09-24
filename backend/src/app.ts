@@ -3,6 +3,7 @@ import express from 'express'
 import helmet from 'helmet'
 import { pinoHttp } from 'pino-http'
 import { authRouter } from './features/auth/index.ts'
+import { financeRouter } from './features/finance/index.ts'
 import { healthRouter } from './features/health/index.ts'
 import { taskRouter } from './features/tasks/index.ts'
 import { env } from './shared/config/env.ts'
@@ -23,6 +24,7 @@ app.use(pinoHttp({ logger, serializers: loggerOptions.serializers }))
 app.use('/api/health', healthRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/tasks', taskRouter)
+app.use('/api', financeRouter)
 
 app.use(notFound)
 app.use(errorHandler)
