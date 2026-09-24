@@ -69,15 +69,16 @@ export async function spendingByCategory(userId: string, month: string) {
 
   const [profile, rows] = await Promise.all([
     requireProfile(userId),
-    Transaction.aggregate<{ _id: Types.ObjectId; total: number }>([
+    Transaction.aggregate<{ _id: Types.ObjectId | null; total: number }>([
       { $match: { userId: owner, kind: 'expense', date: { $gte: start, $lt: end } } },
       { $group: { _id: '$categoryId', total: { $sum: '$amountMinor' } } },
       { $sort: { total: -1, _id: 1 } },
     ]),
   ])
-  // Names come from the user's own categories only; anything else reads as a deleted category.
+  // Names come from the user's own categories only; anything else, including a transaction with no
+  // category at all, reads as a deleted category.
   const categories = await Category.find({
-    _id: { $in: rows.map((row) => row._id) },
+    _id: { $in: rows.flatMap((row) => (row._id ? [row._id] : [])) },
     userId: owner,
   })
     .select('name')
@@ -87,11 +88,14 @@ export async function spendingByCategory(userId: string, month: string) {
   return {
     month,
     currency: profile.currency,
-    items: rows.map((row) => ({
-      categoryId: row._id.toString(),
-      name: nameById.get(row._id.toString()) ?? DELETED_CATEGORY_NAME,
-      totalMinor: row.total,
-    })),
+    items: rows.map((row) => {
+      const categoryId = row._id?.toString() ?? ''
+      return {
+        categoryId,
+        name: nameById.get(categoryId) ?? DELETED_CATEGORY_NAME,
+        totalMinor: row.total,
+      }
+    }),
   }
 }
 

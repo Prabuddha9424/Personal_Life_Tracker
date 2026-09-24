@@ -253,6 +253,28 @@ describe('GET /api/finance/by-category', () => {
     expect(summary.body.expenseMinor).toBe(8700)
   })
 
+  it('shows a transaction stored without any category as a deleted category, not a 500', async () => {
+    await seed()
+    await Transaction.collection.insertOne({
+      userId: new Types.ObjectId(alice.id),
+      kind: 'expense',
+      amountMinor: 4321,
+      currency: 'USD',
+      date: new Date('2026-09-10T00:00:00.000Z'),
+      note: '',
+    })
+
+    const res = await get('/api/finance/by-category?month=2026-09')
+
+    expect(res.status).toBe(200)
+    expect(res.body.items).toContainEqual({
+      categoryId: '',
+      name: 'Deleted category',
+      totalMinor: 4321,
+    })
+    expect(res.body.items.map((item: { name: string }) => item.name)).toContain('Groceries')
+  })
+
   it("never shows another user's category name", async () => {
     const bobsCategory = await insertCategory(bob.id, { kind: 'expense', name: 'Secret hobby' })
     await insertTransaction(alice.id, {
