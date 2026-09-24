@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | In Progress |
+| **Status** | In Review |
 | **Epic** | E0 Project setup |
 | **Priority** | Must |
 | **Size** | L |
@@ -29,7 +29,7 @@
 |---|---|---|---|
 | US-004-T1 | Write the design tokens and base styles (dark default, light values) and the primitives: Button, Spinner, Card, Loading/Empty/Error views, FormField, with tests | [M0 Foundation](../plans/01-foundation.md), Task 6 | Done |
 | US-004-T2 | Add the accessible Modal (focus handling, Escape, backdrop, focus trap) and toast notifications with tests | [M0 Foundation](../plans/01-foundation.md), Task 8 | Done |
-| US-004-T3 | Add the app shell (sidebar, top bar, mobile drawer), the navigation list, the root layout and the `renderWithProviders` test helper, with tests | [M0 Foundation](../plans/01-foundation.md), Task 9 | To do |
+| US-004-T3 | Add the app shell (sidebar, top bar, mobile drawer), the navigation list, the root layout and the `renderWithProviders` test helper, with tests | [M0 Foundation](../plans/01-foundation.md), Task 9 | Done |
 | US-004-T4 | Look at the shell in a browser at desktop and phone widths | [M0 Foundation](../plans/01-foundation.md), Task 9, step 5 | To do |
 
 ## Out of scope
@@ -44,9 +44,9 @@ Each later milestone appends its own entry to the navigation list.
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
+- [x] Acceptance criterion 1
 - [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
-- [ ] Acceptance criterion 6
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
+- [x] Acceptance criterion 6
