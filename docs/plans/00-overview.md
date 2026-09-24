@@ -130,6 +130,7 @@ These exact names and signatures are relied on by later plans. If a plan must ch
 | `requireCronSecret` | `shared/middleware/requireCronSecret.ts` | `RequestHandler`, checks header `x-cron-secret` against `env.CRON_SECRET` |
 | `objectIdSchema`, `idParamsSchema`, `paginationQuerySchema`, `calendarDateSchema`, `monthSchema`, `toSkip`, `paginated` | `shared/validation/requestSchemas.ts` | see M0 Task 5 |
 | `parseCalendarDate`, `formatCalendarDate`, `todayUtc`, `addDays`, `currentMonth`, `shiftMonth`, `monthRange` | `shared/dates/calendarDate.ts` | see M0 Task 5 |
+| `authUserId` | `shared/auth/requestUser.ts` | `(req: Request) => string` |
 
 ### Frontend public APIs
 
