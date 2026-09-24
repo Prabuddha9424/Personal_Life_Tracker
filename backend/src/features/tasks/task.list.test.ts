@@ -79,6 +79,18 @@ describe('GET /api/tasks', () => {
     expect(titles(res)).toEqual(['soon', 'late'])
   })
 
+  it('puts the newest card first when positions are equal, and pages through them stably', async () => {
+    await insertTask(alice.id, { title: 'older', position: 5 })
+    await insertTask(alice.id, { title: 'newer', position: 5 })
+    await insertTask(alice.id, { title: 'newest', position: 5 })
+
+    expect(titles(await list('?status=todo'))).toEqual(['newest', 'newer', 'older'])
+    expect(titles(await list('?limit=1&page=1'))).toEqual(['newest'])
+    expect(titles(await list('?limit=1&page=2'))).toEqual(['newer'])
+    expect(titles(await list('?limit=1&page=3'))).toEqual(['older'])
+    expect(titles(await list('?sort=dueDate'))).toEqual(['newest', 'newer', 'older'])
+  })
+
   it('open=true with status=done matches nothing', async () => {
     await insertTask(alice.id, { status: 'done' })
 

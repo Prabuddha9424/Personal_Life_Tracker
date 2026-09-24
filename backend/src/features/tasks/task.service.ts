@@ -2,6 +2,7 @@ import { Types, type QueryFilter } from 'mongoose'
 import { parseCalendarDate } from '../../shared/dates/calendarDate.ts'
 import { AppError } from '../../shared/errors/AppError.ts'
 import { paginated, toSkip, type Paginated } from '../../shared/validation/requestSchemas.ts'
+import { BOARD_ORDER } from './task.column.ts'
 import { toTaskDto, type TaskDto } from './task.dto.ts'
 import { Task, type TaskAttrs, type TaskRecord } from './task.model.ts'
 import { positionBetween } from './task.ordering.ts'
@@ -12,7 +13,7 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\
 export async function createTask(userId: string, input: CreateTaskInput): Promise<TaskDto> {
   const owner = new Types.ObjectId(userId)
   const top = await Task.findOne({ userId: owner, status: input.status })
-    .sort({ position: 1, _id: 1 })
+    .sort(BOARD_ORDER)
     .select('position')
     .lean<{ position: number } | null>()
 
@@ -78,7 +79,7 @@ export async function listTasks(
   if (query.dueBefore) filter.dueDate = { $lte: parseCalendarDate(query.dueBefore) }
 
   const sort: Record<string, 1 | -1> =
-    query.sort === 'dueDate' ? { dueDate: 1, position: 1, _id: 1 } : { position: 1, _id: 1 }
+    query.sort === 'dueDate' ? { dueDate: 1, ...BOARD_ORDER } : BOARD_ORDER
 
   const [tasks, total] = await Promise.all([
     Task.find(filter).sort(sort).skip(toSkip(query)).limit(query.limit).lean<TaskRecord[]>(),
