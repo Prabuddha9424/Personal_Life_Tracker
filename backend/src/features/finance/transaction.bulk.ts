@@ -20,27 +20,29 @@ export async function bulkCreateTransactions(
   const owner = new Types.ObjectId(userId)
   const profile = await requireProfile(userId)
 
-  const categoryIds = [...new Set(input.rows.map((row) => row.categoryId))].map(
-    (id) => new Types.ObjectId(id),
-  )
-  const categories = await Category.find({ _id: { $in: categoryIds }, userId: owner })
+  // Ids may arrive in upper-case hex; ObjectId normalises them to the form the lookup map uses.
+  const rows = input.rows.map((row) => ({ ...row, categoryId: new Types.ObjectId(row.categoryId) }))
+  const categories = await Category.find({
+    _id: { $in: rows.map((row) => row.categoryId) },
+    userId: owner,
+  })
     .select('kind')
     .lean<{ _id: Types.ObjectId; kind: CategoryKind }[]>()
   const kindById = new Map(categories.map((category) => [category._id.toString(), category.kind]))
 
-  for (const [index, row] of input.rows.entries()) {
-    const kind = kindById.get(row.categoryId)
+  for (const [index, row] of rows.entries()) {
+    const kind = kindById.get(row.categoryId.toString())
     if (!kind) throw new AppError(400, `Row ${index + 1}: unknown category`)
     if (kind !== row.kind) throw new AppError(400, `Row ${index + 1}: that is an ${kind} category`)
   }
 
-  const docs = input.rows.map((row) => ({
+  const docs = rows.map((row) => ({
     _id: new Types.ObjectId(),
     userId: owner,
     kind: row.kind,
     amountMinor: row.amountMinor,
     currency: profile.currency,
-    categoryId: new Types.ObjectId(row.categoryId),
+    categoryId: row.categoryId,
     date: parseCalendarDate(row.date),
     note: row.note,
   }))

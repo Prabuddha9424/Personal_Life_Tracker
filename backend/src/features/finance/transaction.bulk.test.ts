@@ -166,6 +166,15 @@ describe('POST /api/transactions/bulk', () => {
     expect(await Transaction.countDocuments()).toBe(0)
   })
 
+  it('accepts a category id sent in upper case', async () => {
+    const { food, row } = await setup()
+
+    const res = await bulk([row({ categoryId: food._id.toString().toUpperCase() })])
+
+    expect(res.status).toBe(201)
+    expect(await Transaction.countDocuments({ userId: alice.id, categoryId: food._id })).toBe(1)
+  })
+
   it('still surfaces the original error, and logs the failure, when the cleanup fails too', async () => {
     const { row } = await setup()
     const realInsertMany = Transaction.insertMany.bind(Transaction)
