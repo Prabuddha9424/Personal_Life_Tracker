@@ -125,6 +125,7 @@ describe('POST /api/auth/register', () => {
     }
     await register(second).expect(202)
     const newToken = lastMailToken()
+    expect(sendMailMock.mock.calls.at(-1)?.[0].text).toContain('Hi Second Name,')
     await verify(oldToken).expect(400)
     await verify(newToken).expect(200)
 

@@ -10,7 +10,7 @@ function isDuplicateKeyError(err: unknown): boolean {
   return typeof err === 'object' && err !== null && 'code' in err && err.code === 11000
 }
 
-async function sendVerification(user: UserDoc): Promise<void> {
+async function sendVerification(user: Pick<UserDoc, '_id' | 'email' | 'name'>): Promise<void> {
   const token = await createEmailToken(user._id, 'verify', VERIFY_TOKEN_TTL_MS)
   await sendVerificationEmail(user.email, user.name, token)
 }
@@ -28,7 +28,7 @@ async function handleExistingAccount(user: UserDoc, input: RegisterInput): Promi
       { password: passwordHash, name: input.name, currency: input.currency },
     )
     if (overwritten.matchedCount === 1) {
-      await sendVerification(user)
+      await sendVerification({ _id: user._id, email: user.email, name: input.name })
       return
     }
   }
