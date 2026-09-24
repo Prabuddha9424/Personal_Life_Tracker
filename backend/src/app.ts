@@ -2,6 +2,7 @@ import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 import { pinoHttp } from 'pino-http'
+import { authRouter } from './features/auth/index.ts'
 import { healthRouter } from './features/health/index.ts'
 import { env } from './shared/config/env.ts'
 import { logger } from './shared/logger/logger.ts'
@@ -19,6 +20,7 @@ app.use(pinoHttp({ logger }))
 
 // Feature slices
 app.use('/api/health', healthRouter)
+app.use('/api/auth', authRouter)
 
 app.use(notFound)
 app.use(errorHandler)
