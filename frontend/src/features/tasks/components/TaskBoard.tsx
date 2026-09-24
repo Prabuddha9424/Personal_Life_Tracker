@@ -41,9 +41,11 @@ export function TaskBoard({ filters, onOpen, onAdd }: TaskBoardProps) {
     )
     // Both neighbours are sent whenever they exist, because the server does not check that a
     // one-sided drop is really at the edge. If the destination has more pages than are loaded, a
-    // drop at the loaded end has no beforeId, so the server places the card after ALL cards while
-    // the optimistic cache shows it after the loaded ones. The refetch that useMoveTask always
-    // runs when the move settles corrects that; the loaded end is not a true edge until then.
+    // drop at the loaded end has no beforeId, and the server places the card only at the given
+    // neighbour's position plus one step (1024), not after every card. That position can tie with
+    // the next card that is not loaded (the newer _id sorts first), or skip several such cards
+    // once positions have been rebalanced. The optimistic cache shows it right after the loaded
+    // cards; the refetch that useMoveTask always runs when the move settles shows the real order.
     moveTask({
       task,
       toStatus: destination.droppableId,
