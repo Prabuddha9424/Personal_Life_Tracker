@@ -230,6 +230,10 @@ function nameKey(kind: TransactionKind, name: string): string {
   return `${kind}:${name.normalize('NFC').trim().toLowerCase()}`
 }
 
+function isFilled(cell: string): boolean {
+  return cell.trim() !== ''
+}
+
 /** Cell text for a message, cut short so a huge cell cannot flood the preview. */
 function shown(text: string): string {
   const trimmed = text.trim()
@@ -251,6 +255,10 @@ function cleanNote(text: string): string {
  * Turns parsed rows into transactions in the shape the bulk endpoint takes. Every row that cannot
  * be turned into one is reported with its file line; none is dropped silently. The result keeps
  * the order of the file.
+ *
+ * With a header, a row with more cells than the header that has text beyond the header's width is
+ * reported instead of mapped, since an unquoted comma shifts every later column. Empty extra cells
+ * (a trailing delimiter) are ignored.
  *
  * The server numbers a rejected row ("Row N") from 1 within the batch it was sent, which holds
  * only valid rows, so it is not a file line. `lines` runs parallel to `valid` for that: send
@@ -279,6 +287,15 @@ export function mapRows(
       continue
     }
     if (hasHeader && index === 0) continue
+
+    const headerWidth = hasHeader ? (rows[0]?.cells.length ?? 0) : 0
+    if (hasHeader && cells.length > headerWidth && cells.slice(headerWidth).some(isFilled)) {
+      problems.push({
+        line,
+        message: `This row has ${cells.length} columns but the header has ${headerWidth} \u2014 check for an unquoted comma in a text field`,
+      })
+      continue
+    }
 
     const dateText = cells[mapping.dateColumn] ?? ''
     const date = parseDate(dateText, mapping.dateFormat)

@@ -339,15 +339,47 @@ describe('mapRows', () => {
     ])
   })
 
-  it('ignores extra cells on a long row', () => {
+  it('flags a row with more cells than the header, so a column shift cannot go unnoticed', () => {
     const { valid, problems } = mapRows(
+      fileRows([
+        ['Date', 'Amount', 'Description'],
+        ['2026-09-01', '-1', 'Coffee', 'large'],
+        ['2026-09-02', '-2', 'fine'],
+      ]),
+      mapping,
+      true,
+    )
+
+    expect(valid.map((row) => row.note)).toEqual(['fine'])
+    expect(problems).toEqual([
+      {
+        line: 2,
+        message:
+          'This row has 4 columns but the header has 3 \u2014 check for an unquoted comma in a text field',
+      },
+    ])
+  })
+
+  it('accepts empty extra cells, fewer cells and any width when there is no header', () => {
+    const withHeader = mapRows(
+      fileRows([
+        ['Date', 'Amount', 'Description'],
+        ['2026-09-01', '-1', 'x', '', ' '],
+        ['2026-09-02', '-2'],
+      ]),
+      mapping,
+      true,
+    )
+    const withoutHeader = mapRows(
       fileRows([['2026-09-01', '-1', 'x', 'extra', 'more']]),
       mapping,
       false,
     )
 
-    expect(problems).toEqual([])
-    expect(valid).toHaveLength(1)
+    expect(withHeader.valid).toHaveLength(2)
+    expect(withHeader.problems).toEqual([])
+    expect(withoutHeader.valid).toHaveLength(1)
+    expect(withoutHeader.problems).toEqual([])
   })
 
   it('trims notes, joins their lines and truncates to 200 characters', () => {
