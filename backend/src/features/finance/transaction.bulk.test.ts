@@ -112,23 +112,33 @@ describe('POST /api/transactions/bulk', () => {
 
   it.each([
     ['no rows', []],
-    ['more than 500 rows', Array.from({ length: 501 }, () => ({}))],
-    [
-      'a row with a fractional amount',
-      [
-        {
-          kind: 'expense',
-          amountMinor: 1.5,
-          categoryId: '65f1c2a4b3d4e5f6a7b8c9d0',
-          date: '2026-09-01',
-        },
-      ],
-    ],
     ['rows that are not an array', 'nope'],
   ])('rejects %s with 400', async (_name, rows) => {
     const res = await bulk(rows)
 
     expect(res.status).toBe(400)
+    expect(await Transaction.countDocuments()).toBe(0)
+  })
+
+  it('rejects 501 otherwise valid rows because of the count alone', async () => {
+    const { row } = await setup()
+
+    const res = await bulk(Array.from({ length: 501 }, (_, i) => row({ note: `n${i}` })))
+
+    expect(res.status).toBe(400)
+    expect(res.body.errors).toEqual([
+      expect.objectContaining({ path: 'rows', message: expect.stringContaining('500') }),
+    ])
+    expect(await Transaction.countDocuments()).toBe(0)
+  })
+
+  it('rejects a fractional amount on an otherwise valid row with a real category', async () => {
+    const { row } = await setup()
+
+    const res = await bulk([row(), row({ amountMinor: 1.5 })])
+
+    expect(res.status).toBe(400)
+    expect(res.body.errors).toEqual([expect.objectContaining({ path: 'rows.1.amountMinor' })])
     expect(await Transaction.countDocuments()).toBe(0)
   })
 
