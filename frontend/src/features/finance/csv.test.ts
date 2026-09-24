@@ -92,6 +92,31 @@ describe('parseCsv', () => {
     expect(parseCsv('single\nvalue\n')).toEqual([['single'], ['value']])
   })
 
+  it('ignores a lead row that holds only delimiters', () => {
+    expect(parseCsv(';;;\nDate;Amount\n1;2')).toEqual([
+      ['Date', 'Amount'],
+      ['1', '2'],
+    ])
+    expect(readCsv(';;;\nDate;Amount\n1;2').delimiter).toBe(';')
+    expect(readCsv(',\t;\n \t\nDate\tAmount\n1\t2\n').delimiter).toBe('\t')
+  })
+
+  it('is not fooled by a title line above the header', () => {
+    expect(readCsv('Account statement\nDate;Amount;Note\n1;2;a\n3;4;b\n').delimiter).toBe(';')
+    expect(
+      readCsv(
+        'Statement for Jo, January 2026\nDate;Amount;Note\n2026-01-01;-5,50;Coffee\n2026-01-02;-3,10;Tea\n',
+      ).delimiter,
+    ).toBe(';')
+    expect(readCsv('Account statement\nDate\tAmount\n1\t2\n').delimiter).toBe('\t')
+  })
+
+  it('prefers the delimiter that holds the same count on the most lines', () => {
+    expect(readCsv('Date;Amount\n1;2,5\n3;4,5\n5;6,5\n').delimiter).toBe(';')
+    expect(readCsv('Date,Amount,Note\n1,2,"a;b;c;d"\n3,4,x\n').delimiter).toBe(',')
+    expect(readCsv('a;b;c;d\n1;2;3;4\nnote, with, commas,,\n').delimiter).toBe(';')
+  })
+
   it('keeps a quote in the middle of an unquoted field literally', () => {
     expect(parseCsv('5" pipe,ok\n')).toEqual([['5" pipe', 'ok']])
     expect(parseCsv('5" pipe;a,b;c\n1;2;3\n')).toEqual([

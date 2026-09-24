@@ -16,17 +16,30 @@ export interface CsvDocument {
   delimiter: string
 }
 
+const SAMPLE_LINES = 5
+
 /**
- * Picks the delimiter that occurs most often in the first non-blank line, ignoring quoted text.
+ * Picks the delimiter from the first few lines that hold something besides delimiters and spaces
+ * (so a ";;;" lead row does not count), ignoring quoted text. The winner is the delimiter that
+ * appears the same non-zero number of times on the most sampled lines, so a title line or a decimal
+ * comma in a semicolon file does not outvote the real structure. Ties go to comma, semicolon, tab.
  * A quote only opens a quoted field at the start of a field, like in the parser itself.
  */
 function detectDelimiter(text: string): string {
-  const counts = DELIMITERS.map(() => 0)
+  const samples: number[][] = []
+  let counts = DELIMITERS.map(() => 0)
   let inQuotes = false
   let atFieldStart = true
   let hasContent = false
 
-  for (let index = 0; index < text.length; index += 1) {
+  const endLine = () => {
+    if (hasContent) samples.push(counts)
+    counts = DELIMITERS.map(() => 0)
+    atFieldStart = true
+    hasContent = false
+  }
+
+  for (let index = 0; index < text.length && samples.length < SAMPLE_LINES; index += 1) {
     const char = text.charAt(index)
     if (inQuotes) {
       if (char === '"') {
@@ -34,7 +47,7 @@ function detectDelimiter(text: string): string {
         else inQuotes = false
       }
     } else if (char === '\n' || char === '\r') {
-      if (hasContent) break
+      endLine()
     } else if (char === '"' && atFieldStart) {
       inQuotes = true
       atFieldStart = false
@@ -47,14 +60,24 @@ function detectDelimiter(text: string): string {
       } else {
         counts[position] = (counts[position] ?? 0) + 1
         atFieldStart = true
-        hasContent = true
       }
     }
   }
+  if (samples.length < SAMPLE_LINES) endLine()
 
   let best = 0
-  for (let position = 1; position < counts.length; position += 1) {
-    if ((counts[position] ?? 0) > (counts[best] ?? 0)) best = position
+  let bestAgreeing = 0
+  let bestCount = 0
+  for (const [position] of DELIMITERS.entries()) {
+    const perLine = samples.map((line) => line[position] ?? 0).filter((count) => count > 0)
+    for (const count of new Set(perLine)) {
+      const agreeing = perLine.filter((other) => other === count).length
+      if (agreeing > bestAgreeing || (agreeing === bestAgreeing && count > bestCount)) {
+        best = position
+        bestAgreeing = agreeing
+        bestCount = count
+      }
+    }
   }
   return DELIMITERS[best] ?? ','
 }
