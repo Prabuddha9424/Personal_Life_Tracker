@@ -93,7 +93,7 @@ Expected: `* chore/foundation` and `main` both listed, and `git log --oneline` s
 **Interfaces:**
 - Produces: `startTestDb(): Promise<void>`, `clearTestDb(): Promise<void>`, `stopTestDb(): Promise<void>`, `testUser(): { id: string; headers: { Authorization: string } }`.
 
-- [ ] **Step 1: Confirm the version, then install**
+- [x] **Step 1: Confirm the version, then install**
 
 ```bash
 cd backend
@@ -103,7 +103,7 @@ npm install --save-dev mongodb-memory-server
 
 Expected: `11.3.0` (or a newer stable if published); `package.json` lists it under `devDependencies`.
 
-- [ ] **Step 2: Write the failing test for the database helper**
+- [x] **Step 2: Write the failing test for the database helper**
 
 Create `backend/src/test/mongo.test.ts`:
 
@@ -131,12 +131,12 @@ describe('test database helper', () => {
 })
 ```
 
-- [ ] **Step 3: Run it and confirm it fails**
+- [x] **Step 3: Run it and confirm it fails**
 
 Run: `npx vitest run src/test/mongo.test.ts`
 Expected: FAIL, `Failed to resolve import "./mongo.ts"`.
 
-- [ ] **Step 4: Update the Vitest config (timeouts, cron secret) and the build config**
+- [x] **Step 4: Update the Vitest config (timeouts, cron secret) and the build config**
 
 Replace `backend/vitest.config.ts`:
 
@@ -177,7 +177,7 @@ Replace `backend/tsconfig.build.json` so test-only files never reach `dist/`:
 
 (`CRON_SECRET` is required by the env schema added in Task 3. Adding it to the test env now is harmless.)
 
-- [ ] **Step 5: Write the helper**
+- [x] **Step 5: Write the helper**
 
 Create `backend/src/test/mongo.ts`:
 
@@ -208,12 +208,12 @@ export async function stopTestDb(): Promise<void> {
 }
 ```
 
-- [ ] **Step 6: Run the test and confirm it passes**
+- [x] **Step 6: Run the test and confirm it passes**
 
 Run: `npx vitest run src/test/mongo.test.ts`
 Expected: PASS, 2 tests. The first run downloads `mongod`, which can take a few minutes.
 
-- [ ] **Step 7: Write the failing test for the token helper**
+- [x] **Step 7: Write the failing test for the token helper**
 
 Create `backend/src/test/auth.test.ts`:
 
@@ -239,7 +239,7 @@ describe('testUser', () => {
 
 Run: `npx vitest run src/test/auth.test.ts` → FAIL (`./auth.ts` missing).
 
-- [ ] **Step 8: Implement it**
+- [x] **Step 8: Implement it**
 
 Create `backend/src/test/auth.ts`:
 
@@ -259,7 +259,7 @@ export function testUser(): { id: string; headers: { Authorization: string } } {
 
 Run: `npx vitest run src/test/auth.test.ts` → PASS.
 
-- [ ] **Step 9: Run all checks**
+- [x] **Step 9: Run all checks**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -267,7 +267,7 @@ npm run lint && npm run typecheck && npm test
 
 Expected: all pass (health tests still report `database: 'down'` because they never connect).
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add backend
