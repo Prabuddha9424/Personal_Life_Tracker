@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth } from '../../shared/middleware/requireAuth.ts'
 import { categoryRouter } from './category.routes.ts'
 import { transactionRouter } from './transaction.routes.ts'
+import { reportRouter } from './report.routes.ts'
 
 /**
  * Mounted at /api. requireAuth is attached per path, never with router.use('/'), so it cannot
@@ -11,3 +12,4 @@ export const financeRouter = Router()
 
 financeRouter.use('/categories', requireAuth, categoryRouter)
 financeRouter.use('/transactions', requireAuth, transactionRouter)
+financeRouter.use('/finance', requireAuth, reportRouter)
