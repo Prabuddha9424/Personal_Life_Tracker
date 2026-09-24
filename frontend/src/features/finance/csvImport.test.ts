@@ -84,6 +84,12 @@ describe('parseSignedAmount', () => {
     ['USD 12.34', 'USD', { minor: 1234, negative: false }],
     ['12.34 usd', 'USD', { minor: 1234, negative: false }],
     ['-500', 'JPY', { minor: 500, negative: true }],
+    ['$12.30', 'USD', { minor: 1230, negative: false }],
+    ['US$12.30', 'USD', { minor: 1230, negative: false }],
+    ['\u00a312.30', 'GBP', { minor: 1230, negative: false }],
+    ['12.30 \u20ac', 'EUR', { minor: 1230, negative: false }],
+    ['\u00a5500', 'JPY', { minor: 500, negative: false }],
+    ['\uffe5500', 'JPY', { minor: 500, negative: false }],
     ['¥1,500', 'JPY', { minor: 1500, negative: false }],
     ['JPY 500', 'JPY', { minor: 500, negative: false }],
     ['1.234', 'BHD', { minor: 1234, negative: false }],
@@ -117,6 +123,14 @@ describe('parseSignedAmount', () => {
     ['(5', 'USD'],
     ['5+5', 'USD'],
     ['€5€', 'EUR'],
+    ['€12.30', 'USD'],
+    ['¥1,500', 'USD'],
+    ['12.30 €', 'GBP'],
+    ['5¢', 'USD'],
+    ['-€ 5.00', 'USD'],
+    ['$5.00', 'EUR'],
+    ['CA$5.00', 'USD'],
+    ['$$5.00', 'USD'],
     ['12.00 EUR', 'USD'],
     ['12 50', 'USD'],
     ['1 23', 'USD'],
@@ -355,6 +369,30 @@ describe('mapRows', () => {
     expect(valid).toEqual([])
     expect(problems.map((problem) => problem.line)).toEqual([1, 2])
     expect(problems[0]?.message).toBe('Could not read the amount "-1,234"')
+  })
+
+  it('reports a currency symbol or code that does not belong to the mapping currency', () => {
+    const { valid, problems } = mapRows(
+      fileRows([
+        ['2026-09-01', '\u20ac12.30', ''],
+        ['2026-09-01', '\u00a51,500', ''],
+        ['2026-09-01', '5\u00a2', ''],
+        ['2026-09-01', '12.30 EUR', ''],
+        ['2026-09-01', '$12.30', ''],
+        ['2026-09-01', '$$12.30', ''],
+      ]),
+      mapping,
+      false,
+    )
+
+    expect(valid.map((row) => row.amountMinor)).toEqual([1230])
+    expect(problems).toEqual([
+      { line: 1, message: 'Currency symbol \u20ac does not match USD' },
+      { line: 2, message: 'Currency symbol \u00a5 does not match USD' },
+      { line: 3, message: 'Currency symbol \u00a2 does not match USD' },
+      { line: 4, message: 'Currency code EUR does not match USD' },
+      { line: 6, message: 'Could not read the amount "$$12.30"' },
+    ])
   })
 
   it('reports dates the server would refuse', () => {

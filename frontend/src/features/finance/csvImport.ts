@@ -1,4 +1,4 @@
-import { toMinorUnits } from '@/shared/lib/money'
+import { isValidCurrencyCode, toMinorUnits } from '@/shared/lib/money'
 import type { CsvRow } from './csv'
 import type { Category, Transaction, TransactionInput, TransactionKind } from './types'
 
@@ -75,24 +75,48 @@ export function parseDate(value: string, format: DateFormat): string | null {
 
 const CURRENCY_CODES: ReadonlySet<string> = new Set(Intl.supportedValuesOf('currency'))
 
-const LEADING_SIGN = /^([+\-−])\s*/
-const TRAILING_SIGN = /\s*([+\-−])$/
-const LEADING_SYMBOL = /^(\p{Sc})\s*/u
-const TRAILING_SYMBOL = /\s*(\p{Sc})$/u
-const LEADING_CODE = /^([A-Za-z]{3})\s*/
-const TRAILING_CODE = /\s*([A-Za-z]{3})$/
-const SPACED_THOUSANDS = /^\d{1,3}(?:\s\d{3})+(?:[.,]\d+)?$/
+const SYMBOL_LOCALES = ['en', 'en-US', 'en-GB', 'en-CA', 'en-AU', 'de', 'fr', 'ja']
+const symbolCache = new Map<string, readonly string[]>()
 
 /**
- * The size and sign of an amount as written in a bank export: "-12.50", "(12.50)", "12.50-",
- * "$1,234.50", "-€ 1.234,50", "1 234,50", "USD 12.50". The digits go through `toMinorUnits`, so
- * nothing is rounded and an ambiguous or too precise amount is null. Text that is not an amount
- * with at most one sign, one pair of parentheses and one currency mark is null.
+ * The symbols a bank may print for `currency` ("$" and "US$" for USD, "¥" and "￥" for JPY),
+ * as Intl produces them in a few fixed locales. Longest first, so "US$" is tried before "$".
+ * A symbol not in this list, such as "€" or "¢" for USD, is never read as that currency.
  */
-export function parseSignedAmount(
-  value: string,
-  currency: string,
-): { minor: number; negative: boolean } | null {
+function currencySymbols(currency: string): readonly string[] {
+  const cached = symbolCache.get(currency)
+  if (cached) return cached
+  const found = new Set<string>()
+  if (isValidCurrencyCode(currency)) {
+    for (const locale of SYMBOL_LOCALES) {
+      for (const currencyDisplay of ['symbol', 'narrowSymbol'] as const) {
+        const parts = new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency,
+          currencyDisplay,
+        }).formatToParts(1)
+        for (const part of parts) {
+          if (part.type === 'currency' && /\p{Sc}/u.test(part.value)) found.add(part.value)
+        }
+      }
+    }
+  }
+  const symbols = [...found].sort((a, b) => b.length - a.length)
+  symbolCache.set(currency, symbols)
+  return symbols
+}
+
+const LEADING_SIGN = /^([+\-\u2212])\s*/
+const TRAILING_SIGN = /\s*([+\-\u2212])$/
+const LEADING_CODE = /^([A-Za-z]{3})\s*/
+const TRAILING_CODE = /\s*([A-Za-z]{3})$/
+const LEADING_FOREIGN_SYMBOL = /^[A-Za-z]{0,3}(\p{Sc})/u
+const TRAILING_FOREIGN_SYMBOL = /(\p{Sc})$/u
+const SPACED_THOUSANDS = /^\d{1,3}(?:\s\d{3})+(?:[.,]\d+)?$/
+
+type AmountReading = { minor: number; negative: boolean } | { mismatch: string } | null
+
+function readAmount(value: string, currency: string): AmountReading {
   let text = value.trim()
   if (text.length === 0 || text.length > MAX_AMOUNT_TEXT_LENGTH) return null
 
@@ -108,6 +132,7 @@ export function parseSignedAmount(
   }
 
   const wantedCode = currency.toUpperCase()
+  const symbols = currencySymbols(currency)
   const peelSign = (pattern: RegExp): boolean => {
     const match = pattern.exec(text)
     if (!match) return false
@@ -116,15 +141,23 @@ export function parseSignedAmount(
     marks += 1
     return true
   }
-  const peelSymbol = (pattern: RegExp): boolean => {
-    if (!pattern.test(text)) return false
-    text = text.replace(pattern, '')
-    currencyMarks += 1
-    return true
+  const peelSymbol = (side: 'leading' | 'trailing'): boolean => {
+    for (const symbol of symbols) {
+      if (side === 'leading' && text.startsWith(symbol)) {
+        text = text.slice(symbol.length).trimStart()
+        currencyMarks += 1
+        return true
+      }
+      if (side === 'trailing' && text.endsWith(symbol)) {
+        text = text.slice(0, -symbol.length).trimEnd()
+        currencyMarks += 1
+        return true
+      }
+    }
+    return false
   }
   const peelCode = (pattern: RegExp): boolean => {
     const code = pattern.exec(text)?.[1]?.toUpperCase()
-    if (code === undefined || !CURRENCY_CODES.has(code)) return false
     if (code !== wantedCode) return false
     text = text.replace(pattern, '')
     currencyMarks += 1
@@ -136,10 +169,20 @@ export function parseSignedAmount(
     peeled =
       peelSign(LEADING_SIGN) ||
       peelSign(TRAILING_SIGN) ||
-      peelSymbol(LEADING_SYMBOL) ||
-      peelSymbol(TRAILING_SYMBOL) ||
+      peelSymbol('leading') ||
+      peelSymbol('trailing') ||
       peelCode(LEADING_CODE) ||
       peelCode(TRAILING_CODE)
+  }
+
+  const foreignSymbol =
+    LEADING_FOREIGN_SYMBOL.exec(text)?.[1] ?? TRAILING_FOREIGN_SYMBOL.exec(text)?.[1]
+  if (foreignSymbol !== undefined && !symbols.includes(foreignSymbol)) {
+    return { mismatch: `Currency symbol ${foreignSymbol} does not match ${wantedCode}` }
+  }
+  const foreignCode = (LEADING_CODE.exec(text) ?? TRAILING_CODE.exec(text))?.[1]?.toUpperCase()
+  if (foreignCode !== undefined && CURRENCY_CODES.has(foreignCode)) {
+    return { mismatch: `Currency code ${foreignCode} does not match ${wantedCode}` }
   }
   if (marks > 1 || currencyMarks > 1) return null
 
@@ -148,6 +191,21 @@ export function parseSignedAmount(
 
   const minor = toMinorUnits(body, currency)
   return minor === null ? null : { minor, negative }
+}
+
+/**
+ * The size and sign of an amount as written in a bank export: "-12.50", "(12.50)", "12.50-",
+ * "$1,234.50", "-€ 1.234,50", "1 234,50", "USD 12.50". The digits go through `toMinorUnits`, so
+ * nothing is rounded and an ambiguous or too precise amount is null. Text that is not an amount
+ * with at most one sign, one pair of parentheses and one currency mark is null, and so is an
+ * amount marked with another currency than `currency` (so "€12.30" is never read as dollars).
+ */
+export function parseSignedAmount(
+  value: string,
+  currency: string,
+): { minor: number; negative: boolean } | null {
+  const reading = readAmount(value, currency)
+  return reading !== null && 'minor' in reading ? reading : null
 }
 
 export interface MappedRows {
@@ -229,9 +287,13 @@ export function mapRows(
     }
 
     const amountText = cells[mapping.amountColumn] ?? ''
-    const amount = parseSignedAmount(amountText, mapping.currency)
-    if (!amount) {
+    const amount = readAmount(amountText, mapping.currency)
+    if (amount === null) {
       problems.push({ line, message: `Could not read the amount "${shown(amountText)}"` })
+      continue
+    }
+    if ('mismatch' in amount) {
+      problems.push({ line, message: amount.mismatch })
       continue
     }
     if (amount.minor === 0) {
