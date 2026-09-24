@@ -1,3 +1,4 @@
+import { pino } from 'pino'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { app } from '../../app.ts'
 import { testUser } from '../../test/auth.ts'
@@ -7,6 +8,22 @@ import { insertCategory } from './finance.test-helpers.ts'
 import { Transaction } from './transaction.model.ts'
 
 const profiles = vi.hoisted(() => new Map<string, string>())
+const logged = vi.hoisted(() => ({ lines: [] as string[] }))
+
+vi.mock('../../shared/logger/logger.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../shared/logger/logger.ts')>()
+  return {
+    ...actual,
+    logger: pino(
+      { ...actual.loggerOptions, transport: undefined, level: 'info' },
+      {
+        write: (line: string) => {
+          logged.lines.push(line)
+        },
+      },
+    ),
+  }
+})
 vi.mock(import('../auth/index.ts'), async (importOriginal) => ({
   ...(await importOriginal()),
   getUserProfile: async (id: string) => ({
@@ -20,6 +37,7 @@ vi.mock(import('../auth/index.ts'), async (importOriginal) => ({
 beforeAll(startTestDb)
 afterEach(clearTestDb)
 afterEach(() => {
+  logged.lines.length = 0
   profiles.clear()
   vi.restoreAllMocks()
 })
@@ -146,5 +164,25 @@ describe('POST /api/transactions/bulk', () => {
 
     expect(res.status).toBe(500)
     expect(await Transaction.countDocuments()).toBe(0)
+  })
+
+  it('still surfaces the original error, and logs the failure, when the cleanup fails too', async () => {
+    const { row } = await setup()
+    const realInsertMany = Transaction.insertMany.bind(Transaction)
+    vi.spyOn(Transaction, 'insertMany').mockImplementationOnce((async (docs: unknown[]) => {
+      await realInsertMany(docs.slice(0, 2) as never)
+      throw new Error('connection lost')
+    }) as never)
+    vi.spyOn(Transaction, 'deleteMany').mockRejectedValueOnce(new Error('cleanup refused'))
+
+    const res = await bulk([row({ note: 'SECRET-NOTE' }), row(), row()])
+
+    expect(res.status).toBe(500)
+    expect(res.body).toEqual({ message: 'connection lost' })
+    const entries = logged.lines.map((line) => JSON.parse(line) as Record<string, unknown>)
+    const cleanup = entries.filter((entry) => String(entry.msg).includes('cleaned up'))
+    expect(cleanup).toHaveLength(1)
+    expect(cleanup[0]).toMatchObject({ level: 50, rows: 3 })
+    expect(logged.lines.join('')).not.toContain('SECRET-NOTE')
   })
 })
