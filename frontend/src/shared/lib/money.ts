@@ -9,12 +9,19 @@ export function minorUnitDigits(currency: string): number {
 /**
  * Parses what a person typed into integer minor units without any floating-point arithmetic.
  * Returns null for anything ambiguous or too precise; it never rounds.
+ *
+ * Ambiguous, so rejected: a single comma group such as "1,234" for a 3-decimal currency (BHD, KWD,
+ * OMR), where it could be thousands or a decimal comma. Thousands groups never start with a zero,
+ * so "0,500" reads as a decimal comma (0.500). Several groups ("1,234,567") or a dot after the
+ * groups ("1,234.567") are unambiguous thousands.
  */
 export function toMinorUnits(input: string, currency: string): number | null {
   const digits = minorUnitDigits(currency)
   let text = input.trim().replace(/\s/g, '')
 
-  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(text)) {
+  if (digits === 3 && /^[1-9]\d{0,2},\d{3}$/.test(text)) return null
+
+  if (/^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(text)) {
     text = text.replace(/,/g, '')
   } else if (/^\d{1,3}(\.\d{3})+,\d+$/.test(text)) {
     text = text.replace(/\./g, '').replace(',', '.')
@@ -38,6 +45,7 @@ export function minorToMajor(minor: number, currency: string): number {
   return minor / 10 ** minorUnitDigits(currency)
 }
 
+/** For display only: the stored value stays an integer in minor units. */
 export function formatMinorUnits(minor: number, currency: string, locale?: string): string {
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(
     minorToMajor(minor, currency),

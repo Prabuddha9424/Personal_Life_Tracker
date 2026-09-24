@@ -40,6 +40,29 @@ describe('toMinorUnits', () => {
     expect(toMinorUnits(input, currency)).toBeNull()
   })
 
+  it.each([
+    ['1,234', 'USD', 123400],
+    ['1,234', 'JPY', 1234],
+    ['1,234,567', 'BHD', 1234567000],
+    ['1,234.567', 'BHD', 1234567],
+    ['0,500', 'BHD', 500],
+    ['12,5', 'BHD', 12500],
+    ['007', 'USD', 700],
+  ])('resolves the comma form %j in %s to %i', (input, currency, expected) => {
+    expect(toMinorUnits(input, currency)).toBe(expected)
+  })
+
+  it.each([
+    ['1,234', 'BHD'],
+    ['0,500', 'USD'],
+    ['0,123', 'USD'],
+    ['12.500', 'USD'],
+    ['1.234.567', 'EUR'],
+    ['   ', 'USD'],
+  ])('rejects the ambiguous or invalid form %j in %s', (input, currency) => {
+    expect(toMinorUnits(input, currency)).toBeNull()
+  })
+
   it('never produces a float', () => {
     expect(Number.isInteger(toMinorUnits('0.29', 'USD'))).toBe(true)
     expect(toMinorUnits('0.29', 'USD')).toBe(29)
