@@ -23,7 +23,7 @@ export async function requireProfile(userId: string): Promise<UserProfile> {
  * The category must belong to the user and match the transaction's kind. Another user's category
  * answers exactly like one that does not exist.
  */
-export async function assertCategoryMatches(
+async function assertCategoryMatches(
   owner: Types.ObjectId,
   categoryId: string,
   kind: CategoryKind,
