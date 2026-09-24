@@ -13,7 +13,13 @@ export const paginationQuerySchema = z.object({
 export const calendarDateSchema = z.iso.date()
 
 /** A calendar month as `YYYY-MM`. */
-export const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM')
+export const monthSchema = z
+  .string()
+  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM')
+  .refine((value) => {
+    const year = Number(value.slice(0, 4))
+    return year >= 2000 && year <= 2100
+  }, 'Expected a month between 2000 and 2100')
 
 interface PageArgs {
   page: number

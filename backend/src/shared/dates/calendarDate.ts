@@ -27,7 +27,7 @@ export function shiftMonth(month: string, delta: number): string {
   const index = year * 12 + (monthNumber - 1) + delta
   const shiftedYear = Math.floor(index / 12)
   const shiftedMonth = (index % 12) + 1
-  return `${shiftedYear}-${String(shiftedMonth).padStart(2, '0')}`
+  return `${String(shiftedYear).padStart(4, '0')}-${String(shiftedMonth).padStart(2, '0')}`
 }
 
 /** `[start, end)` for a `YYYY-MM` month, both at UTC midnight. */

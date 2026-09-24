@@ -75,4 +75,15 @@ describe('monthSchema', () => {
     expect(monthSchema.safeParse('2026-9').success).toBe(false)
     expect(monthSchema.safeParse('2026-09-01').success).toBe(false)
   })
+
+  it.each(['2000-01', '2100-12', '2026-09'])('accepts %s', (value) => {
+    expect(monthSchema.safeParse(value).success).toBe(true)
+  })
+
+  it.each(['1999-12', '2101-01', '0500-03', '0000-01'])('rejects out-of-range year %s', (value) => {
+    const result = monthSchema.safeParse(value)
+
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.message).toBe('Expected a month between 2000 and 2100')
+  })
 })
