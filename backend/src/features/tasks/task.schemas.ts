@@ -6,6 +6,8 @@ import {
 } from '../../shared/validation/requestSchemas.ts'
 import { TASK_PRIORITIES, TASK_STATUSES } from './task.model.ts'
 
+const CONTROL_CHARACTER = /\p{Cc}/u
+
 const tagSchema = z.string().trim().toLowerCase().min(1).max(30)
 
 /** Trimmed, lower-cased, de-duplicated, at most 10. */
@@ -47,7 +49,13 @@ export const moveTaskSchema = z.object({
 export const listTasksQuerySchema = paginationQuerySchema.extend({
   status: z.enum(TASK_STATUSES).optional(),
   tag: tagSchema.optional(),
-  q: z.string().trim().min(1).max(100).optional(),
+  q: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
+    .refine((value) => !CONTROL_CHARACTER.test(value), 'Invalid search text')
+    .optional(),
   dueBefore: calendarDateSchema.optional(),
   open: z
     .enum(['true', 'false'])

@@ -67,6 +67,27 @@ describe('GET /api/tasks', () => {
     },
   )
 
+  it.each(['%00', 'a%00b', '%01', '%1f', '%7f', 'x%0Ay'])(
+    'rejects control characters in the search text with a 400 (%s)',
+    async (q) => {
+      await insertTask(alice.id, { title: 'Buy Milk' })
+
+      const res = await list(`?q=${q}`)
+
+      expect(res.status).toBe(400)
+      expect(res.body.errors).toEqual([{ path: 'q', message: 'Invalid search text' }])
+    },
+  )
+
+  it('does not crash on a NUL byte in the tag filter', async () => {
+    await insertTask(alice.id, { title: 'Buy Milk', tags: ['home'] })
+
+    const res = await list('?tag=%00')
+
+    expect(res.status).toBe(200)
+    expect(res.body.items).toEqual([])
+  })
+
   it('lists open tasks due on or before a date, soonest first', async () => {
     await insertTask(alice.id, { title: 'late', dueDate: date('2026-10-05') })
     await insertTask(alice.id, { title: 'soon', dueDate: date('2026-09-25') })
