@@ -3,9 +3,9 @@ import { isCommonPassword } from './password-policy.ts'
 
 const SUPPORTED_CURRENCIES = new Set(Intl.supportedValuesOf('currency'))
 
-export const emailSchema = z.string().trim().toLowerCase().max(254).pipe(z.email())
+const emailSchema = z.string().trim().toLowerCase().max(254).pipe(z.email())
 
-export const passwordSchema = z
+const passwordSchema = z
   .string()
   .min(10, 'Use at least 10 characters')
   .max(128, 'Use at most 128 characters')

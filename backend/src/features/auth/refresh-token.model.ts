@@ -1,6 +1,6 @@
 import { model, Schema, type Types } from 'mongoose'
 
-export interface RefreshTokenAttrs {
+interface RefreshTokenAttrs {
   userId: Types.ObjectId
   /** All tokens descended from one login share a family, so theft can revoke them together. */
   familyId: string

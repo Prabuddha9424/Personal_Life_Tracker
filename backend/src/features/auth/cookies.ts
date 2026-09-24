@@ -1,7 +1,7 @@
 import type { CookieOptions, Request, Response } from 'express'
 import { isProduction } from '../../shared/config/env.ts'
 
-export const REFRESH_COOKIE = 'refresh_token'
+const REFRESH_COOKIE = 'refresh_token'
 
 const baseOptions: CookieOptions = {
   httpOnly: true,

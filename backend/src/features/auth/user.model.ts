@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { model, Schema, type HydratedDocument } from 'mongoose'
 import { BCRYPT_COST } from './constants.ts'
 
-export interface UserAttrs {
+interface UserAttrs {
   email: string
   /** Holds the bcrypt hash. Hashed by the pre-save hook, never selected by default. */
   password: string

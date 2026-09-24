@@ -2,7 +2,7 @@ import { model, Schema, type Types } from 'mongoose'
 
 export type EmailTokenPurpose = 'verify' | 'reset'
 
-export interface EmailTokenAttrs {
+interface EmailTokenAttrs {
   userId: Types.ObjectId
   purpose: EmailTokenPurpose
   /** SHA-256 of the raw token. The raw token exists only in the email. */
