@@ -287,7 +287,7 @@ git commit -m "chore(backend): add in-memory MongoDB and test-token helpers" -m 
 
 Why `TRUST_PROXY_HOPS`: in production a request passes through Netlify's proxy and then Render's load balancer. With the current hard-coded `1` hop, Express would see Netlify's address for every user, so every user would share one rate-limit bucket. The hop count becomes configuration and is verified in M6.
 
-- [ ] **Step 1: Write the failing rate-limiter test**
+- [x] **Step 1: Write the failing rate-limiter test**
 
 Create `backend/src/shared/middleware/rateLimiters.test.ts`:
 
@@ -317,7 +317,7 @@ describe('createRateLimiter', () => {
 
 Run: `npx vitest run src/shared/middleware/rateLimiters.test.ts` → FAIL (`createRateLimiter` is not exported).
 
-- [ ] **Step 2: Implement the limiter factory**
+- [x] **Step 2: Implement the limiter factory**
 
 Replace `backend/src/shared/middleware/rateLimiters.ts`:
 
@@ -370,7 +370,7 @@ export const internalRateLimiter = createRateLimiter({
 
 Run the test → PASS.
 
-- [ ] **Step 3: Add the new environment variables**
+- [x] **Step 3: Add the new environment variables**
 
 In `backend/src/shared/config/env.ts`, inside `envSchema`, add after `JWT_EXPIRES_IN`:
 
@@ -398,7 +398,7 @@ CRON_SECRET=change-me-to-a-long-random-string-of-at-least-32-chars
 
 Also replace the `SMTP_HOST` and `SMTP_PORT` lines' surrounding comment so it reads: local development uses a catcher on port 1025 (for example Mailpit); production uses the Brevo SMTP relay `smtp-relay.brevo.com` on port 2525 because Render's free tier blocks ports 25, 465 and 587.
 
-- [ ] **Step 4: Run all checks**
+- [x] **Step 4: Run all checks**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -406,7 +406,7 @@ npm run lint && npm run typecheck && npm test
 
 Expected: all pass. (`.env.example` is not loaded by tests; the test env comes from `vitest.config.ts`.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend
