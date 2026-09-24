@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { FieldValues, Path, UseFormSetError } from 'react-hook-form'
 
-export interface ApiFieldError {
+interface ApiFieldError {
   path: string
   message: string
 }
