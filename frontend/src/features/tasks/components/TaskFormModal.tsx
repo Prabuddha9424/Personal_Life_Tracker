@@ -100,13 +100,19 @@ export function TaskFormModal({ mode, onClose }: TaskFormModalProps) {
     })
   }
 
+  // Closing mid-request would unmount the form and drop the per-call callbacks, so a failed save
+  // would go unreported. Escape, the backdrop and the close button wait for the result.
+  function requestClose() {
+    if (!inFlight.current) onClose()
+  }
+
   function onKeepTask() {
     deleteTask.reset()
     setConfirmingDelete(false)
   }
 
   return (
-    <Modal title={editing ? 'Edit task' : 'New task'} onClose={onClose}>
+    <Modal title={editing ? 'Edit task' : 'New task'} onClose={requestClose}>
       <form onSubmit={onFormSubmit} noValidate>
         <fieldset className="form-fields" disabled={locked}>
           <FormField label="Title" error={errors.title?.message}>

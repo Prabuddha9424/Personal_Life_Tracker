@@ -331,3 +331,77 @@ describe('TaskFormModal (focus)', () => {
     expect(screen.getByRole('button', { name: 'Open form' })).toHaveFocus()
   })
 })
+
+describe('TaskFormModal (closing while a save is running)', () => {
+  async function submitPending() {
+    const settle = {
+      resolve: (task: Task): void => void task,
+      reject: (error: Error): void => void error,
+    }
+    vi.mocked(taskApi.createTask).mockReturnValue(
+      new Promise<Task>((resolve, reject) => {
+        settle.resolve = resolve
+        settle.reject = reject
+      }),
+    )
+    const onClose = vi.fn()
+    renderWithProviders(
+      <TaskFormModal mode={{ kind: 'create', status: 'todo' }} onClose={onClose} />,
+    )
+    await userEvent.type(screen.getByLabelText('Title'), 'x')
+    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    await vi.waitFor(() => expect(taskApi.createTask).toHaveBeenCalled())
+    return { onClose, settle }
+  }
+
+  it('ignores Escape, the backdrop and the close button while the request is pending', async () => {
+    const { onClose } = await submitPending()
+
+    await userEvent.keyboard('{Escape}')
+    fireEvent.mouseDown(screen.getByRole('dialog').parentElement as HTMLElement)
+    await userEvent.click(screen.getByRole('button', { name: 'Close dialog' }))
+
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('still shows the inline error when the request fails after Escape was pressed', async () => {
+    const { onClose, settle } = await submitPending()
+
+    await userEvent.keyboard('{Escape}')
+    await act(async () => settle.reject(new Error('Network Error')))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Network Error')
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('closes when the request succeeds', async () => {
+    const { onClose, settle } = await submitPending()
+
+    await userEvent.keyboard('{Escape}')
+    await act(async () => settle.resolve(existing))
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+  })
+
+  it('lets Escape close the dialog again once the request has failed', async () => {
+    const { onClose, settle } = await submitPending()
+
+    await act(async () => settle.reject(new Error('Network Error')))
+    await screen.findByRole('alert')
+    await userEvent.keyboard('{Escape}')
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('closes on Escape as usual when nothing is pending', async () => {
+    const onClose = vi.fn()
+    renderWithProviders(
+      <TaskFormModal mode={{ kind: 'create', status: 'todo' }} onClose={onClose} />,
+    )
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
