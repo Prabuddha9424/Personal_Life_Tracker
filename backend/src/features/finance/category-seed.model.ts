@@ -1,6 +1,6 @@
 import { model, Schema, type Types } from 'mongoose'
 
-export interface CategorySeedAttrs {
+interface CategorySeedAttrs {
   userId: Types.ObjectId
 }
 
