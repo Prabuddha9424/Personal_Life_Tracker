@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E2 Tasks (Kanban) |
 | **Priority** | Must |
 | **Size** | XL |
@@ -28,11 +28,11 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-021-T1 | Add the ordering logic (`positionBetween`) with tests | [M2 Tasks](../plans/03-tasks.md), Task 1 | To do |
-| US-021-T2 | Add the move endpoint (neighbour ids, rebalancing, 400 and 409 cases) with tests | [M2 Tasks](../plans/03-tasks.md), Task 4 | To do |
-| US-021-T3 | Add the board-cache logic (remove, insert, neighbours) with tests | [M2 Tasks](../plans/03-tasks.md), Task 6 (board cache) | To do |
-| US-021-T4 | Add the query hooks and the optimistic move with rollback, with tests | [M2 Tasks](../plans/03-tasks.md), Task 7 | To do |
-| US-021-T5 | Add the columns, the drag-and-drop board, the page, the route and the navigation entry, with page tests | [M2 Tasks](../plans/03-tasks.md), Task 9 | To do |
+| US-021-T1 | Add the ordering logic (`positionBetween`) with tests | [M2 Tasks](../plans/03-tasks.md), Task 1 | Done |
+| US-021-T2 | Add the move endpoint (neighbour ids, rebalancing, 400 and 409 cases) with tests | [M2 Tasks](../plans/03-tasks.md), Task 4 | Done |
+| US-021-T3 | Add the board-cache logic (remove, insert, neighbours) with tests | [M2 Tasks](../plans/03-tasks.md), Task 6 (board cache) | Done |
+| US-021-T4 | Add the query hooks and the optimistic move with rollback, with tests | [M2 Tasks](../plans/03-tasks.md), Task 7 | Done |
+| US-021-T5 | Add the columns, the drag-and-drop board, the page, the route and the navigation entry, with page tests | [M2 Tasks](../plans/03-tasks.md), Task 9 | Done |
 | US-021-T6 | Walk drag, keyboard drag and the two-tab stale-board case in a real browser | [M2 Tasks](../plans/03-tasks.md), Task 10 | To do |
 
 ## Out of scope
@@ -47,10 +47,10 @@ Drag and drop cannot be proven in jsdom, so the real-browser check is part of th
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
+- [x] Acceptance criterion 1
 - [ ] Acceptance criterion 2
 - [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
-- [ ] Acceptance criterion 6
-- [ ] Acceptance criterion 7
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
+- [x] Acceptance criterion 6
+- [x] Acceptance criterion 7

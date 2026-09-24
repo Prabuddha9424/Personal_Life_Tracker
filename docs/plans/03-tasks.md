@@ -41,13 +41,13 @@
 **Interfaces:**
 - Produces: `POSITION_STEP = 1024`, `MIN_GAP = 1e-6`, `positionBetween(above: number | undefined, below: number | undefined): number | null` (`above` is the position of the card that will sit above, `below` of the card that will sit below; returns `null` when both are given and the gap is too small to split).
 
-- [ ] **Step 0: Create the branch**
+- [x] **Step 0: Create the branch**
 
 ```bash
 git switch main && git switch -c feature/tasks-board
 ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -88,7 +88,7 @@ describe('positionBetween', () => {
 
 Run: `cd backend && npx vitest run src/features/tasks/task.ordering.test.ts` → FAIL (module missing).
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 ```ts
 /** Distance between cards when a column is (re)numbered, and the offset for top and bottom drops. */
@@ -114,7 +114,7 @@ export function positionBetween(above: number | undefined, below: number | undef
 
 Run → PASS.
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -135,7 +135,7 @@ git commit -m "feat(tasks): add card ordering logic" -m "Co-Authored-By: Claude 
 
 (No behaviour to test in isolation here: the schemas are exercised through the API in Task 3. This task exists so the next two can stay focused.)
 
-- [ ] **Step 1: Write the model**
+- [x] **Step 1: Write the model**
 
 `backend/src/features/tasks/task.model.ts`:
 
@@ -185,7 +185,7 @@ taskSchema.index({ userId: 1, tags: 1 })
 export const Task = model<TaskAttrs>('Task', taskSchema)
 ```
 
-- [ ] **Step 2: Write the schemas**
+- [x] **Step 2: Write the schemas**
 
 `backend/src/features/tasks/task.schemas.ts`:
 
@@ -254,7 +254,7 @@ export type MoveTaskInput = z.infer<typeof moveTaskSchema>
 export type ListTasksQuery = z.infer<typeof listTasksQuerySchema>
 ```
 
-- [ ] **Step 3: Write the DTO and the test helper**
+- [x] **Step 3: Write the DTO and the test helper**
 
 `backend/src/features/tasks/task.dto.ts`:
 
@@ -316,7 +316,7 @@ export async function insertTask(
 }
 ```
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -336,7 +336,7 @@ git commit -m "feat(tasks): add task model, request schemas and DTO" -m "Co-Auth
 - Consumes: everything from Tasks 1 and 2, `authUserId`, `requireAuth`, `validate`, `idParamsSchema`, `paginated`, `toSkip`.
 - Produces: `createTask(userId, input): Promise<TaskDto>`, `getTask(userId, id)`, `updateTask(userId, id, input)`, `deleteTask(userId, id): Promise<void>`, `listTasks(userId, query): Promise<Paginated<TaskDto>>`, `listTags(userId): Promise<string[]>`; routes `GET/POST /api/tasks`, `GET /api/tasks/tags`, `GET/PATCH/DELETE /api/tasks/:id`.
 
-- [ ] **Step 1: Write the failing CRUD tests**
+- [x] **Step 1: Write the failing CRUD tests**
 
 `backend/src/features/tasks/task.crud.test.ts`:
 
@@ -513,7 +513,7 @@ describe('DELETE /api/tasks/:id', () => {
 })
 ```
 
-- [ ] **Step 2: Write the failing list tests**
+- [x] **Step 2: Write the failing list tests**
 
 `backend/src/features/tasks/task.list.test.ts`:
 
@@ -641,7 +641,7 @@ describe('GET /api/tasks/tags', () => {
 
 Run: `npx vitest run src/features/tasks` → FAIL (404 for `/api/tasks`).
 
-- [ ] **Step 3: Implement the service**
+- [x] **Step 3: Implement the service**
 
 `backend/src/features/tasks/task.service.ts`:
 
@@ -743,7 +743,7 @@ export async function deleteAllTasks(userId: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: Implement controller, routes and the slice entry**
+- [x] **Step 4: Implement controller, routes and the slice entry**
 
 `backend/src/features/tasks/task.controller.ts`:
 
@@ -812,7 +812,7 @@ In `backend/src/app.ts` add `import { taskRouter } from './features/tasks/index.
 
 Run: `npx vitest run src/features/tasks` → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -832,7 +832,7 @@ git commit -m "feat(tasks): add task CRUD, list, search and tag endpoints" -m "C
 - Consumes: `positionBetween`, `POSITION_STEP`, `Task`, `moveTaskSchema`.
 - Produces: `moveTask(userId, id, input: MoveTaskInput): Promise<TaskDto>`; route `POST /api/tasks/:id/move`. Errors: `404` unknown task, `400` a neighbour is the moved task itself, `409` a neighbour does not exist or is in a different column, or `afterId` sits at or below `beforeId`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `backend/src/features/tasks/task.move.test.ts`:
 
@@ -986,7 +986,7 @@ describe('POST /api/tasks/:id/move', () => {
 
 Run: `npx vitest run src/features/tasks/task.move.test.ts` → FAIL (404 on the move route).
 
-- [ ] **Step 2: Implement the move**
+- [x] **Step 2: Implement the move**
 
 `backend/src/features/tasks/task.move.ts`:
 
@@ -1069,7 +1069,7 @@ export async function moveTask(userId: string, id: string, input: MoveTaskInput)
 
 One subtlety the tests cover: when two neighbours share a position, `rebalance` orders ties by `_id`, which keeps their relative order, and after renumbering the gap is 1024 so the split succeeds. The moved card is still in its old column while neighbours are read, but it can never be its own neighbour (checked above), so the midpoint is unaffected.
 
-- [ ] **Step 3: Add the route**
+- [x] **Step 3: Add the route**
 
 In `task.controller.ts` add `import { moveTask } from './task.move.ts'`, `MoveTaskInput` to the schema type import, and:
 
@@ -1087,7 +1087,7 @@ taskRouter.post('/:id/move', validate({ params: idParamsSchema, body: moveTaskSc
 
 Run: `npx vitest run src/features/tasks` → PASS.
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1106,7 +1106,7 @@ git commit -m "feat(tasks): add move endpoint with column rebalancing" -m "Co-Au
 **Interfaces:**
 - Produces (from `features/tasks/index.ts`): `taskRouter`, `type TaskDto`, `exportTasksForUser(userId): Promise<TaskDto[]>`, `deleteTasksForUser(userId): Promise<void>`.
 
-- [ ] **Step 1: Write the isolation test (NFR-1)**
+- [x] **Step 1: Write the isolation test (NFR-1)**
 
 `backend/src/features/tasks/task.isolation.test.ts`:
 
@@ -1199,7 +1199,7 @@ describe("another user's tasks look like they do not exist", () => {
 
 Run it: it should already PASS, because the service scopes by `userId` everywhere. If any assertion fails, that is a tenant leak: fix the service (never the test).
 
-- [ ] **Step 2: Write the public API test**
+- [x] **Step 2: Write the public API test**
 
 `backend/src/features/tasks/task.public-api.test.ts`:
 
@@ -1245,7 +1245,7 @@ describe('tasks public API', () => {
 })
 ```
 
-- [ ] **Step 3: Export the API**
+- [x] **Step 3: Export the API**
 
 Replace `backend/src/features/tasks/index.ts`:
 
@@ -1259,7 +1259,7 @@ Run: `npx vitest run src/features/tasks` → PASS.
 
 The export sorts by `status` then `position`; the alphabetical order of status names (`done`, `in_progress`, `todo`) is what the test above expects and is fine for a data export.
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1281,7 +1281,7 @@ All commands in Part B run from `frontend/`.
 **Interfaces:**
 - Produces: `TASK_STATUSES`, `TASK_PRIORITIES`, `STATUS_LABELS`, `PRIORITY_LABELS`, `type TaskStatus`, `type TaskPriority`, `isTaskStatus(value: string): value is TaskStatus`, `type Task`, `type TaskPage`, `type BoardFilters = { tag?: string; q?: string }`, `type TaskInput`; API functions `listTasks(params)`, `fetchTags()`, `createTask(input)`, `updateTask(id, input)`, `deleteTask(id)`, `moveTask(id, input)`; `taskKeys` (`all`, `columns`, `column(status, filters)`, `dueSoon(days)`, `tags`); `type ColumnData = InfiniteData<TaskPage, number>`, `flattenColumn(data)`, `removeTask(data, id)`, `insertTask(data, task, index)`, `neighboursFor(items, movedId, destIndex)`; `parseTags(text)`, `taskFormSchema`, `type TaskFormValues`, `toTaskInput(values)`, `toFormValues(task?)`.
 
-- [ ] **Step 0: Create the branch**
+- [x] **Step 0: Create the branch**
 
 ```bash
 git switch main && git switch -c feature/tasks-board
@@ -1289,7 +1289,7 @@ git switch main && git switch -c feature/tasks-board
 
 (Skip this step if you are continuing on the branch created in Part A.)
 
-- [ ] **Step 1: Write types, API and query keys**
+- [x] **Step 1: Write types, API and query keys**
 
 `frontend/src/features/tasks/types.ts`:
 
@@ -1415,7 +1415,7 @@ export const taskKeys = {
 }
 ```
 
-- [ ] **Step 2: Write the failing board-cache tests**
+- [x] **Step 2: Write the failing board-cache tests**
 
 `frontend/src/features/tasks/boardCache.test.ts`:
 
@@ -1539,7 +1539,7 @@ describe('neighboursFor', () => {
 
 Run: `npx vitest run src/features/tasks/boardCache.test.ts` → FAIL (module missing).
 
-- [ ] **Step 3: Implement the board cache logic**
+- [x] **Step 3: Implement the board cache logic**
 
 `frontend/src/features/tasks/boardCache.ts`:
 
@@ -1605,7 +1605,7 @@ export function neighboursFor(
 
 Run → PASS (13 assertions across the cases).
 
-- [ ] **Step 4: Write the failing task-form tests**
+- [x] **Step 4: Write the failing task-form tests**
 
 `frontend/src/features/tasks/taskForm.test.ts`:
 
@@ -1761,7 +1761,7 @@ export function toFormValues(task?: Task): TaskFormValues {
 
 Run: `npx vitest run src/features/tasks` → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1780,7 +1780,7 @@ git commit -m "feat(tasks): add task types, API, query keys, board cache and for
 - Consumes: Task 6 modules, `pushToast`, `getErrorMessage`.
 - Produces: `useColumnTasks(status, filters)` (infinite query, 50 per page), `useTags()`, `useCreateTask()`, `useUpdateTask()`, `useDeleteTask()`, `useMoveTask()` (optimistic, rolls back on error, always refetches), `useDueSoonTasks(days = 7)`.
 
-- [ ] **Step 1: Write the failing hook tests**
+- [x] **Step 1: Write the failing hook tests**
 
 `frontend/src/features/tasks/api/hooks.test.tsx`:
 
@@ -1930,7 +1930,7 @@ describe('useMoveTask', () => {
 
 Run: `npx vitest run src/features/tasks/api/hooks.test.tsx` → FAIL (module missing).
 
-- [ ] **Step 2: Implement the hooks**
+- [x] **Step 2: Implement the hooks**
 
 `frontend/src/features/tasks/api/hooks.ts`:
 
@@ -2045,7 +2045,7 @@ export function useMoveTask() {
 
 Run: `npx vitest run src/features/tasks/api/hooks.test.tsx` → PASS.
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -2063,7 +2063,7 @@ git commit -m "feat(tasks): add task query hooks with optimistic drag and rollba
 **Interfaces:**
 - Produces: `TaskCard({ task })` (presentational: title, priority chip, due date, overdue badge, tags); `TaskFormModal({ mode, onClose })` with `mode: { kind: 'create'; status: TaskStatus } | { kind: 'edit'; task: Task }` (exported type `TaskFormMode`); `BoardToolbar({ filters, onChange, onNew })`.
 
-- [ ] **Step 1: Write the failing TaskCard test**
+- [x] **Step 1: Write the failing TaskCard test**
 
 `frontend/src/features/tasks/components/TaskCard.test.tsx`:
 
@@ -2166,7 +2166,7 @@ The "Due" text query in the last test uses `/Due/`; in the third test `getByText
 
 Run → PASS.
 
-- [ ] **Step 2: Write the failing TaskFormModal test**
+- [x] **Step 2: Write the failing TaskFormModal test**
 
 `frontend/src/features/tasks/components/TaskFormModal.test.tsx`:
 
@@ -2290,7 +2290,7 @@ describe('TaskFormModal (edit)', () => {
 
 Run → FAIL (module missing).
 
-- [ ] **Step 3: Implement TaskFormModal**
+- [x] **Step 3: Implement TaskFormModal**
 
 `frontend/src/features/tasks/components/TaskFormModal.tsx`:
 
@@ -2421,7 +2421,7 @@ export function TaskFormModal({ mode, onClose }: TaskFormModalProps) {
 
 Run: `npx vitest run src/features/tasks/components/TaskFormModal.test.tsx` → PASS.
 
-- [ ] **Step 4: Write the failing BoardToolbar test and implement it**
+- [x] **Step 4: Write the failing BoardToolbar test and implement it**
 
 `frontend/src/features/tasks/components/BoardToolbar.test.tsx`:
 
@@ -2556,7 +2556,7 @@ export function BoardToolbar({ filters, onChange, onNew }: BoardToolbarProps) {
 
 The search box is deliberately submit-only: it avoids a request per keystroke and keeps the tests free of timers.
 
-- [ ] **Step 5: Add the styles**
+- [x] **Step 5: Add the styles**
 
 Create `frontend/src/features/tasks/tasks.css`:
 
@@ -2708,7 +2708,7 @@ Create `frontend/src/features/tasks/tasks.css`:
 }
 ```
 
-- [ ] **Step 6: Run all checks and commit**
+- [x] **Step 6: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -2727,7 +2727,7 @@ git commit -m "feat(tasks): add task card, form modal and board toolbar" -m "Co-
 **Interfaces:**
 - Produces (from `@/features/tasks`): `taskRoutes: RouteObject[]` (path `board`), `useDueSoonTasks`.
 
-- [ ] **Step 1: Write the failing page tests**
+- [x] **Step 1: Write the failing page tests**
 
 `frontend/src/features/tasks/pages/BoardPage.test.tsx`:
 
@@ -2891,7 +2891,7 @@ describe('BoardPage', () => {
 
 Run: `npx vitest run src/features/tasks/pages/BoardPage.test.tsx` → FAIL (module missing).
 
-- [ ] **Step 2: Implement the column**
+- [x] **Step 2: Implement the column**
 
 `frontend/src/features/tasks/components/BoardColumn.tsx`:
 
@@ -2976,7 +2976,7 @@ export function BoardColumn({ status, filters, onOpen, onAdd }: BoardColumnProps
 }
 ```
 
-- [ ] **Step 3: Implement the board and the page**
+- [x] **Step 3: Implement the board and the page**
 
 `frontend/src/features/tasks/components/TaskBoard.tsx`:
 
@@ -3065,7 +3065,7 @@ export default function BoardPage() {
 
 Run: `npx vitest run src/features/tasks/pages/BoardPage.test.tsx` → PASS.
 
-- [ ] **Step 4: Add the routes, the public API and the navigation**
+- [x] **Step 4: Add the routes, the public API and the navigation**
 
 `frontend/src/features/tasks/routes.ts`:
 
@@ -3089,7 +3089,7 @@ export { taskRoutes } from './routes'
 
 In `frontend/src/app/navigation.ts` add `{ to: '/board', label: 'Board' }` after the Dashboard entry. In `frontend/src/app/router.ts` add `import { taskRoutes } from '@/features/tasks'` and change the shell's children to `[...dashboardRoutes, ...taskRoutes]`.
 
-- [ ] **Step 5: Run all checks**
+- [x] **Step 5: Run all checks**
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build
@@ -3097,7 +3097,7 @@ npm run lint && npm run typecheck && npm test && npm run build
 
 Expected: all pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend

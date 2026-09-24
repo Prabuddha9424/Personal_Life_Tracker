@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E2 Tasks (Kanban) |
 | **Priority** | Must |
 | **Size** | L |
@@ -27,10 +27,10 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-020-T1 | Add the task model, request schemas, DTO and test helper | [M2 Tasks](../plans/03-tasks.md), Task 2 | To do |
-| US-020-T2 | Add task create, read, update, delete, list and tags endpoints with tests | [M2 Tasks](../plans/03-tasks.md), Task 3 | To do |
-| US-020-T3 | Add the frontend types, API, query keys and task-form logic with tests | [M2 Tasks](../plans/03-tasks.md), Task 6 (types, API, keys, form) | To do |
-| US-020-T4 | Add the task card and the create/edit/delete modal (two-step delete) with tests | [M2 Tasks](../plans/03-tasks.md), Task 8 (card, form modal) | To do |
+| US-020-T1 | Add the task model, request schemas, DTO and test helper | [M2 Tasks](../plans/03-tasks.md), Task 2 | Done |
+| US-020-T2 | Add task create, read, update, delete, list and tags endpoints with tests | [M2 Tasks](../plans/03-tasks.md), Task 3 | Done |
+| US-020-T3 | Add the frontend types, API, query keys and task-form logic with tests | [M2 Tasks](../plans/03-tasks.md), Task 6 (types, API, keys, form) | Done |
+| US-020-T4 | Add the task card and the create/edit/delete modal (two-step delete) with tests | [M2 Tasks](../plans/03-tasks.md), Task 8 (card, form modal) | Done |
 | US-020-T5 | Walk create, edit and delete in a real browser | [M2 Tasks](../plans/03-tasks.md), Task 10 | To do |
 
 ## Out of scope
@@ -41,9 +41,9 @@ Subtasks, attachments and comments.
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
-- [ ] Acceptance criterion 6
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
+- [x] Acceptance criterion 6

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E2 Tasks (Kanban) |
 | **Priority** | Should |
 | **Size** | M |
@@ -26,8 +26,8 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-022-T1 | Cover the list filters (status, tag, search, due date, open) and the tags endpoint with tests | [M2 Tasks](../plans/03-tasks.md), Task 3 (list tests) | To do |
-| US-022-T2 | Add the card's priority and overdue display and the board toolbar (tag filter, submit-only search) with tests | [M2 Tasks](../plans/03-tasks.md), Task 8 (card, toolbar) | To do |
+| US-022-T1 | Cover the list filters (status, tag, search, due date, open) and the tags endpoint with tests | [M2 Tasks](../plans/03-tasks.md), Task 3 (list tests) | Done |
+| US-022-T2 | Add the card's priority and overdue display and the board toolbar (tag filter, submit-only search) with tests | [M2 Tasks](../plans/03-tasks.md), Task 8 (card, toolbar) | Done |
 | US-022-T3 | Walk filters and search in a real browser | [M2 Tasks](../plans/03-tasks.md), Task 10 | To do |
 
 ## Out of scope
@@ -38,8 +38,8 @@ Saved filters and full-text search of descriptions.
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5

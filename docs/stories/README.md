@@ -50,9 +50,9 @@ Task status: **To do**, **In progress**, **Done**. A story is *In Progress* as s
 | Status | Count | Stories |
 |---|---|---|
 | Backlog | 1 | [US-063](./US-063-run-the-pilot.md) |
-| Ready | 17 | [US-020](./US-020-create-and-edit-tasks.md), [US-021](./US-021-move-tasks-on-the-board.md), [US-022](./US-022-find-and-prioritise-tasks.md), [US-030](./US-030-record-income-and-expenses.md), [US-031](./US-031-manage-categories.md), [US-032](./US-032-see-where-my-money-goes.md), [US-033](./US-033-import-bank-csv.md), [US-040](./US-040-track-recurring-bills.md), [US-041](./US-041-email-reminders-before-bills-are-due.md), [US-050](./US-050-dashboard-at-a-glance.md), [US-051](./US-051-export-my-data.md), [US-052](./US-052-delete-my-account.md), [US-054](./US-054-change-currency-before-data.md), [US-060](./US-060-production-hardening.md), [US-061](./US-061-deploy-on-free-hosting.md), [US-062](./US-062-operate-and-back-up.md), [US-071](./US-071-phone-and-keyboard.md) |
+| Ready | 14 | [US-030](./US-030-record-income-and-expenses.md), [US-031](./US-031-manage-categories.md), [US-032](./US-032-see-where-my-money-goes.md), [US-033](./US-033-import-bank-csv.md), [US-040](./US-040-track-recurring-bills.md), [US-041](./US-041-email-reminders-before-bills-are-due.md), [US-050](./US-050-dashboard-at-a-glance.md), [US-051](./US-051-export-my-data.md), [US-052](./US-052-delete-my-account.md), [US-054](./US-054-change-currency-before-data.md), [US-060](./US-060-production-hardening.md), [US-061](./US-061-deploy-on-free-hosting.md), [US-062](./US-062-operate-and-back-up.md), [US-071](./US-071-phone-and-keyboard.md) |
 | In Progress | 5 | [US-005](./US-005-sleeping-server-handling.md), [US-006](./US-006-exact-money-and-dates.md), [US-013](./US-013-change-password-and-profile.md), [US-053](./US-053-choose-dark-or-light-theme.md), [US-070](./US-070-my-data-is-private.md) |
-| In Review | 6 | [US-002](./US-002-automated-tests-and-ci.md), [US-003](./US-003-shared-backend-foundations.md), [US-004](./US-004-interface-shell.md), [US-010](./US-010-register-with-email-verification.md), [US-011](./US-011-log-in-stay-logged-in-log-out.md), [US-012](./US-012-reset-forgotten-password.md) |
+| In Review | 9 | [US-002](./US-002-automated-tests-and-ci.md), [US-003](./US-003-shared-backend-foundations.md), [US-004](./US-004-interface-shell.md), [US-010](./US-010-register-with-email-verification.md), [US-011](./US-011-log-in-stay-logged-in-log-out.md), [US-012](./US-012-reset-forgotten-password.md), [US-020](./US-020-create-and-edit-tasks.md), [US-021](./US-021-move-tasks-on-the-board.md), [US-022](./US-022-find-and-prioritise-tasks.md) |
 | Blocked | 0 | – |
 | Done | 1 | [US-001](./US-001-repository-and-tooling-baseline.md) |
 
@@ -99,9 +99,9 @@ Notes on the order: US-013 finishes in M5 (its Settings sections), US-053 finish
 
 | Story | Title | Status | Priority | Size | Milestone | Tasks done | Depends on |
 |---|---|---|---|---|---|---|---|
-| [US-020](./US-020-create-and-edit-tasks.md) | Create and edit tasks | Ready | Must | L | M2 | 0/5 | US-011, US-004, US-006 |
-| [US-021](./US-021-move-tasks-on-the-board.md) | Move tasks across the Kanban board | Ready | Must | XL | M2 | 0/6 | US-020 |
-| [US-022](./US-022-find-and-prioritise-tasks.md) | Find and prioritise tasks | Ready | Should | M | M2 | 0/3 | US-020 |
+| [US-020](./US-020-create-and-edit-tasks.md) | Create and edit tasks | In Review | Must | L | M2 | 4/5 | US-011, US-004, US-006 |
+| [US-021](./US-021-move-tasks-on-the-board.md) | Move tasks across the Kanban board | In Review | Must | XL | M2 | 5/6 | US-020 |
+| [US-022](./US-022-find-and-prioritise-tasks.md) | Find and prioritise tasks | In Review | Should | M | M2 | 2/3 | US-020 |
 
 ### E3 Personal finance
 
@@ -142,7 +142,7 @@ Notes on the order: US-013 finishes in M5 (its Settings sections), US-053 finish
 
 | Story | Title | Status | Priority | Size | Milestone | Tasks done | Depends on |
 |---|---|---|---|---|---|---|---|
-| [US-070](./US-070-my-data-is-private.md) | My data is private to me | In Progress | Must | L | M2-M5 | 1/7 | US-020, US-030, US-040 |
+| [US-070](./US-070-my-data-is-private.md) | My data is private to me | In Progress | Must | L | M2-M5 | 2/7 | US-020, US-030, US-040 |
 | [US-071](./US-071-phone-and-keyboard.md) | Usable on a phone and with a keyboard | Ready | Should | M | M0-M6 | 0/4 | US-004, US-021, US-032 |
 
 ## Sizes and priorities
