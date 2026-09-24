@@ -184,6 +184,57 @@ describe('readCsv', () => {
     expect(rows[2]?.problem).toBeUndefined()
   })
 
+  describe('a multi-line note that holds what look like other rows', () => {
+    const stray = (delimiter: string) =>
+      [
+        ['date', 'amount', 'note'].join(delimiter),
+        ['2026-09-01', '-5', '"12 inch pizza'].join(delimiter),
+        ['2026-09-02', '-6', 'fine'].join(delimiter),
+        ['2026-09-03', '-7', 'TV 55"'].join(delimiter),
+        ['2026-09-04', '-8', 'ok'].join(delimiter),
+      ].join('\n')
+
+    it.each([',', ';', '\t'])('flags the swallowed rows with %j as the delimiter', (delimiter) => {
+      const { rows } = readCsv(stray(delimiter))
+
+      expect(rows.map((row) => [row.line, row.endLine])).toEqual([
+        [1, 1],
+        [2, 4],
+        [5, 5],
+      ])
+      expect(rows[1]?.problem).toBe(
+        'Lines 2\u20134: this note runs over several lines and contains what look like other rows \u2014 check for a stray quote',
+      )
+      expect(rows[2]?.problem).toBeUndefined()
+    })
+
+    it('recognises the other supported date shapes', () => {
+      for (const line of ['5/9/2026,-6,x', '05.09.2026,-6,x', '  2026/9/2 , -6,x']) {
+        const { rows } = readCsv(`date,amount,note\n1,2,"a\n${line}"\n`)
+
+        expect(rows[1]?.problem).toMatch(/other rows/)
+      }
+    })
+
+    it.each([
+      ['an address', '"Home\n12 High Street\nLondon"'],
+      ['a bullet list', '"shopping\n- milk\n- eggs\n* bread"'],
+      ['a date in the middle of a line', '"trip\nPaid on 2026-09-02 by card"'],
+      ['a date and a space but no delimiter', '"trip\n2026-09-02 lunch with Sam"'],
+      ['a date followed by the other delimiter', '"trip\n2026-09-02; lunch"'],
+      ['a number that is not a date', '"trip\n12,50 was the price"'],
+      ['a date on the first line only', '"2026-09-02,-6,x\nsecond line"'],
+    ])('does not flag %s', (_name, note) => {
+      const { rows } = readCsv(`date,amount,note\n2026-09-01,-5,${note}\n2026-09-04,-8,ok\n`)
+
+      const swallowed = rows[1]
+      expect(swallowed?.problem).toBeUndefined()
+      expect(swallowed?.endLine).toBeGreaterThan(swallowed?.line ?? 0)
+      expect(rows[2]?.cells).toEqual(['2026-09-04', '-8', 'ok'])
+      expect(rows[2]?.line).toBe((swallowed?.endLine ?? 0) + 1)
+    })
+  })
+
   it('names the lines of a multi-line row that also holds an unclosed quote', () => {
     const { rows } = readCsv('h\n"a\nb",x,"oops\nnext,1\n')
 

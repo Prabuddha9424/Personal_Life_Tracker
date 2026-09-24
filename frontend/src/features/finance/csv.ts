@@ -87,11 +87,35 @@ function isBlank(cells: readonly string[]): boolean {
 }
 
 const TEXT_AFTER_QUOTE = 'Unexpected text after a closing quote'
+const ROW_LIKE_NOTE = 'A note holds what look like other rows'
+
+const DATE_LIKE = '(?:\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{4})'
+
+/** A line that starts like a row: a date then the delimiter. */
+function rowStart(delimiter: string): RegExp {
+  const separator = delimiter === '\t' ? '\\t' : delimiter
+  return new RegExp(`[ \\t]*${DATE_LIKE}[ ]*${separator}`, 'y')
+}
+
+/** Whether a cell has a line after its first that looks like a row of the file, as a stray quote leaves behind. */
+function holdsRowLikeLine(cell: string, pattern: RegExp): boolean {
+  let start = cell.indexOf('\n') + 1
+  while (start > 0 && start <= cell.length) {
+    pattern.lastIndex = start
+    if (pattern.test(cell)) return true
+    const next = cell.indexOf('\n', start)
+    start = next === -1 ? 0 : next + 1
+  }
+  return false
+}
 
 /** A flagged row that spans several lines must name all of them, or the user cannot tell which were swallowed. */
 function describeProblem(problem: string, first: number, last: number): string {
   if (last <= first) return problem
   const lines = `Lines ${first}\u2013${last}`
+  if (problem === ROW_LIKE_NOTE) {
+    return `${lines}: this note runs over several lines and contains what look like other rows \u2014 check for a stray quote`
+  }
   if (problem === TEXT_AFTER_QUOTE) {
     return `${lines}: a quoted field runs over several lines and ends with unexpected text (check for a stray quote)`
   }
@@ -123,8 +147,17 @@ function scan(text: string, delimiter: string, recover: boolean): CsvRow[] {
   let quoteCellCount = 0
   let quoteProblem: string | undefined
 
+  const rowPattern = rowStart(delimiter)
+
   const endRow = (endLine: number) => {
     cells.push(field)
+    if (
+      problem === undefined &&
+      endLine > rowLine &&
+      cells.some((cell) => holdsRowLikeLine(cell, rowPattern))
+    ) {
+      problem = ROW_LIKE_NOTE
+    }
     if (problem !== undefined) {
       const described = describeProblem(problem, rowLine, endLine)
       rows.push({ line: rowLine, endLine, cells, problem: described })

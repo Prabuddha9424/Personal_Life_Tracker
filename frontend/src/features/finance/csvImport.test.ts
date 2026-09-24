@@ -283,6 +283,28 @@ describe('mapRows', () => {
     ])
   })
 
+  it('imports nothing from a note that swallowed other rows, and still imports the rest', () => {
+    const text = [
+      'date,amount,note',
+      '2026-09-01,-5,"12 inch pizza',
+      '2026-09-02,-6,fine',
+      '2026-09-03,-7,TV 55"',
+      '2026-09-04,-8,ok',
+    ].join('\n')
+
+    const { valid, lines, problems } = mapRows(readCsv(text).rows, mapping, true)
+
+    expect(valid.map((row) => row.note)).toEqual(['ok'])
+    expect(lines).toEqual([5])
+    expect(problems).toEqual([
+      {
+        line: 2,
+        message:
+          'Lines 2\u20134: this note runs over several lines and contains what look like other rows \u2014 check for a stray quote',
+      },
+    ])
+  })
+
   it('keeps the file line of every valid row, for mapping a server "Row N" back to the file', () => {
     const text = [
       'date,amount,note',
