@@ -28,7 +28,7 @@ const transactionSchema = new Schema<TransactionAttrs>({
     max: MAX_AMOUNT_MINOR,
     validate: { validator: Number.isInteger, message: 'amountMinor must be an integer' },
   },
-  currency: { type: String, required: true, uppercase: true, minlength: 3, maxlength: 3 },
+  currency: { type: String, required: true, uppercase: true, match: /^[A-Z]{3}$/ },
   categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
   date: { type: Date, required: true },
   note: { type: String, default: '', maxlength: 200 },

@@ -23,6 +23,26 @@ describe('Category', () => {
     )
   })
 
+  // What the { locale: 'en', strength: 2 } collation actually folds, checked against the real index.
+  it.each([
+    ['folds the dotted capital I to i plus a combining dot', '\u0130', 'i\u0307', true],
+    ['folds a precomposed accent to its decomposed form', 'Caf\u00e9', 'Cafe\u0301', true],
+    ['folds a base letter with its accent to another case', '\u00e9', 'E\u0301', true],
+    ['folds a fullwidth letter to its ASCII form', '\uff21', 'A', true],
+    [
+      'keeps Caf\u00e9 and Cafe distinct (accents differ at strength 2)',
+      'Caf\u00e9',
+      'Cafe',
+      false,
+    ],
+    ['keeps the sharp s and ss distinct (no expansion fold)', '\u00df', 'ss', false],
+  ])('%s', async (_behaviour, first, second, isDuplicate) => {
+    await insertCategory(alice.id, { name: first })
+    const insertSecond = insertCategory(alice.id, { name: second })
+    if (isDuplicate) await expect(insertSecond).rejects.toThrow(/duplicate key/)
+    else await expect(insertSecond).resolves.toBeDefined()
+  })
+
   it('allows the same name for another kind or another user', async () => {
     await insertCategory(alice.id, { name: 'Other', kind: 'expense' })
     await expect(insertCategory(alice.id, { name: 'Other', kind: 'income' })).resolves.toBeDefined()
@@ -72,6 +92,10 @@ describe('Transaction', () => {
   it('upper-cases the currency and requires 3 letters', async () => {
     expect((await insertTransaction(alice.id, { currency: 'eur' })).currency).toBe('EUR')
     await expect(insertTransaction(alice.id, { currency: 'EU' })).rejects.toThrow()
+  })
+
+  it.each(['E1R', 'U$D', '€UR', 'EU '])('rejects the non-letter currency %j', async (currency) => {
+    await expect(insertTransaction(alice.id, { currency })).rejects.toThrow(/currency/)
   })
 
   it('requires a category', async () => {

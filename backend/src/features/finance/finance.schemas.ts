@@ -9,6 +9,12 @@ import {
 import { CATEGORY_KINDS } from './category.model.ts'
 import { MAX_AMOUNT_MINOR } from './transaction.model.ts'
 
+/** The years finance reports cover, matching the month filters (a date outside them would never be reported). */
+const reportableDateSchema = calendarDateSchema.refine((value) => {
+  const year = Number(value.slice(0, 4))
+  return year >= 2000 && year <= 2100
+}, 'Expected a date between 2000 and 2100')
+
 const nameSchema = z.string().trim().min(1, 'Name is required').max(40)
 const kindSchema = z.enum(CATEGORY_KINDS)
 
@@ -20,7 +26,7 @@ const transactionFields = {
   kind: kindSchema,
   amountMinor: z.number().int().min(1).max(MAX_AMOUNT_MINOR),
   categoryId: objectIdSchema,
-  date: calendarDateSchema,
+  date: reportableDateSchema,
   note: z.string().trim().max(200),
 }
 
@@ -40,8 +46,8 @@ export const bulkTransactionsSchema = z.object({
 
 export const listTransactionsQuerySchema = paginationQuerySchema
   .extend({
-    from: calendarDateSchema.optional(),
-    to: calendarDateSchema.optional(),
+    from: reportableDateSchema.optional(),
+    to: reportableDateSchema.optional(),
     kind: kindSchema.optional(),
     categoryId: objectIdSchema.optional(),
   })

@@ -61,6 +61,36 @@ describe('createTransactionSchema', () => {
     ).toBe(false)
   })
 
+  it('strips unknown keys such as userId and currency', () => {
+    const parsed = createTransactionSchema.parse({
+      ...validTransaction,
+      userId: 'b'.repeat(24),
+      currency: 'JPY',
+    })
+    expect(parsed).not.toHaveProperty('userId')
+    expect(parsed).not.toHaveProperty('currency')
+  })
+
+  it('rejects an infinite amount', () => {
+    expect(
+      createTransactionSchema.safeParse({
+        ...validTransaction,
+        amountMinor: Number.POSITIVE_INFINITY,
+      }).success,
+    ).toBe(false)
+  })
+
+  it.each(['0001-01-01', '1999-12-31', '2101-01-01', '9999-12-31'])(
+    'rejects the date %s, outside 2000-2100',
+    (date) => {
+      expect(createTransactionSchema.safeParse({ ...validTransaction, date }).success).toBe(false)
+    },
+  )
+
+  it.each(['2000-01-01', '2100-12-31'])('accepts the boundary date %s', (date) => {
+    expect(createTransactionSchema.safeParse({ ...validTransaction, date }).success).toBe(true)
+  })
+
   it('rejects a note over 200 characters', () => {
     expect(
       createTransactionSchema.safeParse({ ...validTransaction, note: 'n'.repeat(201) }).success,
@@ -72,6 +102,15 @@ describe('updateTransactionSchema', () => {
   it('accepts a partial update and rejects an empty one', () => {
     expect(updateTransactionSchema.parse({ amountMinor: 5 })).toEqual({ amountMinor: 5 })
     expect(updateTransactionSchema.safeParse({}).success).toBe(false)
+  })
+
+  it('accepts a partial update that changes the kind', () => {
+    expect(updateTransactionSchema.parse({ kind: 'income' })).toEqual({ kind: 'income' })
+    expect(updateTransactionSchema.safeParse({ kind: 'transfer' }).success).toBe(false)
+  })
+
+  it('applies the same date bounds to an update', () => {
+    expect(updateTransactionSchema.safeParse({ date: '9999-12-31' }).success).toBe(false)
   })
 })
 
@@ -91,6 +130,12 @@ describe('listTransactionsQuerySchema', () => {
       page: 2,
       limit: 10,
     })
+  })
+
+  it.each(['from', 'to'])('rejects a %s date outside 2000-2100', (key) => {
+    expect(listTransactionsQuerySchema.safeParse({ [key]: '0001-01-01' }).success).toBe(false)
+    expect(listTransactionsQuerySchema.safeParse({ [key]: '9999-12-31' }).success).toBe(false)
+    expect(listTransactionsQuerySchema.safeParse({ [key]: '2026-09-01' }).success).toBe(true)
   })
 
   it('rejects from after to but accepts equal dates', () => {
