@@ -22,10 +22,21 @@ export function createRateLimiter({ windowMs, limit, skip }: LimiterOptions) {
 // createRateLimiter itself is tested directly above.
 const skipInTests = () => env.NODE_ENV === 'test'
 
-/** Login, refresh, verify, reset and other auth endpoints. */
+/** Login, verify, reset and change-password. Deliberately strict: these take guessable input. */
 export const authRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 20,
+  skip: skipInTests,
+})
+
+/**
+ * Refresh runs on every page load and access-token expiry, so it needs its own, looser budget.
+ * Sharing the login counter would let ordinary reloads lock users out of logging in. The token is
+ * 256 bits, so guessing it is not the concern here.
+ */
+export const refreshRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
   skip: skipInTests,
 })
 

@@ -1,6 +1,10 @@
 import { Router } from 'express'
 import { requireAuth } from '../../shared/middleware/requireAuth.ts'
-import { authRateLimiter, mailRateLimiter } from '../../shared/middleware/rateLimiters.ts'
+import {
+  authRateLimiter,
+  mailRateLimiter,
+  refreshRateLimiter,
+} from '../../shared/middleware/rateLimiters.ts'
 import { validate } from '../../shared/middleware/validate.ts'
 import {
   changePasswordSchema,
@@ -34,7 +38,7 @@ authRouter.post(
 )
 authRouter.get('/me', requireAuth, me)
 authRouter.post('/login', authRateLimiter, validate({ body: loginSchema }), login)
-authRouter.post('/refresh', authRateLimiter, refresh)
+authRouter.post('/refresh', refreshRateLimiter, refresh)
 authRouter.post('/logout', logout)
 authRouter.post(
   '/forgot-password',

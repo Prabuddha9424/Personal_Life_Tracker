@@ -18,4 +18,18 @@ describe('createRateLimiter', () => {
     expect(res.status).toBe(429)
     expect(res.body).toEqual({ message: 'Too many requests, please try again later' })
   })
+
+  it('keeps an independent counter for each limiter instance', async () => {
+    const app = express()
+    app.get('/strict', createRateLimiter({ windowMs: 60_000, limit: 1 }), (_req, res) => {
+      res.json({ ok: true })
+    })
+    app.get('/loose', createRateLimiter({ windowMs: 60_000, limit: 5 }), (_req, res) => {
+      res.json({ ok: true })
+    })
+
+    await request(app).get('/strict').expect(200)
+    await request(app).get('/strict').expect(429)
+    await request(app).get('/loose').expect(200)
+  })
 })
