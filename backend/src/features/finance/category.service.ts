@@ -3,21 +3,11 @@ import { AppError } from '../../shared/errors/AppError.ts'
 import { CategorySeed } from './category-seed.model.ts'
 import { Category, type CategoryKind, type CategoryRecord } from './category.model.ts'
 import { DEFAULT_CATEGORIES } from './default-categories.ts'
+import { isDuplicateKeyError } from './duplicate-key.ts'
 import { toCategoryDto, type CategoryDto } from './finance.dto.ts'
 import { Transaction } from './transaction.model.ts'
 
 const DUPLICATE_NAME = 'A category with that name already exists'
-
-const isDuplicateCode = (value: unknown): boolean =>
-  typeof value === 'object' && value !== null && 'code' in value && value.code === 11000
-
-/** A single duplicate-key error, or a bulk insert whose only failures were duplicates. */
-function isDuplicateKeyError(err: unknown): boolean {
-  if (isDuplicateCode(err)) return true
-  if (typeof err !== 'object' || err === null || !('writeErrors' in err)) return false
-  const failures: unknown = err.writeErrors
-  return Array.isArray(failures) && failures.length > 0 && failures.every(isDuplicateCode)
-}
 
 /**
  * Creates the default set the first time a user's categories are read. Safe to call concurrently.

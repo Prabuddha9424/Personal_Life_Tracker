@@ -1,14 +1,18 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { app } from '../../app.ts'
 import { testUser } from '../../test/auth.ts'
 import { request } from '../../test/http.ts'
 import { clearTestDb, startTestDb, stopTestDb } from '../../test/mongo.ts'
+import { CategorySeed } from './category-seed.model.ts'
 import { Category } from './category.model.ts'
 import { DEFAULT_CATEGORIES } from './default-categories.ts'
 import { insertCategory, insertTransaction } from './finance.test-helpers.ts'
 
 beforeAll(startTestDb)
-afterEach(clearTestDb)
+afterEach(async () => {
+  vi.restoreAllMocks()
+  await clearTestDb()
+})
 afterAll(stopTestDb)
 
 const alice = testUser()
@@ -89,6 +93,28 @@ describe('GET /api/categories', () => {
     const again = await list()
 
     expect(again.body.items).toEqual([])
+  })
+
+  it('does not mark the defaults as seeded after a bulk failure that is not a duplicate, and retries', async () => {
+    const failure = Object.assign(new Error('bulk write failed'), {
+      code: 11000,
+      writeErrors: [
+        { index: 0, err: { code: 11000 } },
+        { index: 1, err: { code: 121 } },
+      ],
+    })
+    vi.spyOn(Category, 'insertMany').mockRejectedValueOnce(failure)
+
+    const failed = await list()
+
+    expect(failed.status).toBeGreaterThanOrEqual(400)
+    expect(await CategorySeed.countDocuments({ userId: alice.id })).toBe(0)
+
+    const retried = await list()
+
+    expect(retried.status).toBe(200)
+    expect(retried.body.items).toHaveLength(DEFAULT_CATEGORIES.length)
+    expect(await CategorySeed.countDocuments({ userId: alice.id })).toBe(1)
   })
 
   it('gives each user their own default set', async () => {
