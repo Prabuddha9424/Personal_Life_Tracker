@@ -774,7 +774,7 @@ git commit -m "feat(backend): add shared request schemas and calendar-date helpe
 - Produces: `Button({ variant?: 'primary'|'secondary'|'danger'|'ghost', loading?, ...buttonProps })`, `Spinner({ size?: 'sm'|'md' })`, `Card({ title?, children, className? })`, `LoadingState({ label? })`, `EmptyState({ title, description?, action? })`, `ErrorState({ message?, onRetry? })`, `FormField({ label, error?, hint?, children })`.
 - Produces: CSS custom properties `--bg --surface --surface-2 --border --text --text-muted --accent --accent-strong --on-accent --danger --danger-bg --positive --warning --chart-1 … --chart-6` for both `[data-theme='dark']` (default) and `[data-theme='light']`.
 
-- [ ] **Step 1: Write the failing Button test**
+- [x] **Step 1: Write the failing Button test**
 
 Create `frontend/src/shared/ui/Button.test.tsx`:
 
@@ -820,7 +820,7 @@ describe('Button', () => {
 
 Run (from `frontend`): `npx vitest run src/shared/ui/Button.test.tsx` → FAIL (module missing).
 
-- [ ] **Step 2: Implement Spinner and Button**
+- [x] **Step 2: Implement Spinner and Button**
 
 `frontend/src/shared/ui/Spinner.tsx`:
 
@@ -874,7 +874,7 @@ export function Button({
 
 Run the Button test → PASS (3 tests).
 
-- [ ] **Step 3: Write failing tests for the state views and FormField**
+- [x] **Step 3: Write failing tests for the state views and FormField**
 
 `frontend/src/shared/ui/StateViews.test.tsx`:
 
@@ -953,7 +953,7 @@ describe('FormField', () => {
 
 Run: `npx vitest run src/shared/ui` → FAIL for the two new files.
 
-- [ ] **Step 4: Implement Card, StateViews and FormField**
+- [x] **Step 4: Implement Card, StateViews and FormField**
 
 `frontend/src/shared/ui/Card.tsx`:
 
@@ -1056,7 +1056,7 @@ export function FormField({ label, error, hint, children }: FormFieldProps) {
 
 Run: `npx vitest run src/shared/ui` → PASS.
 
-- [ ] **Step 5: Write the design tokens and base styles**
+- [x] **Step 5: Write the design tokens and base styles**
 
 Replace the whole of `frontend/src/index.css`:
 
@@ -1168,7 +1168,7 @@ a {
 }
 ```
 
-- [ ] **Step 6: Write the primitive styles**
+- [x] **Step 6: Write the primitive styles**
 
 Create `frontend/src/shared/ui/ui.css`:
 
@@ -1288,7 +1288,7 @@ Create `frontend/src/shared/ui/ui.css`:
 
 In `frontend/src/main.tsx`, add `import '@/shared/ui/ui.css'` below `import './index.css'`.
 
-- [ ] **Step 7: Run all checks and commit**
+- [x] **Step 7: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
