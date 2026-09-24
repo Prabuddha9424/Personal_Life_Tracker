@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Progress |
 | **Epic** | E0 Project setup |
 | **Priority** | Must |
 | **Size** | M |
@@ -25,9 +25,9 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-002-T1 | Add `mongodb-memory-server` (dev) and the `startTestDb`, `clearTestDb`, `stopTestDb` helpers with a test | [M0 Foundation](../plans/01-foundation.md), Task 2, steps 1-6 | To do |
-| US-002-T2 | Add the `testUser()` helper with a test | [M0 Foundation](../plans/01-foundation.md), Task 2, steps 7-8 | To do |
-| US-002-T3 | Raise the Vitest timeouts and exclude test files and `src/test` from the build | [M0 Foundation](../plans/01-foundation.md), Task 2, step 4 | To do |
+| US-002-T1 | Add `mongodb-memory-server` (dev) and the `startTestDb`, `clearTestDb`, `stopTestDb` helpers with a test | [M0 Foundation](../plans/01-foundation.md), Task 2, steps 1-6 | Done |
+| US-002-T2 | Add the `testUser()` helper with a test | [M0 Foundation](../plans/01-foundation.md), Task 2, steps 7-8 | Done |
+| US-002-T3 | Raise the Vitest timeouts and exclude test files and `src/test` from the build | [M0 Foundation](../plans/01-foundation.md), Task 2, step 4 | Done |
 | US-002-T4 | Add the GitHub Actions CI workflow for both apps and dry-run the same commands locally | [M0 Foundation](../plans/01-foundation.md), Task 12 | To do |
 
 ## Out of scope
@@ -42,7 +42,7 @@ The first run downloads a `mongod` binary (about 100 MB); hooks have a 120 s tim
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
 - [ ] Acceptance criterion 3
 - [ ] Acceptance criterion 4
