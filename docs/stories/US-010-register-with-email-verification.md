@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E1 Authentication |
 | **Priority** | Must |
 | **Size** | L |
@@ -27,11 +27,11 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-010-T1 | Add the token, cookie and password-policy utilities with tests | [M1 Auth](../plans/02-auth.md), Task 1 | To do |
-| US-010-T2 | Add the user, email-token and refresh-token models (password hashed in a `pre('save')` hook at cost 12, hidden by default) | [M1 Auth](../plans/02-auth.md), Task 2 | To do |
-| US-010-T3 | Add registration, email verification and resend (generic answers, hashed single-use tokens, mail failures swallowed) with tests | [M1 Auth](../plans/02-auth.md), Task 3 | To do |
-| US-010-T4 | Add the shared auth building blocks and the login and register pages | [M1 Auth](../plans/02-auth.md), Task 10 (register page, layout, schemas) | To do |
-| US-010-T5 | Add the verification page (token captured once and removed from the URL) and the resend form, with tests including React StrictMode | [M1 Auth](../plans/02-auth.md), Task 11 (verify page, resend form) | To do |
+| US-010-T1 | Add the token, cookie and password-policy utilities with tests | [M1 Auth](../plans/02-auth.md), Task 1 | Done |
+| US-010-T2 | Add the user, email-token and refresh-token models (password hashed in a `pre('save')` hook at cost 12, hidden by default) | [M1 Auth](../plans/02-auth.md), Task 2 | Done |
+| US-010-T3 | Add registration, email verification and resend (generic answers, hashed single-use tokens, mail failures swallowed) with tests | [M1 Auth](../plans/02-auth.md), Task 3 | Done |
+| US-010-T4 | Add the shared auth building blocks and the login and register pages | [M1 Auth](../plans/02-auth.md), Task 10 (register page, layout, schemas) | Done |
+| US-010-T5 | Add the verification page (token captured once and removed from the URL) and the resend form, with tests including React StrictMode | [M1 Auth](../plans/02-auth.md), Task 11 (verify page, resend form) | Done |
 | US-010-T6 | Walk sign-up and verification in a real browser with a mail catcher | [M1 Auth](../plans/02-auth.md), Task 13 | To do |
 
 ## Out of scope
@@ -46,9 +46,9 @@ Register, resend and forgot-password do slightly more work for existing accounts
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
 - [ ] Acceptance criterion 6

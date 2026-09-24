@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Progress |
 | **Epic** | E7 Cross-cutting quality |
 | **Priority** | Must |
 | **Size** | L |
@@ -31,7 +31,7 @@
 | US-070-T2 | Finance: tenant isolation tests (transactions, categories, bulk, reports) | [M3 Finance](../plans/04-finance.md), Task 6 | To do |
 | US-070-T3 | Fixed expenses: tenant isolation tests | [M4 Fixed expenses](../plans/05-fixed-expenses.md), Task 7 | To do |
 | US-070-T4 | Account: deletion leaves other users intact and old tokens harmless | [M5 Dashboard and account](../plans/06-dashboard-account.md), Task 3 (delete tests) | To do |
-| US-070-T5 | Frontend: cache cleared on login, logout and failed refresh | [M1 Auth](../plans/02-auth.md), Tasks 9, 10, 12 (tests) | To do |
+| US-070-T5 | Frontend: cache cleared on login, logout and failed refresh | [M1 Auth](../plans/02-auth.md), Tasks 9, 10, 12 (tests) | Done |
 | US-070-T6 | Two-user manual check on the deployed site, using two browser profiles | [M6 Deploy and pilot](../plans/07-deploy-pilot.md), Task 6, step 2 | To do |
 | US-070-T7 | Review every query in the codebase once more for a missing `userId` before the pilot | No plan task (new work described here) | To do |
 

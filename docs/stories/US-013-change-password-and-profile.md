@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Progress |
 | **Epic** | E1 Authentication |
 | **Priority** | Must |
 | **Size** | S |
@@ -26,7 +26,7 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-013-T1 | Add change-password (403 for a wrong current password, other sessions revoked, new session issued) and `PATCH /auth/me` (name only) with tests | [M1 Auth](../plans/02-auth.md), Task 6 (change password, profile) | To do |
+| US-013-T1 | Add change-password (403 for a wrong current password, other sessions revoked, new session issued) and `PATCH /auth/me` (name only) with tests | [M1 Auth](../plans/02-auth.md), Task 6 (change password, profile) | Done |
 | US-013-T2 | Add the Profile and Password sections with tests | [M5 Dashboard and account](../plans/06-dashboard-account.md), Task 6 | To do |
 | US-013-T3 | Compose the Settings page, its route and the navigation entry | [M5 Dashboard and account](../plans/06-dashboard-account.md), Task 7, step 3 | To do |
 

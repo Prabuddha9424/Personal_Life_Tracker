@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E1 Authentication |
 | **Priority** | Must |
 | **Size** | M |
@@ -26,8 +26,8 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-012-T1 | Add forgot-password and reset-password (hashed single-use 15-minute token, all sessions revoked) with tests | [M1 Auth](../plans/02-auth.md), Task 6 (forgot and reset) | To do |
-| US-012-T2 | Add the forgot-password and reset-password pages (token captured once and stripped from the URL) with tests | [M1 Auth](../plans/02-auth.md), Task 11 (forgot and reset pages) | To do |
+| US-012-T1 | Add forgot-password and reset-password (hashed single-use 15-minute token, all sessions revoked) with tests | [M1 Auth](../plans/02-auth.md), Task 6 (forgot and reset) | Done |
+| US-012-T2 | Add the forgot-password and reset-password pages (token captured once and stripped from the URL) with tests | [M1 Auth](../plans/02-auth.md), Task 11 (forgot and reset pages) | Done |
 
 ## Out of scope
 
@@ -41,8 +41,8 @@ A wrong current password on change-password answers 403, not 401, because the cl
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5

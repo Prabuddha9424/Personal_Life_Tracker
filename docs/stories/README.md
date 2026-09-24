@@ -50,11 +50,11 @@ Task status: **To do**, **In progress**, **Done**. A story is *In Progress* as s
 | Status | Count | Stories |
 |---|---|---|
 | Backlog | 1 | [US-063](./US-063-run-the-pilot.md) |
-| Ready | 28 | [US-002](./US-002-automated-tests-and-ci.md), [US-003](./US-003-shared-backend-foundations.md), [US-004](./US-004-interface-shell.md), [US-005](./US-005-sleeping-server-handling.md), [US-006](./US-006-exact-money-and-dates.md), [US-010](./US-010-register-with-email-verification.md), [US-011](./US-011-log-in-stay-logged-in-log-out.md), [US-012](./US-012-reset-forgotten-password.md), [US-013](./US-013-change-password-and-profile.md), [US-020](./US-020-create-and-edit-tasks.md), [US-021](./US-021-move-tasks-on-the-board.md), [US-022](./US-022-find-and-prioritise-tasks.md), [US-030](./US-030-record-income-and-expenses.md), [US-031](./US-031-manage-categories.md), [US-032](./US-032-see-where-my-money-goes.md), [US-033](./US-033-import-bank-csv.md), [US-040](./US-040-track-recurring-bills.md), [US-041](./US-041-email-reminders-before-bills-are-due.md), [US-050](./US-050-dashboard-at-a-glance.md), [US-051](./US-051-export-my-data.md), [US-052](./US-052-delete-my-account.md), [US-053](./US-053-choose-dark-or-light-theme.md), [US-054](./US-054-change-currency-before-data.md), [US-060](./US-060-production-hardening.md), [US-061](./US-061-deploy-on-free-hosting.md), [US-062](./US-062-operate-and-back-up.md), [US-070](./US-070-my-data-is-private.md), [US-071](./US-071-phone-and-keyboard.md) |
-| In Progress | 1 | [US-001](./US-001-repository-and-tooling-baseline.md) |
-| In Review | 0 | – |
+| Ready | 17 | [US-020](./US-020-create-and-edit-tasks.md), [US-021](./US-021-move-tasks-on-the-board.md), [US-022](./US-022-find-and-prioritise-tasks.md), [US-030](./US-030-record-income-and-expenses.md), [US-031](./US-031-manage-categories.md), [US-032](./US-032-see-where-my-money-goes.md), [US-033](./US-033-import-bank-csv.md), [US-040](./US-040-track-recurring-bills.md), [US-041](./US-041-email-reminders-before-bills-are-due.md), [US-050](./US-050-dashboard-at-a-glance.md), [US-051](./US-051-export-my-data.md), [US-052](./US-052-delete-my-account.md), [US-054](./US-054-change-currency-before-data.md), [US-060](./US-060-production-hardening.md), [US-061](./US-061-deploy-on-free-hosting.md), [US-062](./US-062-operate-and-back-up.md), [US-071](./US-071-phone-and-keyboard.md) |
+| In Progress | 5 | [US-005](./US-005-sleeping-server-handling.md), [US-006](./US-006-exact-money-and-dates.md), [US-013](./US-013-change-password-and-profile.md), [US-053](./US-053-choose-dark-or-light-theme.md), [US-070](./US-070-my-data-is-private.md) |
+| In Review | 6 | [US-002](./US-002-automated-tests-and-ci.md), [US-003](./US-003-shared-backend-foundations.md), [US-004](./US-004-interface-shell.md), [US-010](./US-010-register-with-email-verification.md), [US-011](./US-011-log-in-stay-logged-in-log-out.md), [US-012](./US-012-reset-forgotten-password.md) |
 | Blocked | 0 | – |
-| Done | 0 | – |
+| Done | 1 | [US-001](./US-001-repository-and-tooling-baseline.md) |
 
 ## Build order
 
@@ -79,21 +79,21 @@ Notes on the order: US-013 finishes in M5 (its Settings sections), US-053 finish
 
 | Story | Title | Status | Priority | Size | Milestone | Tasks done | Depends on |
 |---|---|---|---|---|---|---|---|
-| [US-001](./US-001-repository-and-tooling-baseline.md) | Repository and tooling baseline | In Progress | Must | M | M0 | 5/8 | – |
-| [US-002](./US-002-automated-tests-and-ci.md) | Automated tests and continuous integration | Ready | Must | M | M0 | 0/4 | US-001 |
-| [US-003](./US-003-shared-backend-foundations.md) | Shared backend foundations | Ready | Must | M | M0 | 0/5 | US-001, US-002 |
-| [US-004](./US-004-interface-shell.md) | Consistent dark-first interface shell | Ready | Must | L | M0 | 0/4 | US-001 |
-| [US-005](./US-005-sleeping-server-handling.md) | Friendly handling of a sleeping free server | Ready | Must | M | M0 | 0/4 | US-004 |
-| [US-006](./US-006-exact-money-and-dates.md) | Exact money and calendar-date handling | Ready | Must | S | M0 | 0/3 | US-001 |
+| [US-001](./US-001-repository-and-tooling-baseline.md) | Repository and tooling baseline | Done | Must | M | M0 | 8/8 | – |
+| [US-002](./US-002-automated-tests-and-ci.md) | Automated tests and continuous integration | In Review | Must | M | M0 | 4/4 | US-001 |
+| [US-003](./US-003-shared-backend-foundations.md) | Shared backend foundations | In Review | Must | M | M0 | 5/5 | US-001, US-002 |
+| [US-004](./US-004-interface-shell.md) | Consistent dark-first interface shell | In Review | Must | L | M0 | 3/4 | US-001 |
+| [US-005](./US-005-sleeping-server-handling.md) | Friendly handling of a sleeping free server | In Progress | Must | M | M0 | 3/4 | US-004 |
+| [US-006](./US-006-exact-money-and-dates.md) | Exact money and calendar-date handling | In Progress | Must | S | M0 | 2/3 | US-001 |
 
 ### E1 Authentication
 
 | Story | Title | Status | Priority | Size | Milestone | Tasks done | Depends on |
 |---|---|---|---|---|---|---|---|
-| [US-010](./US-010-register-with-email-verification.md) | Register with email verification | Ready | Must | L | M1 | 0/6 | US-003, US-004, US-005 |
-| [US-011](./US-011-log-in-stay-logged-in-log-out.md) | Log in, stay logged in, and log out | Ready | Must | XL | M1 | 0/8 | US-010 |
-| [US-012](./US-012-reset-forgotten-password.md) | Reset a forgotten password | Ready | Must | M | M1 | 0/2 | US-010 |
-| [US-013](./US-013-change-password-and-profile.md) | Change my password and edit my profile | Ready | Must | S | M1 | 0/3 | US-011, US-004 |
+| [US-010](./US-010-register-with-email-verification.md) | Register with email verification | In Review | Must | L | M1 | 5/6 | US-003, US-004, US-005 |
+| [US-011](./US-011-log-in-stay-logged-in-log-out.md) | Log in, stay logged in, and log out | In Review | Must | XL | M1 | 7/8 | US-010 |
+| [US-012](./US-012-reset-forgotten-password.md) | Reset a forgotten password | In Review | Must | M | M1 | 2/2 | US-010 |
+| [US-013](./US-013-change-password-and-profile.md) | Change my password and edit my profile | In Progress | Must | S | M1 | 1/3 | US-011, US-004 |
 
 ### E2 Tasks (Kanban)
 
@@ -126,7 +126,7 @@ Notes on the order: US-013 finishes in M5 (its Settings sections), US-053 finish
 | [US-050](./US-050-dashboard-at-a-glance.md) | See my day at a glance | Ready | Must | L | M5 | 0/3 | US-021, US-032, US-040 |
 | [US-051](./US-051-export-my-data.md) | Export my data | Ready | Must | M | M5 | 0/4 | US-013, US-021, US-030, US-040 |
 | [US-052](./US-052-delete-my-account.md) | Delete my account | Ready | Must | M | M5 | 0/3 | US-013, US-021, US-030, US-040 |
-| [US-053](./US-053-choose-dark-or-light-theme.md) | Choose a dark or light theme | Ready | Must | S | M0 | 0/2 | US-004 |
+| [US-053](./US-053-choose-dark-or-light-theme.md) | Choose a dark or light theme | In Progress | Must | S | M0 | 1/2 | US-004 |
 | [US-054](./US-054-change-currency-before-data.md) | Change my currency before I have data | Ready | Could | S | M5 | 0/2 | US-013, US-030, US-040 |
 
 ### E6 Deployment and pilot
@@ -142,7 +142,7 @@ Notes on the order: US-013 finishes in M5 (its Settings sections), US-053 finish
 
 | Story | Title | Status | Priority | Size | Milestone | Tasks done | Depends on |
 |---|---|---|---|---|---|---|---|
-| [US-070](./US-070-my-data-is-private.md) | My data is private to me | Ready | Must | L | M2-M5 | 0/7 | US-020, US-030, US-040 |
+| [US-070](./US-070-my-data-is-private.md) | My data is private to me | In Progress | Must | L | M2-M5 | 1/7 | US-020, US-030, US-040 |
 | [US-071](./US-071-phone-and-keyboard.md) | Usable on a phone and with a keyboard | Ready | Should | M | M0-M6 | 0/4 | US-004, US-021, US-032 |
 
 ## Sizes and priorities

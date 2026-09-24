@@ -52,13 +52,13 @@ Decisions and gaps found in the whole-branch review of M0 that land in this mile
 **Interfaces:**
 - Produces: `generateToken(): { raw: string; hash: string }`, `hashToken(raw: string): string`; `REFRESH_COOKIE`, `parseCookies(header: string | undefined): Record<string, string>`, `readRefreshCookie(req: Request): string | undefined`, `setRefreshCookie(res: Response, token: string, expires: Date): void`, `clearRefreshCookie(res: Response): void`; `isCommonPassword(password: string): boolean`.
 
-- [ ] **Step 0: Create the branch**
+- [x] **Step 0: Create the branch**
 
 ```bash
 git switch main && git switch -c feature/auth-accounts
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `backend/src/features/auth/tokens.test.ts`:
 
@@ -143,7 +143,7 @@ describe('isCommonPassword', () => {
 
 Run: `cd backend && npx vitest run src/features/auth` → FAIL (three modules missing).
 
-- [ ] **Step 2: Implement the utilities**
+- [x] **Step 2: Implement the utilities**
 
 `backend/src/features/auth/tokens.ts`:
 
@@ -251,7 +251,7 @@ export function isCommonPassword(password: string): boolean {
 
 Run: `npx vitest run src/features/auth` → PASS.
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -270,7 +270,7 @@ git commit -m "feat(auth): add token, cookie and password-policy utilities" -m "
 - Consumes: `env`.
 - Produces: `BCRYPT_COST`, `VERIFY_TOKEN_TTL_MS`, `RESET_TOKEN_TTL_MS`, `REFRESH_REUSE_GRACE_MS`; `User` model with `UserAttrs { email; password; name; currency; emailVerifiedAt?: Date }` and `type UserDoc`; `EmailToken` (`userId`, `purpose: 'verify' | 'reset'`, `tokenHash`, `expiresAt`, `usedAt?`) and `type EmailTokenPurpose`; `RefreshToken` (`userId`, `familyId`, `tokenHash`, `expiresAt`, `revokedAt?`).
 
-- [ ] **Step 1: Write the failing model test**
+- [x] **Step 1: Write the failing model test**
 
 `backend/src/features/auth/user.model.test.ts`:
 
@@ -341,7 +341,7 @@ describe('User model', () => {
 
 Run: `npx vitest run src/features/auth/user.model.test.ts` → FAIL (module missing).
 
-- [ ] **Step 2: Implement constants and models**
+- [x] **Step 2: Implement constants and models**
 
 `backend/src/features/auth/constants.ts`:
 
@@ -454,7 +454,7 @@ export const RefreshToken = model<RefreshTokenAttrs>('RefreshToken', refreshToke
 
 Run: `npx vitest run src/features/auth/user.model.test.ts` → PASS (5 tests).
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -474,7 +474,7 @@ git commit -m "feat(auth): add user, email-token and refresh-token models" -m "C
 - Consumes: models and constants from Task 2, `sendMail`, `validate`, `mailRateLimiter`, `authRateLimiter`.
 - Produces: `emailSchema`, `passwordSchema`, `currencySchema`, `registerSchema`, `verifyEmailSchema`, `resendVerificationSchema`, `type RegisterInput`; `sendVerificationEmail(to, name, token)`, `sendAlreadyRegisteredEmail(to, name)`, `sendPasswordResetEmail(to, name, token)` (all return `Promise<void>` and never throw); `createEmailToken(userId, purpose, ttlMs): Promise<string>`, `consumeEmailToken(raw, purpose): Promise<Types.ObjectId>` (throws `AppError(400, 'Invalid or expired token')`); `toPublicUser(user): PublicUser`; `register(input)`, `verifyEmail(token)`, `resendVerification(email)`; `authRouter`; test helpers `sendMailMock`, `newUserInput(overrides?)`, `lastMailToken()`, `registerVerified(input?)`, `setCookies(res)`, `refreshCookie(res)`, `VALID_PASSWORD`.
 
-- [ ] **Step 1: Write the test helpers**
+- [x] **Step 1: Write the test helpers**
 
 `backend/src/features/auth/auth.test-helpers.ts`:
 
@@ -537,7 +537,7 @@ export async function registerVerified(input: NewUserInput = newUserInput()): Pr
 }
 ```
 
-- [ ] **Step 2: Write the failing registration tests**
+- [x] **Step 2: Write the failing registration tests**
 
 `backend/src/features/auth/auth.registration.test.ts`:
 
@@ -752,7 +752,7 @@ describe('POST /api/auth/resend-verification', () => {
 
 Run: `npx vitest run src/features/auth/auth.registration.test.ts` → FAIL (`/api/auth/register` is 404 and modules are missing).
 
-- [ ] **Step 3: Implement schemas, emails, token helpers and the public-user mapper**
+- [x] **Step 3: Implement schemas, emails, token helpers and the public-user mapper**
 
 `backend/src/features/auth/auth.schemas.ts`:
 
@@ -905,7 +905,7 @@ export function toPublicUser(user: {
 }
 ```
 
-- [ ] **Step 4: Implement the service, controller and routes**
+- [x] **Step 4: Implement the service, controller and routes**
 
 `backend/src/features/auth/registration.service.ts`:
 
@@ -1027,7 +1027,7 @@ app.use('/api/auth', authRouter)
 
 Run: `npx vitest run src/features/auth/auth.registration.test.ts` → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1048,7 +1048,7 @@ git commit -m "feat(auth): add registration, email verification and resend" -m "
 
 `authUserId` replaces `req.user!.id` everywhere. It is needed by every tenant slice, so it lives in `shared/`.
 
-- [ ] **Step 1: Write the failing helper test**
+- [x] **Step 1: Write the failing helper test**
 
 `backend/src/shared/auth/requestUser.test.ts`:
 
@@ -1087,7 +1087,7 @@ export function authUserId(req: Request): string {
 
 Run → PASS.
 
-- [ ] **Step 2: Add `getMe` (test comes with Task 5's session tests; here only the wiring)**
+- [x] **Step 2: Add `getMe` (test comes with Task 5's session tests; here only the wiring)**
 
 `backend/src/features/auth/profile.service.ts`:
 
@@ -1123,7 +1123,7 @@ authRouter.get('/me', requireAuth, me)
 
 In `docs/plans/00-overview.md`, in the "Shared backend helpers" table add a row: `authUserId` | `shared/auth/requestUser.ts` | `(req: Request) => string`.
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1143,7 +1143,7 @@ git commit -m "feat(auth): add authUserId helper and GET /me" -m "Co-Authored-By
 - Consumes: `RefreshToken`, `User`, `signAccessToken`, `env.REFRESH_TOKEN_TTL_DAYS`, `REFRESH_REUSE_GRACE_MS`, cookie helpers.
 - Produces: `type Session = { accessToken: string; user: PublicUser; refreshToken: string; refreshExpiresAt: Date }`; `startSession(user, familyId?): Promise<Session>`; `login(email, password): Promise<Session>`; `refreshSession(rawToken: string | undefined): Promise<Session>`; `logout(rawToken: string | undefined): Promise<void>`; `revokeAllSessions(userId: Types.ObjectId): Promise<void>`; `sendSession(res, session, status?)`; routes `POST /login`, `/refresh`, `/logout`; `loginSchema`, `type LoginInput`.
 
-- [ ] **Step 1: Write the failing session tests**
+- [x] **Step 1: Write the failing session tests**
 
 `backend/src/features/auth/auth.session.test.ts`:
 
@@ -1347,7 +1347,7 @@ describe('POST /api/auth/logout', () => {
 
 Run: `npx vitest run src/features/auth/auth.session.test.ts` → FAIL (404 on `/login`).
 
-- [ ] **Step 2: Append the login schema**
+- [x] **Step 2: Append the login schema**
 
 Append to `backend/src/features/auth/auth.schemas.ts`:
 
@@ -1360,7 +1360,7 @@ export const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>
 ```
 
-- [ ] **Step 3: Implement the session service**
+- [x] **Step 3: Implement the session service**
 
 `backend/src/features/auth/session.service.ts`:
 
@@ -1460,7 +1460,7 @@ export async function revokeAllSessions(userId: Types.ObjectId): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: Implement the controller, response helper and routes**
+- [x] **Step 4: Implement the controller, response helper and routes**
 
 `backend/src/features/auth/session-response.ts`:
 
@@ -1511,7 +1511,7 @@ authRouter.post('/logout', logout)
 
 Run: `npx vitest run src/features/auth/auth.session.test.ts` → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1531,7 +1531,7 @@ git commit -m "feat(auth): add login, rotating refresh tokens and logout" -m "Co
 - Consumes: `createEmailToken`, `consumeEmailToken`, `sendPasswordResetEmail`, `startSession`, `revokeAllSessions`, `sendSession`, `authUserId`.
 - Produces: `forgotPassword(email)`, `resetPassword(token, password)`, `changePassword(userId, currentPassword, newPassword): Promise<Session>`, `updateProfile(userId, { name }): Promise<PublicUser>`; routes `POST /forgot-password`, `/reset-password`, `/change-password`, `PATCH /me`.
 
-- [ ] **Step 1: Write the failing password tests**
+- [x] **Step 1: Write the failing password tests**
 
 `backend/src/features/auth/auth.password.test.ts`:
 
@@ -1781,7 +1781,7 @@ describe('PATCH /api/auth/me', () => {
 
 Run: `npx vitest run src/features/auth/auth.password.test.ts src/features/auth/auth.profile.test.ts` → FAIL (404s).
 
-- [ ] **Step 2: Append the schemas**
+- [x] **Step 2: Append the schemas**
 
 Append to `auth.schemas.ts`:
 
@@ -1801,7 +1801,7 @@ export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>
 ```
 
-- [ ] **Step 3: Implement the password service and controller**
+- [x] **Step 3: Implement the password service and controller**
 
 `backend/src/features/auth/password.service.ts`:
 
@@ -1875,7 +1875,7 @@ export async function changePassword(req: Request, res: Response) {
 }
 ```
 
-- [ ] **Step 4: Add the profile update**
+- [x] **Step 4: Add the profile update**
 
 Append to `backend/src/features/auth/profile.service.ts`:
 
@@ -1896,7 +1896,7 @@ export async function updateMe(req: Request, res: Response) {
 }
 ```
 
-- [ ] **Step 5: Add the routes**
+- [x] **Step 5: Add the routes**
 
 In `auth.routes.ts` extend the schema import with `changePasswordSchema, forgotPasswordSchema, resetPasswordSchema, updateProfileSchema`, import `{ changePassword, forgotPassword, resetPassword } from './password.controller.ts'` and `updateMe` from `./profile.controller.ts` (alongside `me`), then append:
 
@@ -1915,7 +1915,7 @@ authRouter.patch('/me', requireAuth, validate({ body: updateProfileSchema }), up
 
 Run: `npx vitest run src/features/auth` → PASS.
 
-- [ ] **Step 6: Run all checks and commit**
+- [x] **Step 6: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1934,7 +1934,7 @@ git commit -m "feat(auth): add password reset, password change and profile updat
 **Interfaces:**
 - Produces (exported from `features/auth/index.ts`): `authRouter`, `clearRefreshCookie`, `type UserProfile`, `getUserProfile(userId: string): Promise<UserProfile | null>`, `verifyPassword(userId: string, password: string): Promise<boolean>`, `setUserCurrency(userId: string, currency: string): Promise<void>` (throws a Zod error, so 400, for an unsupported code), `deleteUser(userId: string): Promise<void>`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `backend/src/features/auth/public-api.test.ts`:
 
@@ -2010,7 +2010,7 @@ describe('auth public API', () => {
 
 Run → FAIL (`deleteUser` etc. not exported).
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 `backend/src/features/auth/public-api.ts`:
 
@@ -2061,7 +2061,7 @@ export {
 
 Run: `npx vitest run src/features/auth/public-api.test.ts` → PASS. (The test imports from `./index.ts`, which is the slice boundary other slices will use.)
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -2085,7 +2085,7 @@ All commands in Part B run from `frontend/`. Imports use the `@/` alias; imports
 - Consumes: `installColdStartRetry` (M0).
 - Produces: `configureAuth({ getToken: () => string | null; onUnauthorized: () => Promise<boolean> })`. When a request that carried a token gets a 401, the client calls `onUnauthorized()` once; if it resolves `true` the request is retried once with the new token, otherwise the original error is rejected. `AxiosRequestConfig` gains `skipAuthRefresh?: boolean` (never try to refresh for this request) and `authRetried?: boolean` (internal).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `frontend/src/shared/api/httpClient.test.ts`:
 
@@ -2217,7 +2217,7 @@ describe('getErrorMessage', () => {
 
 Run: `npx vitest run src/shared/api/httpClient.test.ts` → FAIL (`skipAuthRefresh` is not a known option and `onUnauthorized` has the old shape).
 
-- [ ] **Step 2: Extend the axios config type**
+- [x] **Step 2: Extend the axios config type**
 
 Replace `frontend/src/shared/api/axios-augment.d.ts`:
 
@@ -2236,7 +2236,7 @@ declare module 'axios' {
 }
 ```
 
-- [ ] **Step 3: Replace the client**
+- [x] **Step 3: Replace the client**
 
 Replace `frontend/src/shared/api/httpClient.ts`:
 
@@ -2312,7 +2312,7 @@ export function getErrorMessage(error: unknown): string {
 
 Run: `npx vitest run src/shared/api` → PASS (the new file and the M0 cold-start file).
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -2331,7 +2331,7 @@ git commit -m "feat(frontend): refresh the session once on 401 and retry the req
 - Consumes: `httpClient`, `configureAuth`, `warmUpServer`, `queryClient`.
 - Produces: `SessionUser = { id; email; name; currency }`, `SessionResponse = { accessToken; user }`; `useAuthStore` (`status: 'unknown' | 'authenticated' | 'anonymous'`, `accessToken`, `user`, `setSession`, `setUser`, `clear`); API functions `register`, `verifyEmail`, `resendVerification`, `login`, `refresh`, `logout`, `forgotPassword`, `resetPassword`, `changePassword`, `updateProfile`; session functions `refreshSession(): Promise<boolean>` (single-flight), `endSession(): void`, `logoutUser(): Promise<void>`, `bootstrapSession(): Promise<void>`, `initAuth(): void`, `updateSessionUser(partial): void`; hooks `useSessionUser`, `useRegister`, `useVerifyEmail`, `useResendVerification`, `useLogin`, `useLogout`, `useForgotPassword`, `useResetPassword`, `useChangePassword`, `useUpdateProfile`.
 
-- [ ] **Step 1: Write the types, store and API functions**
+- [x] **Step 1: Write the types, store and API functions**
 
 `frontend/src/features/auth/types.ts`:
 
@@ -2439,7 +2439,7 @@ export async function updateProfile(input: { name: string }): Promise<SessionUse
 }
 ```
 
-- [ ] **Step 2: Write the failing session tests**
+- [x] **Step 2: Write the failing session tests**
 
 `frontend/src/features/auth/session.test.ts`:
 
@@ -2572,7 +2572,7 @@ describe('updateSessionUser', () => {
 
 Run: `npx vitest run src/features/auth/session.test.ts` → FAIL (`./session` missing).
 
-- [ ] **Step 3: Implement the session logic**
+- [x] **Step 3: Implement the session logic**
 
 `frontend/src/features/auth/session.ts`:
 
@@ -2656,7 +2656,7 @@ export function initAuth(): void {
 
 Run: `npx vitest run src/features/auth/session.test.ts` → PASS (9 tests).
 
-- [ ] **Step 4: Implement the hooks**
+- [x] **Step 4: Implement the hooks**
 
 `frontend/src/features/auth/api/hooks.ts`:
 
@@ -2722,7 +2722,7 @@ export function useUpdateProfile() {
 }
 ```
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -2740,7 +2740,7 @@ git commit -m "feat(auth): add session store, API functions and single-flight re
 **Interfaces:**
 - Produces: form schemas `loginFormSchema`, `registerFormSchema`, `forgotFormSchema`, `resetFormSchema`, `resendFormSchema` and their types `LoginForm`, `RegisterForm`, `ForgotForm`, `ResetForm`, `ResendForm`; `CURRENCY_OPTIONS: { code: string; label: string }[]`; `AuthLayout({ title, children, footer? })`; default-exported pages `LoginPage`, `RegisterPage`.
 
-- [ ] **Step 1: Write the failing LoginPage test**
+- [x] **Step 1: Write the failing LoginPage test**
 
 `frontend/src/features/auth/pages/LoginPage.test.tsx`:
 
@@ -2872,7 +2872,7 @@ describe('LoginPage', () => {
 
 Run: `npx vitest run src/features/auth/pages/LoginPage.test.tsx` → FAIL (module missing).
 
-- [ ] **Step 2: Implement the shared auth building blocks**
+- [x] **Step 2: Implement the shared auth building blocks**
 
 `frontend/src/features/auth/schemas.ts`:
 
@@ -2989,7 +2989,7 @@ export function AuthLayout({ title, children, footer }: AuthLayoutProps) {
 }
 ```
 
-- [ ] **Step 3: Implement LoginPage**
+- [x] **Step 3: Implement LoginPage**
 
 `frontend/src/features/auth/pages/LoginPage.tsx`:
 
@@ -3076,7 +3076,7 @@ export default function LoginPage() {
 
 Run the LoginPage test → PASS (6 tests).
 
-- [ ] **Step 4: Write the failing RegisterPage test**
+- [x] **Step 4: Write the failing RegisterPage test**
 
 `frontend/src/features/auth/pages/RegisterPage.test.tsx`:
 
@@ -3174,7 +3174,7 @@ describe('RegisterPage', () => {
 
 Run → FAIL (module missing).
 
-- [ ] **Step 5: Implement RegisterPage**
+- [x] **Step 5: Implement RegisterPage**
 
 `frontend/src/features/auth/pages/RegisterPage.tsx`:
 
@@ -3264,7 +3264,7 @@ export default function RegisterPage() {
 
 Run: `npx vitest run src/features/auth/pages` → PASS.
 
-- [ ] **Step 6: Run all checks and commit**
+- [x] **Step 6: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -3282,7 +3282,7 @@ git commit -m "feat(auth): add login and registration pages" -m "Co-Authored-By:
 **Interfaces:**
 - Produces: `useUrlToken(): string | null` (returns the `?token=` value captured on first render and removes it from the address bar, once, even under React StrictMode); `ResendVerificationForm()`; default-exported `VerifyEmailPage`, `ForgotPasswordPage`, `ResetPasswordPage`.
 
-- [ ] **Step 1: Write the failing verify-page tests**
+- [x] **Step 1: Write the failing verify-page tests**
 
 `frontend/src/features/auth/pages/VerifyEmailPage.test.tsx`:
 
@@ -3383,7 +3383,7 @@ describe('VerifyEmailPage', () => {
 
 Run → FAIL (modules missing).
 
-- [ ] **Step 2: Implement the token hook, resend form and verify page**
+- [x] **Step 2: Implement the token hook, resend form and verify page**
 
 `frontend/src/features/auth/useUrlToken.ts`:
 
@@ -3508,7 +3508,7 @@ export default function VerifyEmailPage() {
 
 Run: `npx vitest run src/features/auth/pages/VerifyEmailPage.test.tsx` → PASS (4 tests).
 
-- [ ] **Step 3: Write the failing forgot-password tests**
+- [x] **Step 3: Write the failing forgot-password tests**
 
 `frontend/src/features/auth/pages/ForgotPasswordPage.test.tsx`:
 
@@ -3596,7 +3596,7 @@ export default function ForgotPasswordPage() {
 
 Run: `npx vitest run src/features/auth/pages/ForgotPasswordPage.test.tsx` → PASS.
 
-- [ ] **Step 4: Write the failing reset-password tests**
+- [x] **Step 4: Write the failing reset-password tests**
 
 `frontend/src/features/auth/pages/ResetPasswordPage.test.tsx`:
 
@@ -3774,7 +3774,7 @@ export default function ResetPasswordPage() {
 
 Run: `npx vitest run src/features/auth/pages` → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -3793,7 +3793,7 @@ git commit -m "feat(auth): add email verification, forgot-password and reset-pas
 **Interfaces:**
 - Produces (from `@/features/auth`): `authRoutes: RouteObject[]`, `ProtectedRoute`, `SessionGate({ children })`, `UserMenu`, `initAuth`, `useSessionUser`, `updateSessionUser`, `useChangePassword`, `useUpdateProfile`.
 
-- [ ] **Step 1: Write the failing guard and menu tests**
+- [x] **Step 1: Write the failing guard and menu tests**
 
 `frontend/src/features/auth/components/guards.test.tsx`:
 
@@ -3929,7 +3929,7 @@ describe('UserMenu', () => {
 
 Run: `npx vitest run src/features/auth/components` → FAIL (modules missing).
 
-- [ ] **Step 2: Implement the components**
+- [x] **Step 2: Implement the components**
 
 `frontend/src/features/auth/components/ProtectedRoute.tsx`:
 
@@ -4018,7 +4018,7 @@ and add `import './auth.css'` at the top of `UserMenu.tsx`.
 
 Run: `npx vitest run src/features/auth/components` → PASS.
 
-- [ ] **Step 3: Add the routes and the public API**
+- [x] **Step 3: Add the routes and the public API**
 
 `frontend/src/features/auth/routes.ts`:
 
@@ -4066,7 +4066,7 @@ export { authRoutes } from './routes'
 export { initAuth, updateSessionUser } from './session'
 ```
 
-- [ ] **Step 4: Wire it into the app**
+- [x] **Step 4: Wire it into the app**
 
 `frontend/src/app/router.ts`:
 
@@ -4120,7 +4120,7 @@ In `frontend/src/app/AppShell.tsx` add `import { UserMenu } from '@/features/aut
 
 In `frontend/src/main.tsx` add `import { initAuth } from '@/features/auth'` and call `initAuth()` on the line after `initTheme()`.
 
-- [ ] **Step 5: Run all checks**
+- [x] **Step 5: Run all checks**
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build
@@ -4128,7 +4128,7 @@ npm run lint && npm run typecheck && npm test && npm run build
 
 Expected: all pass. `npm run build` proves the lazy routes and the alias imports bundle.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend

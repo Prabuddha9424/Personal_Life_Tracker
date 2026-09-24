@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E1 Authentication |
 | **Priority** | Must |
 | **Size** | XL |
@@ -27,13 +27,13 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-011-T1 | Add `authUserId` (shared) and `GET /auth/me` | [M1 Auth](../plans/02-auth.md), Task 4 | To do |
-| US-011-T2 | Add login, rotating refresh tokens with reuse detection and grace period, and logout, with tests | [M1 Auth](../plans/02-auth.md), Task 5 | To do |
-| US-011-T3 | Expose the auth slice's public API for other slices (`getUserProfile`, `verifyPassword`, `setUserCurrency`, `deleteUser`, `clearRefreshCookie`) | [M1 Auth](../plans/02-auth.md), Task 7 | To do |
-| US-011-T4 | Make the shared HTTP client refresh the session once on a 401 and retry, and show plain error messages | [M1 Auth](../plans/02-auth.md), Task 8 | To do |
-| US-011-T5 | Add the session store, API functions, single-flight refresh, bootstrap and hooks, with tests including cache clearing | [M1 Auth](../plans/02-auth.md), Task 9 | To do |
-| US-011-T6 | Add the login page and its tests (including clearing a previous user's cache) | [M1 Auth](../plans/02-auth.md), Task 10 (login page) | To do |
-| US-011-T7 | Add route guards, session gate, user menu and wire them into the app | [M1 Auth](../plans/02-auth.md), Task 12 | To do |
+| US-011-T1 | Add `authUserId` (shared) and `GET /auth/me` | [M1 Auth](../plans/02-auth.md), Task 4 | Done |
+| US-011-T2 | Add login, rotating refresh tokens with reuse detection and grace period, and logout, with tests | [M1 Auth](../plans/02-auth.md), Task 5 | Done |
+| US-011-T3 | Expose the auth slice's public API for other slices (`getUserProfile`, `verifyPassword`, `setUserCurrency`, `deleteUser`, `clearRefreshCookie`) | [M1 Auth](../plans/02-auth.md), Task 7 | Done |
+| US-011-T4 | Make the shared HTTP client refresh the session once on a 401 and retry, and show plain error messages | [M1 Auth](../plans/02-auth.md), Task 8 | Done |
+| US-011-T5 | Add the session store, API functions, single-flight refresh, bootstrap and hooks, with tests including cache clearing | [M1 Auth](../plans/02-auth.md), Task 9 | Done |
+| US-011-T6 | Add the login page and its tests (including clearing a previous user's cache) | [M1 Auth](../plans/02-auth.md), Task 10 (login page) | Done |
+| US-011-T7 | Add route guards, session gate, user menu and wire them into the app | [M1 Auth](../plans/02-auth.md), Task 12 | Done |
 | US-011-T8 | Walk log in, reload, two tabs and log out in a real browser; inspect storage and cookies | [M1 Auth](../plans/02-auth.md), Task 13 | To do |
 
 ## Out of scope
@@ -48,9 +48,9 @@ Sessions across the Netlify and Render hosts rely on the same-origin `/api` rewr
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
+- [x] Acceptance criterion 1
 - [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
 - [ ] Acceptance criterion 6
