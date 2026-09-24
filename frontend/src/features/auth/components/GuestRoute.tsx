@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore'
 export function GuestRoute() {
   const status = useAuthStore((state) => state.status)
 
-  if (status === 'unknown') return <LoadingState label="Loading your account…" />
   if (status === 'authenticated') return <Navigate to="/" replace />
-  return <Outlet />
+  if (status === 'anonymous') return <Outlet />
+  return <LoadingState label="Loading your account…" />
 }

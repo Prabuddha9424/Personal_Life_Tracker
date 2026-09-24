@@ -6,10 +6,10 @@ export function ProtectedRoute() {
   const status = useAuthStore((state) => state.status)
   const location = useLocation()
 
-  if (status === 'unknown') return <LoadingState label="Loading your account…" />
+  if (status === 'authenticated') return <Outlet />
   if (status === 'anonymous') {
     const from = location.pathname + location.search + location.hash
     return <Navigate to="/login" replace state={{ from }} />
   }
-  return <Outlet />
+  return <LoadingState label="Loading your account…" />
 }

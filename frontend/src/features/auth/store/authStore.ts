@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import type { SessionResponse, SessionUser } from '../types'
 
-type Status = 'unknown' | 'authenticated' | 'anonymous'
+/** `unavailable`: start-up could not reach the server, so it is unknown whether a session exists. */
+type Status = 'unknown' | 'authenticated' | 'anonymous' | 'unavailable'
 
 interface AuthState {
   status: Status

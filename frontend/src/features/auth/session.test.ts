@@ -1,11 +1,21 @@
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '@/shared/lib/queryClient'
 import * as authApi from './api/authApi'
-import { logoutUser, refreshSession, startSession, updateSessionUser } from './session'
+import { useServerStatus } from '@/shared/api/serverStatus'
+import { warmUpServer } from '@/shared/api/warmUp'
+import {
+  bootstrapSession,
+  logoutUser,
+  refreshSession,
+  retryBootstrap,
+  startSession,
+  updateSessionUser,
+} from './session'
 import { useAuthStore } from './store/authStore'
 
 vi.mock('./api/authApi')
+vi.mock('@/shared/api/warmUp')
 
 const session = {
   accessToken: 'token-1',
@@ -85,12 +95,12 @@ describe('refreshSession', () => {
     expect(queryClient.getQueryData(['tasks'])).toEqual(['still mine'])
   })
 
-  it('falls back to anonymous at start-up when the server cannot be reached', async () => {
+  it('does not treat an unreachable server as a logged-out user at start-up', async () => {
     vi.mocked(authApi.refresh).mockRejectedValue(new Error('Network Error'))
 
     expect(await refreshSession()).toBe(false)
 
-    expect(useAuthStore.getState().status).toBe('anonymous')
+    expect(useAuthStore.getState().status).toBe('unknown')
   })
 })
 
@@ -165,5 +175,75 @@ describe('updateSessionUser', () => {
     updateSessionUser({ name: 'Nobody' })
 
     expect(useAuthStore.getState().user).toBeNull()
+  })
+})
+
+describe('bootstrapSession', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.mocked(warmUpServer).mockResolvedValue()
+    useServerStatus.setState({ waking: false })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('runs once however many times it is called', async () => {
+    vi.mocked(authApi.refresh).mockResolvedValue(session)
+
+    await Promise.all([bootstrapSession(), bootstrapSession()])
+
+    expect(authApi.refresh).toHaveBeenCalledTimes(1)
+    expect(useAuthStore.getState().status).toBe('authenticated')
+  })
+
+  it('goes to anonymous straight away when the cookie is rejected', async () => {
+    vi.mocked(authApi.refresh).mockRejectedValue(httpError(401))
+
+    await retryBootstrap()
+
+    expect(useAuthStore.getState().status).toBe('anonymous')
+    expect(authApi.refresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps waiting while the server wakes up instead of sending a returning user to login', async () => {
+    vi.mocked(authApi.refresh)
+      .mockRejectedValueOnce(httpError(503))
+      .mockRejectedValueOnce(new Error('Network Error'))
+      .mockResolvedValue(session)
+
+    const done = retryBootstrap()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(useAuthStore.getState().status).toBe('unknown')
+    expect(useServerStatus.getState().waking).toBe(true)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+    await done
+
+    expect(authApi.refresh).toHaveBeenCalledTimes(3)
+    expect(useAuthStore.getState()).toMatchObject({ status: 'authenticated', accessToken: 'token-1' })
+    expect(useServerStatus.getState().waking).toBe(false)
+  })
+
+  it('gives up after a bounded number of attempts and reports the server as unavailable', async () => {
+    vi.mocked(authApi.refresh).mockRejectedValue(httpError(502))
+
+    const done = retryBootstrap()
+    await vi.advanceTimersByTimeAsync(60_000)
+    await done
+
+    expect(authApi.refresh).toHaveBeenCalledTimes(4)
+    expect(useAuthStore.getState().status).toBe('unavailable')
+    expect(useServerStatus.getState().waking).toBe(false)
+  })
+
+  it('tries again from scratch when asked, after the server was unavailable', async () => {
+    useAuthStore.setState({ status: 'unavailable' })
+    vi.mocked(authApi.refresh).mockResolvedValue(session)
+
+    await retryBootstrap()
+
+    expect(useAuthStore.getState().status).toBe('authenticated')
   })
 })

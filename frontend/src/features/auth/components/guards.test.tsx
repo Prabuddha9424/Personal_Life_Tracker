@@ -56,6 +56,15 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Login page (from /board?filter=done#top)')).toBeInTheDocument()
   })
 
+  it('never shows the page while it is unknown whether a session exists', () => {
+    useAuthStore.setState({ status: 'unavailable' })
+
+    renderApp('/board')
+
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(screen.queryByText('Board')).not.toBeInTheDocument()
+  })
+
   it('shows the page to a signed-in user', () => {
     useAuthStore.setState({ status: 'authenticated', accessToken: 't', user })
 
