@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { getErrorMessage } from '@/shared/api/httpClient'
 import { Button } from '@/shared/ui/Button'
@@ -7,17 +7,21 @@ import { LoadingState } from '@/shared/ui/StateViews'
 import { useVerifyEmail } from '../api/hooks'
 import { AuthLayout } from '../components/AuthLayout'
 import { ResendVerificationForm } from '../components/ResendVerificationForm'
+import { bootstrapSession } from '../session'
 import { useUrlToken } from '../useUrlToken'
 
 export default function VerifyEmailPage() {
   const token = useUrlToken()
   const { mutate: verify, isSuccess, isError, error } = useVerifyEmail()
   const started = useRef(false)
+  const [retried, setRetried] = useState(false)
 
   useEffect(() => {
     if (!token || started.current) return
     started.current = true
-    verify({ token })
+    // The token is single use. If the request is sent while the server is still waking, the gateway
+    // can give up although the server goes on to consume the token, so wake it up first.
+    void bootstrapSession().then(() => verify({ token }))
   }, [token, verify])
 
   if (isSuccess) {
@@ -42,7 +46,13 @@ export default function VerifyEmailPage() {
         footer={<Link to="/login">Back to log in</Link>}
       >
         <p role="alert">{getErrorMessage(error)}</p>
-        <Button variant="primary" onClick={() => verify({ token })}>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setRetried(true)
+            verify({ token })
+          }}
+        >
           Try again
         </Button>
       </AuthLayout>
@@ -53,6 +63,22 @@ export default function VerifyEmailPage() {
     return (
       <AuthLayout title="Verifying your email">
         <LoadingState label="Verifying…" />
+      </AuthLayout>
+    )
+  }
+
+  if (linkInvalid && retried) {
+    return (
+      <AuthLayout title="Your email may already be verified">
+        <p role="status">
+          Your email may already be verified: an earlier attempt could have gone through while the
+          server was waking up. Try logging in.
+        </p>
+        <Link className="btn btn--primary" to="/login">
+          Log in
+        </Link>
+        <p className="muted">Still cannot log in? We can send a new link.</p>
+        <ResendVerificationForm />
       </AuthLayout>
     )
   }

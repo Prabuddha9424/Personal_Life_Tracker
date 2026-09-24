@@ -6,9 +6,11 @@ import { Route, Routes, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 import * as authApi from '../api/authApi'
+import { bootstrapSession } from '../session'
 import VerifyEmailPage from './VerifyEmailPage'
 
 vi.mock('../api/authApi')
+vi.mock('../session')
 
 function LocationProbe() {
   return <output aria-label="search">{useLocation().search}</output>
@@ -35,8 +37,19 @@ function renderVerify(route: string) {
 
 const TOKEN = 'a'.repeat(64)
 
+function httpError(status: number) {
+  return new AxiosError('failed', 'ERR_BAD_REQUEST', undefined, null, {
+    status,
+    statusText: '',
+    data: {},
+    headers: {},
+    config: {} as InternalAxiosRequestConfig,
+  })
+}
+
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.mocked(bootstrapSession).mockResolvedValue()
 })
 
 describe('VerifyEmailPage', () => {
@@ -50,6 +63,39 @@ describe('VerifyEmailPage', () => {
     expect(vi.mocked(authApi.verifyEmail).mock.calls[0]?.[0]).toEqual({ token: TOKEN })
     expect(screen.getByLabelText('search').textContent).toBe('')
     expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login')
+  })
+
+  it('waits for the server to be awake before it uses the token', async () => {
+    let wake: () => void = () => undefined
+    vi.mocked(bootstrapSession).mockReturnValue(new Promise<void>((resolve) => (wake = resolve)))
+    vi.mocked(authApi.verifyEmail).mockResolvedValue()
+
+    renderVerify(`/verify-email?token=${TOKEN}`)
+
+    expect(await screen.findByText('Verifying…')).toBeInTheDocument()
+    expect(authApi.verifyEmail).not.toHaveBeenCalled()
+
+    wake()
+
+    expect(await screen.findByRole('heading', { name: 'Email verified' })).toBeInTheDocument()
+    expect(authApi.verifyEmail).toHaveBeenCalledTimes(1)
+  })
+
+  it('says the email may already be verified when a retry finds the token used up', async () => {
+    vi.mocked(authApi.verifyEmail)
+      .mockRejectedValueOnce(httpError(504))
+      .mockRejectedValueOnce(httpError(400))
+    renderVerify(`/verify-email?token=${TOKEN}`)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    expect(
+      await screen.findByText(/an earlier attempt could have gone through/i),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /may already be verified/i })).toBeInTheDocument()
+    expect(screen.queryByText(/invalid or has expired/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login')
+    expect(screen.getByLabelText('Email')).toBeInTheDocument()
   })
 
   it('explains an invalid or expired link and offers a new one', async () => {
