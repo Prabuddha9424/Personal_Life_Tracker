@@ -222,7 +222,10 @@ describe('bootstrapSession', () => {
     await done
 
     expect(authApi.refresh).toHaveBeenCalledTimes(3)
-    expect(useAuthStore.getState()).toMatchObject({ status: 'authenticated', accessToken: 'token-1' })
+    expect(useAuthStore.getState()).toMatchObject({
+      status: 'authenticated',
+      accessToken: 'token-1',
+    })
     expect(useServerStatus.getState().waking).toBe(false)
   })
 

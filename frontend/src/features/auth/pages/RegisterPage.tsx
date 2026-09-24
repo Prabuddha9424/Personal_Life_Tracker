@@ -35,7 +35,11 @@ export default function RegisterPage() {
           We sent a verification link to <strong>{email}</strong>. It expires in 24 hours, so open
           it soon.
         </p>
-        {resend.isError && <p className="form-error">{getErrorMessage(resend.error)}</p>}
+        {resend.isError && (
+          <p className="form-error" role="alert">
+            {getErrorMessage(resend.error)}
+          </p>
+        )}
         <Button
           loading={resend.isPending}
           onClick={() =>
@@ -97,7 +101,9 @@ export default function RegisterPage() {
           </select>
         </FormField>
         {registerUser.isError && !hasFieldErrorFor(registerUser.error, FIELDS) && (
-          <p className="form-error">{getErrorMessage(registerUser.error)}</p>
+          <p className="form-error" role="alert">
+            {getErrorMessage(registerUser.error)}
+          </p>
         )}
         <Button type="submit" variant="primary" loading={registerUser.isPending}>
           Create account

@@ -25,7 +25,11 @@ export default function ForgotPasswordPage() {
           <FormField label="Email" error={errors.email?.message}>
             <input type="email" autoComplete="email" {...register('email')} />
           </FormField>
-          {forgot.isError && <p className="form-error">{getErrorMessage(forgot.error)}</p>}
+          {forgot.isError && (
+            <p className="form-error" role="alert">
+              {getErrorMessage(forgot.error)}
+            </p>
+          )}
           <Button type="submit" variant="primary" loading={forgot.isPending}>
             Send reset link
           </Button>

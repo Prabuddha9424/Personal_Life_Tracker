@@ -66,11 +66,19 @@ export default function LoginPage() {
         <FormField label="Password" error={errors.password?.message}>
           <input type="password" autoComplete="current-password" {...register('password')} />
         </FormField>
-        {login.isError && <p className="form-error">{getErrorMessage(login.error)}</p>}
+        {login.isError && (
+          <p className="form-error" role="alert">
+            {getErrorMessage(login.error)}
+          </p>
+        )}
         <Button type="submit" variant="primary" loading={login.isPending}>
           Log in
         </Button>
-        {resend.isError && <p className="form-error">{getErrorMessage(resend.error)}</p>}
+        {resend.isError && (
+          <p className="form-error" role="alert">
+            {getErrorMessage(resend.error)}
+          </p>
+        )}
         {unverified && (
           <Button onClick={onResend} loading={resend.isPending}>
             Resend verification email

@@ -24,7 +24,11 @@ export function ResendVerificationForm() {
       <FormField label="Email" error={errors.email?.message}>
         <input type="email" autoComplete="email" {...register('email')} />
       </FormField>
-      {resend.isError && <p className="form-error">{getErrorMessage(resend.error)}</p>}
+      {resend.isError && (
+        <p className="form-error" role="alert">
+          {getErrorMessage(resend.error)}
+        </p>
+      )}
       <Button type="submit" loading={resend.isPending}>
         Send a new link
       </Button>

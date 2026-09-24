@@ -75,7 +75,9 @@ export default function ResetPasswordPage() {
           <input type="password" autoComplete="new-password" {...register('confirm')} />
         </FormField>
         {reset.isError && !passwordRejected && (
-          <p className="form-error">{getErrorMessage(reset.error)}</p>
+          <p className="form-error" role="alert">
+            {getErrorMessage(reset.error)}
+          </p>
         )}
         <Button type="submit" variant="primary" loading={reset.isPending}>
           Change password

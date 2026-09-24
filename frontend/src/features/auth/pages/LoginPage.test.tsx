@@ -115,7 +115,7 @@ describe('LoginPage', () => {
 
     await fillAndSubmit()
 
-    expect(await screen.findByText('Invalid email or password')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password')
     expect(useAuthStore.getState().status).toBe('anonymous')
   })
 
