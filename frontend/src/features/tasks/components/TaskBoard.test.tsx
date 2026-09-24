@@ -102,28 +102,37 @@ describe('TaskBoard card activation', () => {
     expect(onOpen).toHaveBeenCalledTimes(1)
   })
 
-  it('leaves the drag handle to dragging: it does not open the editor itself', async () => {
+  it('leaves the grip to dragging: it does not open the editor itself', async () => {
     serve({ todo: [task('1', 'todo', 'Buy milk')] })
     const { onOpen } = setup()
-    const title = await screen.findByRole('button', { name: 'Edit task: Buy milk' })
-    const handle = title.closest('[data-rfd-drag-handle-draggable-id]')
-    expect(handle).not.toBeNull()
+    const grip = await screen.findByRole('button', { name: 'Move Buy milk' })
 
-    await userEvent.click(handle as HTMLElement)
-    ;(handle as HTMLElement).focus()
+    await userEvent.click(grip)
+    grip.focus()
     await userEvent.keyboard('{Enter}')
 
     expect(onOpen).not.toHaveBeenCalled()
   })
 
-  it('makes every card a keyboard-operable drag handle that is described to assistive tech', async () => {
+  it('keeps the grip and the title button apart, so no control is nested inside another', async () => {
     serve({ todo: [task('1', 'todo', 'Buy milk')] })
     setup()
     const title = await screen.findByRole('button', { name: 'Edit task: Buy milk' })
-    const handle = title.closest('[data-rfd-drag-handle-draggable-id]') as HTMLElement
+    const grip = screen.getByRole('button', { name: 'Move Buy milk' })
 
-    expect(handle).toHaveAttribute('tabindex', '0')
-    const description = document.getElementById(handle.getAttribute('aria-describedby') ?? '')
+    expect(title.closest('[role="button"]')).toBeNull()
+    expect(grip.contains(title)).toBe(false)
+    expect(title.contains(grip)).toBe(false)
+    expect(grip.closest('[data-rfd-draggable-id]')).toBe(title.closest('[data-rfd-draggable-id]'))
+  })
+
+  it('gives every card a keyboard-operable grip that is described to assistive tech', async () => {
+    serve({ todo: [task('1', 'todo', 'Buy milk')] })
+    setup()
+    const grip = await screen.findByRole('button', { name: 'Move Buy milk' })
+
+    expect(grip).toHaveAttribute('tabindex', '0')
+    const description = document.getElementById(grip.getAttribute('aria-describedby') ?? '')
     expect(description).toHaveTextContent(/space bar/i)
     expect(document.querySelector('[aria-live]')).not.toBeNull()
   })
@@ -203,6 +212,59 @@ describe('TaskBoard drops', () => {
     await waitFor(() =>
       expect(vi.mocked(taskApi.listTasks).mock.calls.length).toBeGreaterThan(before),
     )
+  })
+
+  it('sends no neighbours for a drop into an empty column', async () => {
+    serve({ todo: [task('a', 'todo')], done: [] })
+    setup()
+    await screen.findByText('a')
+
+    drop({ id: 'a', from: ['todo', 0], to: ['done', 0] })
+
+    await waitFor(() =>
+      expect(taskApi.moveTask).toHaveBeenCalledWith('a', {
+        status: 'done',
+        afterId: undefined,
+        beforeId: undefined,
+      }),
+    )
+  })
+
+  it('treats the destination index as an index in the list without the moved card', async () => {
+    serve({ todo: [task('a', 'todo'), task('b', 'todo'), task('c', 'todo')] })
+    setup()
+    await screen.findByText('c')
+
+    drop({ id: 'a', from: ['todo', 0], to: ['todo', 2] })
+
+    await waitFor(() =>
+      expect(taskApi.moveTask).toHaveBeenCalledWith('a', {
+        status: 'todo',
+        afterId: 'c',
+        beforeId: undefined,
+      }),
+    )
+  })
+
+  it('ignores a drop whose column is not a task status', async () => {
+    serve({ todo: [task('a', 'todo')] })
+    setup()
+    await screen.findByText('a')
+
+    dnd.onDragEnd?.(
+      {
+        draggableId: 'a',
+        type: 'DEFAULT',
+        mode: 'FLUID',
+        reason: 'DROP',
+        source: { droppableId: 'todo', index: 0 },
+        destination: { droppableId: 'archive', index: 0 },
+        combine: null,
+      },
+      { announce: () => {} },
+    )
+
+    expect(taskApi.moveTask).not.toHaveBeenCalled()
   })
 
   it.each([

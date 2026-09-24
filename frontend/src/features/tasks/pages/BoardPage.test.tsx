@@ -66,6 +66,35 @@ describe('BoardPage', () => {
     expect(within(column('To Do')).getByText('2')).toBeInTheDocument()
   })
 
+  it('announces the count with a unit, not as a bare number', async () => {
+    serve({ todo: [task('1', 'todo'), task('2', 'todo')], done: [task('3', 'done')] })
+
+    renderWithProviders(<BoardPage />)
+
+    expect(await within(column('To Do')).findByText('2 tasks')).toBeInTheDocument()
+    expect(within(column('Done')).getByText('1 task')).toBeInTheDocument()
+  })
+
+  it('says a column is updating, and locks its cards, while a new filter loads', async () => {
+    vi.mocked(taskApi.listTasks).mockImplementation(async (params) => {
+      if (params.tag === 'work') return new Promise<TaskPage>(() => {})
+      return page(params.status === 'todo' ? [task('1', 'todo', 'Buy milk')] : [])
+    })
+    renderWithProviders(<BoardPage />)
+    await within(column('To Do')).findByText('Buy milk')
+    expect(within(column('To Do')).queryByText('Updating…')).not.toBeInTheDocument()
+    expect(
+      within(column('To Do')).getByRole('button', { name: 'Move Buy milk' }),
+    ).toBeInTheDocument()
+
+    await screen.findByRole('option', { name: 'work' })
+    await userEvent.selectOptions(screen.getByLabelText('Filter by tag'), 'work')
+
+    expect(await within(column('To Do')).findByRole('status')).toHaveTextContent('Updating…')
+    expect(within(column('To Do')).getByText('Buy milk')).toBeInTheDocument()
+    expect(within(column('To Do')).queryByRole('button', { name: 'Move Buy milk' })).toBeNull()
+  })
+
   it('says so when a column is empty', async () => {
     serve({ todo: [task('1', 'todo')] })
 

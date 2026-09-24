@@ -24,7 +24,12 @@ export function BoardColumn({ status, filters, onOpen, onAdd }: BoardColumnProps
     <section className="column" aria-label={label}>
       <header className="column__header">
         <h2>{label}</h2>
-        <span className="column__count muted">{total}</span>
+        <span className="column__count muted">
+          <span aria-hidden="true">{total}</span>
+          <span className="visually-hidden">
+            {total} {total === 1 ? 'task' : 'tasks'}
+          </span>
+        </span>
         <Button variant="ghost" onClick={() => onAdd(status)} aria-label={`Add task to ${label}`}>
           +
         </Button>
@@ -33,6 +38,12 @@ export function BoardColumn({ status, filters, onOpen, onAdd }: BoardColumnProps
       {query.isPending && <LoadingState label="Loading…" />}
       {query.isError && (
         <ErrorState message="Could not load this column" onRetry={() => void query.refetch()} />
+      )}
+
+      {query.isPlaceholderData && (
+        <p className="column__updating muted" role="status">
+          Updating…
+        </p>
       )}
 
       {query.data && (
@@ -47,14 +58,29 @@ export function BoardColumn({ status, filters, onOpen, onAdd }: BoardColumnProps
                 <EmptyState title="Nothing here yet" description="Drag a card here or add one." />
               )}
               {tasks.map((task, index) => (
-                <Draggable key={task.id} draggableId={task.id} index={index}>
+                <Draggable
+                  key={task.id}
+                  draggableId={task.id}
+                  index={index}
+                  isDragDisabled={query.isPlaceholderData}
+                >
                   {(drag, dragSnapshot) => (
                     <div
                       ref={drag.innerRef}
                       {...drag.draggableProps}
-                      {...drag.dragHandleProps}
                       className={`task-card${dragSnapshot.isDragging ? ' is-dragging' : ''}`}
                     >
+                      {drag.dragHandleProps ? (
+                        <span
+                          {...drag.dragHandleProps}
+                          className="task-card__grip"
+                          aria-label={`Move ${task.title}`}
+                        >
+                          <span aria-hidden="true">⋮⋮</span>
+                        </span>
+                      ) : (
+                        <span className="task-card__grip is-disabled" aria-hidden="true" />
+                      )}
                       <TaskCard task={task} onEdit={onOpen} />
                     </div>
                   )}
