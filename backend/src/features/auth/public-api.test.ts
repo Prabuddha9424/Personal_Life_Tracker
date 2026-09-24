@@ -55,7 +55,9 @@ describe('auth public API', () => {
 
   it('deleteUser removes the user, their tokens and their sessions', async () => {
     const { input, id } = await createUser()
-    await request(app).post('/api/auth/login').send({ email: input.email, password: input.password })
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: input.email, password: input.password })
     expect(await RefreshToken.countDocuments()).toBe(1)
 
     await deleteUser(id)

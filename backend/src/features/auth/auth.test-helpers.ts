@@ -1,7 +1,6 @@
-import type { Response } from 'supertest'
 import { vi } from 'vitest'
 import { app } from '../../app.ts'
-import { request } from '../../test/http.ts'
+import { request, type Response } from '../../test/http.ts'
 import { sendMail } from '../../shared/mailer/mailer.ts'
 
 /** The test file must call vi.mock('../../shared/mailer/mailer.ts', ...) for this to be a mock. */
@@ -50,7 +49,9 @@ export function refreshCookie(res: Response): string {
 }
 
 /** Registers and verifies a user through the real endpoints. */
-export async function registerVerified(input: NewUserInput = newUserInput()): Promise<NewUserInput> {
+export async function registerVerified(
+  input: NewUserInput = newUserInput(),
+): Promise<NewUserInput> {
   await request(app).post('/api/auth/register').send(input).expect(202)
   await request(app).post('/api/auth/verify-email').send({ token: lastMailToken() }).expect(200)
   return input

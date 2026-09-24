@@ -43,3 +43,5 @@ export function request(app: RequestListener): ReturnType<typeof supertest> {
   }
   return supertest(`${origin}${prefix}`)
 }
+
+export type { Response } from 'supertest'

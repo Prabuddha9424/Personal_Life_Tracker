@@ -2,12 +2,7 @@ import { request } from '../../test/http.ts'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { app } from '../../app.ts'
 import { clearTestDb, startTestDb, stopTestDb } from '../../test/mongo.ts'
-import {
-  lastMailToken,
-  newUserInput,
-  registerVerified,
-  sendMailMock,
-} from './auth.test-helpers.ts'
+import { lastMailToken, newUserInput, registerVerified, sendMailMock } from './auth.test-helpers.ts'
 import { EmailToken } from './email-token.model.ts'
 import { hashToken } from './tokens.ts'
 import { User } from './user.model.ts'
@@ -58,7 +53,9 @@ describe('POST /api/auth/register', () => {
     const raw = lastMailToken()
 
     expect(await EmailToken.countDocuments({ tokenHash: raw })).toBe(0)
-    expect(await EmailToken.countDocuments({ tokenHash: hashToken(raw), purpose: 'verify' })).toBe(1)
+    expect(await EmailToken.countDocuments({ tokenHash: hashToken(raw), purpose: 'verify' })).toBe(
+      1,
+    )
   })
 
   it('normalises the email address', async () => {
