@@ -107,3 +107,16 @@ export async function listTags(userId: string): Promise<string[]> {
   const tags = (await Task.distinct('tags', { userId: new Types.ObjectId(userId) })) as string[]
   return tags.sort()
 }
+
+/** Every task of one user, for the data export: by column, then board order. */
+export async function exportTasks(userId: string): Promise<TaskDto[]> {
+  const tasks = await Task.find({ userId: new Types.ObjectId(userId) })
+    .sort({ status: 1, ...BOARD_ORDER })
+    .lean<TaskRecord[]>()
+  return tasks.map(toTaskDto)
+}
+
+/** Removes every task of one user, for account deletion. */
+export async function deleteAllTasks(userId: string): Promise<void> {
+  await Task.deleteMany({ userId: new Types.ObjectId(userId) })
+}
