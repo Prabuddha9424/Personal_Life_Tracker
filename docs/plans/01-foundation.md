@@ -2454,7 +2454,7 @@ git commit -m "feat(frontend): retry safe requests while the free backend wakes 
 
 Three slices (finance, fixed-expenses, dashboard) need these, so they live in `shared/`.
 
-- [ ] **Step 1: Write the failing money tests**
+- [x] **Step 1: Write the failing money tests**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -2526,7 +2526,7 @@ describe('minorToMajor', () => {
 
 Run: `npx vitest run src/shared/lib/money.test.ts` → FAIL.
 
-- [ ] **Step 2: Implement money.ts**
+- [x] **Step 2: Implement money.ts**
 
 ```ts
 /** Number of digits after the decimal point in the currency's minor unit (USD 2, JPY 0, BHD 3). */
@@ -2578,7 +2578,7 @@ export function formatMinorUnits(minor: number, currency: string, locale?: strin
 
 Run the money tests → PASS.
 
-- [ ] **Step 3: Write the failing date tests**
+- [x] **Step 3: Write the failing date tests**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -2639,7 +2639,7 @@ describe('months', () => {
 
 Run → FAIL.
 
-- [ ] **Step 4: Implement dates.ts**
+- [x] **Step 4: Implement dates.ts**
 
 ```ts
 const DAY_MS = 86_400_000
@@ -2691,7 +2691,7 @@ export function formatMonth(month: string, locale?: string): string {
 
 Run: `npx vitest run src/shared/lib` → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
