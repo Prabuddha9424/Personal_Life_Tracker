@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | In Progress |
+| **Status** | In Review |
 | **Epic** | E0 Project setup |
 | **Priority** | Must |
 | **Size** | M |
@@ -28,7 +28,7 @@
 | US-002-T1 | Add `mongodb-memory-server` (dev) and the `startTestDb`, `clearTestDb`, `stopTestDb` helpers with a test | [M0 Foundation](../plans/01-foundation.md), Task 2, steps 1-6 | Done |
 | US-002-T2 | Add the `testUser()` helper with a test | [M0 Foundation](../plans/01-foundation.md), Task 2, steps 7-8 | Done |
 | US-002-T3 | Raise the Vitest timeouts and exclude test files and `src/test` from the build | [M0 Foundation](../plans/01-foundation.md), Task 2, step 4 | Done |
-| US-002-T4 | Add the GitHub Actions CI workflow for both apps and dry-run the same commands locally | [M0 Foundation](../plans/01-foundation.md), Task 12 | To do |
+| US-002-T4 | Add the GitHub Actions CI workflow for both apps and dry-run the same commands locally | [M0 Foundation](../plans/01-foundation.md), Task 12 | Done |
 
 ## Out of scope
 
@@ -45,4 +45,4 @@ The shared [Definition of Done](./README.md#definition-of-done) applies, plus ev
 - [x] Acceptance criterion 1
 - [x] Acceptance criterion 2
 - [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
+- [x] Acceptance criterion 4
