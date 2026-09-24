@@ -7,3 +7,13 @@ export async function getMe(userId: string): Promise<PublicUser> {
   if (!user) throw new AppError(401, 'Not authorized')
   return toPublicUser(user)
 }
+
+export async function updateProfile(userId: string, input: { name: string }): Promise<PublicUser> {
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { name: input.name },
+    { returnDocument: 'after' },
+  ).lean()
+  if (!user) throw new AppError(401, 'Not authorized')
+  return toPublicUser(user)
+}

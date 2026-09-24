@@ -3,12 +3,17 @@ import { requireAuth } from '../../shared/middleware/requireAuth.ts'
 import { authRateLimiter, mailRateLimiter } from '../../shared/middleware/rateLimiters.ts'
 import { validate } from '../../shared/middleware/validate.ts'
 import {
+  changePasswordSchema,
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resendVerificationSchema,
+  resetPasswordSchema,
+  updateProfileSchema,
   verifyEmailSchema,
 } from './auth.schemas.ts'
-import { me } from './profile.controller.ts'
+import { changePassword, forgotPassword, resetPassword } from './password.controller.ts'
+import { me, updateMe } from './profile.controller.ts'
 import { register, resendVerification, verifyEmail } from './registration.controller.ts'
 import { login, logout, refresh } from './session.controller.ts'
 
@@ -31,3 +36,23 @@ authRouter.get('/me', requireAuth, me)
 authRouter.post('/login', authRateLimiter, validate({ body: loginSchema }), login)
 authRouter.post('/refresh', authRateLimiter, refresh)
 authRouter.post('/logout', logout)
+authRouter.post(
+  '/forgot-password',
+  mailRateLimiter,
+  validate({ body: forgotPasswordSchema }),
+  forgotPassword,
+)
+authRouter.post(
+  '/reset-password',
+  authRateLimiter,
+  validate({ body: resetPasswordSchema }),
+  resetPassword,
+)
+authRouter.post(
+  '/change-password',
+  authRateLimiter,
+  requireAuth,
+  validate({ body: changePasswordSchema }),
+  changePassword,
+)
+authRouter.patch('/me', requireAuth, validate({ body: updateProfileSchema }), updateMe)

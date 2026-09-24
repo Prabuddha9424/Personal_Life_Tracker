@@ -38,3 +38,17 @@ export const loginSchema = z.object({
 })
 
 export type LoginInput = z.infer<typeof loginSchema>
+
+export const forgotPasswordSchema = z.object({ email: emailSchema })
+
+export const resetPasswordSchema = z.object({ token: tokenSchema, password: passwordSchema })
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: passwordSchema,
+})
+
+export const updateProfileSchema = z.object({ name: z.string().trim().min(1).max(80) })
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>
