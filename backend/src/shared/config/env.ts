@@ -9,7 +9,8 @@ const envSchema = z.object({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   CRON_SECRET: z.string().min(32, 'CRON_SECRET must be at least 32 characters'),
-  CLIENT_URL: z.url(),
+  // Only the origin is used (CORS and email links), so a trailing slash or path is dropped.
+  CLIENT_URL: z.url().transform((url) => new URL(url).origin),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_USER: z.string().default(''),
