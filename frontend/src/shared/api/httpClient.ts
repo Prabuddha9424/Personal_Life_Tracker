@@ -29,9 +29,15 @@ export const httpClient = axios.create({
   withCredentials: true,
 })
 
+/**
+ * The token is stamped once, when a request is first sent. A resend of the same request (the
+ * cold-start retry) keeps that token instead of picking up whoever is signed in by then, so a
+ * request sent by one user is never carried out as the next one. A retry after a session refresh
+ * clears the header on purpose to get the renewed token.
+ */
 httpClient.interceptors.request.use((config) => {
   const token = getAccessToken()
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  if (token && !config.headers.Authorization) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
@@ -45,7 +51,10 @@ httpClient.interceptors.response.use(
       const sent = config?.headers.Authorization
       if (config && !config.skipAuthRefresh && !config.authRetried && sent) {
         config.authRetried = true
-        if (await onUnauthorized(String(sent))) return httpClient.request(config)
+        if (await onUnauthorized(String(sent))) {
+          config.headers.delete('Authorization')
+          return httpClient.request(config)
+        }
       }
     }
     return Promise.reject(error)

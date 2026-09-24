@@ -110,6 +110,43 @@ describe('httpClient auth handling', () => {
   })
 })
 
+describe('httpClient resending a request while the server wakes up', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('resends with the token the request was first sent with, not whoever is signed in by then', async () => {
+    vi.useFakeTimers()
+    let token = 'ada'
+    const calls = useServer(() => (calls.length === 1 ? 503 : 200))
+    configureAuth({ getToken: () => token, onUnauthorized: async () => false })
+
+    const request = httpClient.get('/things')
+    await vi.advanceTimersByTimeAsync(0)
+    token = 'bob'
+    await vi.advanceTimersByTimeAsync(5000)
+    await request
+
+    expect(calls).toEqual(['Bearer ada', 'Bearer ada'])
+  })
+
+  it('still stamps the renewed token when a request is retried after a refresh', async () => {
+    let token = 'old'
+    const calls = useServer((config) => (bearer(config) === 'Bearer old' ? 401 : 200))
+    configureAuth({
+      getToken: () => token,
+      onUnauthorized: async () => {
+        token = 'new'
+        return true
+      },
+    })
+
+    await httpClient.get('/things')
+
+    expect(calls).toEqual(['Bearer old', 'Bearer new'])
+  })
+})
+
 describe('getErrorMessage', () => {
   it('prefers the API message, then the error message, then a generic one', () => {
     const apiError = new AxiosError('Request failed', 'ERR_BAD_REQUEST', undefined, null, {
