@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Progress |
 | **Epic** | E0 Project setup |
 | **Priority** | Must |
 | **Size** | L |
@@ -27,7 +27,7 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-004-T1 | Write the design tokens and base styles (dark default, light values) and the primitives: Button, Spinner, Card, Loading/Empty/Error views, FormField, with tests | [M0 Foundation](../plans/01-foundation.md), Task 6 | To do |
+| US-004-T1 | Write the design tokens and base styles (dark default, light values) and the primitives: Button, Spinner, Card, Loading/Empty/Error views, FormField, with tests | [M0 Foundation](../plans/01-foundation.md), Task 6 | Done |
 | US-004-T2 | Add the accessible Modal (focus handling, Escape, backdrop, focus trap) and toast notifications with tests | [M0 Foundation](../plans/01-foundation.md), Task 8 | To do |
 | US-004-T3 | Add the app shell (sidebar, top bar, mobile drawer), the navigation list, the root layout and the `renderWithProviders` test helper, with tests | [M0 Foundation](../plans/01-foundation.md), Task 9 | To do |
 | US-004-T4 | Look at the shell in a browser at desktop and phone widths | [M0 Foundation](../plans/01-foundation.md), Task 9, step 5 | To do |
