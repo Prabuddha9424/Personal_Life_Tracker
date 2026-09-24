@@ -1,7 +1,13 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 
-const FOCUSABLE =
-  'input, select, textarea, button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+const FOCUSABLE = [
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  'button:not([disabled])',
+  'a[href]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ')
 
 interface ModalProps {
   title: string
@@ -27,15 +33,25 @@ export function Modal({ title, onClose, children }: ModalProps) {
         onClose()
         return
       }
-      if (event.key !== 'Tab' || !dialogRef.current) return
-      const items = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+      const dialog = dialogRef.current
+      if (event.key !== 'Tab' || !dialog) return
+      const items = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE))
       const first = items[0]
       const last = items.at(-1)
-      if (!first || !last) return
-      if (event.shiftKey && document.activeElement === first) {
+      if (!first || !last) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
+      const active = document.activeElement
+      if (!dialog.contains(active) || active === dialog) {
+        event.preventDefault()
+        const target = event.shiftKey ? last : first
+        target.focus()
+      } else if (event.shiftKey && active === first) {
         event.preventDefault()
         last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
+      } else if (!event.shiftKey && active === last) {
         event.preventDefault()
         first.focus()
       }
