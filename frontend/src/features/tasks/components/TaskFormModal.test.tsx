@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -77,17 +77,41 @@ describe('TaskFormModal (create)', () => {
     )
 
     await userEvent.type(screen.getByLabelText('Title'), 'x')
-    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    const form = screen
+      .getByRole('button', { name: 'Create task' })
+      .closest('form') as HTMLFormElement
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+    await waitFor(() => expect(taskApi.createTask).toHaveBeenCalled())
+    await act(async () => {})
 
-    const submit = await screen.findByRole('button', { name: 'Create task' })
-    await waitFor(() => expect(submit).toBeDisabled())
+    expect(taskApi.createTask).toHaveBeenCalledTimes(1)
+    const submit = screen.getByRole('button', { name: 'Create task' })
+    expect(submit).toBeDisabled()
     expect(submit).toHaveAttribute('aria-busy', 'true')
-    await userEvent.click(submit)
-    fireEvent.submit(submit.closest('form') as HTMLFormElement)
+    fireEvent.submit(form)
+    await act(async () => {})
     expect(taskApi.createTask).toHaveBeenCalledTimes(1)
 
     finish(existing)
     await waitFor(() => expect(submit).toBeEnabled())
+  })
+
+  it('clears a failed create when the next submit fails validation', async () => {
+    vi.mocked(taskApi.createTask).mockRejectedValue(new Error('Network Error'))
+    renderWithProviders(
+      <TaskFormModal mode={{ kind: 'create', status: 'todo' }} onClose={() => {}} />,
+    )
+
+    await userEvent.type(screen.getByLabelText('Title'), 'x')
+    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    expect(await screen.findByText('Network Error')).toBeInTheDocument()
+
+    await userEvent.clear(screen.getByLabelText('Title'))
+    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+
+    expect(await screen.findByText('Enter a title')).toBeInTheDocument()
+    expect(screen.queryByText('Network Error')).not.toBeInTheDocument()
   })
 
   it('creates a task in the column it was opened from and closes', async () => {
@@ -176,6 +200,73 @@ describe('TaskFormModal (edit)', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Server down')
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('drops a failed delete message once the user keeps the task', async () => {
+    vi.mocked(taskApi.deleteTask).mockRejectedValue(new Error('Server down'))
+    renderWithProviders(
+      <TaskFormModal mode={{ kind: 'edit', task: existing }} onClose={() => {}} />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Yes, delete' }))
+    expect(await screen.findByText('Server down')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Keep it' }))
+
+    expect(screen.queryByText('Server down')).not.toBeInTheDocument()
+  })
+
+  it('describes the confirmation group by its question', async () => {
+    renderWithProviders(
+      <TaskFormModal mode={{ kind: 'edit', task: existing }} onClose={() => {}} />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+
+    expect(screen.getByRole('group', { name: 'Confirm deletion' })).toHaveAccessibleDescription(
+      'Delete this task? This cannot be undone.',
+    )
+  })
+
+  it('locks saving while the delete confirmation is showing or running', async () => {
+    let finish: () => void = () => {}
+    vi.mocked(taskApi.deleteTask).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finish = resolve
+      }),
+    )
+    renderWithProviders(
+      <TaskFormModal mode={{ kind: 'edit', task: existing }} onClose={() => {}} />,
+    )
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
+    expect(screen.getByLabelText('Title')).toBeDisabled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Yes, delete' }))
+    await waitFor(() => expect(taskApi.deleteTask).toHaveBeenCalled())
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Save changes' }).closest('form') as HTMLFormElement,
+    )
+    await act(async () => {})
+    expect(taskApi.updateTask).not.toHaveBeenCalled()
+
+    finish()
+    await act(async () => {})
+  })
+
+  it('re-enables the form when the user keeps the task', async () => {
+    renderWithProviders(
+      <TaskFormModal mode={{ kind: 'edit', task: existing }} onClose={() => {}} />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Keep it' }))
+
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled()
+    expect(screen.getByLabelText('Title')).toBeEnabled()
   })
 
   it('moves focus to the safe choice when asking to confirm and back when cancelled', async () => {
