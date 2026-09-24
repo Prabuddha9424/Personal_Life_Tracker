@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Progress |
 | **Epic** | E0 Project setup |
 | **Priority** | Must |
 | **Size** | M |
@@ -26,8 +26,8 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-005-T1 | Add the server-status store, the type augmentation, the cold-start retry interceptor (GET and HEAD only) and the warm-up call, with tests | [M0 Foundation](../plans/01-foundation.md), Task 10, steps 1-3 | To do |
-| US-005-T2 | Add the waking-up banner and mount it in the root layout, with a test | [M0 Foundation](../plans/01-foundation.md), Task 10, step 4 | To do |
+| US-005-T1 | Add the server-status store, the type augmentation, the cold-start retry interceptor (GET and HEAD only) and the warm-up call, with tests | [M0 Foundation](../plans/01-foundation.md), Task 10, steps 1-3 | Done |
+| US-005-T2 | Add the waking-up banner and mount it in the root layout, with a test | [M0 Foundation](../plans/01-foundation.md), Task 10, step 4 | Done |
 | US-005-T3 | Confirm session restore pings the backend first (delivered with US-011) | [M1 Auth](../plans/02-auth.md), Task 9 (`bootstrapSession`) | To do |
 | US-005-T4 | Confirm on the real deployment that the first request after 20 minutes idle shows the banner and recovers | [M6 Deploy and pilot](../plans/07-deploy-pilot.md), Task 6, step 4 | To do |
 
