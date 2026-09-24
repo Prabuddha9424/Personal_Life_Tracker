@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { formatMinorUnits, minorToMajor, minorUnitDigits, toMinorUnits } from './money'
+import {
+  formatMinorForInput,
+  formatMinorUnits,
+  isValidCurrencyCode,
+  minorToMajor,
+  minorUnitDigits,
+  toMinorUnits,
+} from './money'
 
 describe('minorUnitDigits', () => {
   it.each([
@@ -84,5 +91,56 @@ describe('minorToMajor', () => {
     expect(minorToMajor(1234, 'USD')).toBe(12.34)
     expect(minorToMajor(500, 'JPY')).toBe(500)
     expect(minorToMajor(1234, 'BHD')).toBe(1.234)
+  })
+})
+
+describe('formatMinorForInput', () => {
+  it.each([
+    [1234, 'USD', '12.34'],
+    [5, 'USD', '0.05'],
+    [0, 'USD', '0.00'],
+    [100000, 'USD', '1000.00'],
+    [500, 'JPY', '500'],
+    [1234, 'BHD', '1.234'],
+    [7, 'BHD', '0.007'],
+    [-5, 'USD', '-0.05'],
+    [-1234, 'BHD', '-1.234'],
+    [-500, 'JPY', '-500'],
+  ])('shows %i minor units of %s as %s', (minor, currency, expected) => {
+    expect(formatMinorForInput(minor, currency)).toBe(expected)
+  })
+
+  it('round-trips with toMinorUnits for every supported exponent', () => {
+    for (const [minor, currency] of [
+      [1, 'USD'],
+      [999999999, 'USD'],
+      [42, 'JPY'],
+      [1001, 'BHD'],
+      [1_000_000_000_000, 'BHD'],
+    ] as const) {
+      expect(toMinorUnits(formatMinorForInput(minor, currency), currency)).toBe(minor)
+    }
+  })
+
+  it('refuses a value that is not a safe integer instead of printing a float', () => {
+    expect(() => formatMinorForInput(12.5, 'USD')).toThrow(RangeError)
+    expect(() => formatMinorForInput(1e21, 'USD')).toThrow(RangeError)
+  })
+})
+
+describe('an invalid currency code', () => {
+  it.each(['', 'US', 'USDX', 'U$D', '123', 'us d'])('%j is not a valid code', (code) => {
+    expect(isValidCurrencyCode(code)).toBe(false)
+  })
+
+  it.each(['USD', 'jpy', 'BHD'])('%j is a valid code', (code) => {
+    expect(isValidCurrencyCode(code)).toBe(true)
+  })
+
+  it('never reaches Intl.NumberFormat: the helpers stay safe instead of throwing', () => {
+    expect(minorUnitDigits('not-a-currency')).toBe(2)
+    expect(toMinorUnits('12.34', 'not-a-currency')).toBeNull()
+    expect(formatMinorForInput(1234, '')).toBe('12.34')
+    expect(formatMinorUnits(1234, 'US$', 'en-US')).toBe('12.34 US$')
   })
 })

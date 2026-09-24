@@ -1,8 +1,19 @@
-/** Number of digits after the decimal point in the currency's minor unit (USD 2, JPY 0, BHD 3). */
+const DEFAULT_MINOR_UNIT_DIGITS = 2
+
+/** Whether `code` is well formed (three letters), which is all Intl.NumberFormat requires to not throw. */
+export function isValidCurrencyCode(code: string): boolean {
+  return /^[A-Za-z]{3}$/.test(code)
+}
+
+/**
+ * Number of digits after the decimal point in the currency's minor unit (USD 2, JPY 0, BHD 3).
+ * A malformed code never reaches Intl.NumberFormat (it would throw); it reads as 2 digits.
+ */
 export function minorUnitDigits(currency: string): number {
+  if (!isValidCurrencyCode(currency)) return DEFAULT_MINOR_UNIT_DIGITS
   return (
     new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions()
-      .maximumFractionDigits ?? 2
+      .maximumFractionDigits ?? DEFAULT_MINOR_UNIT_DIGITS
   )
 }
 
@@ -16,6 +27,7 @@ export function minorUnitDigits(currency: string): number {
  * groups ("1,234.567") are unambiguous thousands.
  */
 export function toMinorUnits(input: string, currency: string): number | null {
+  if (!isValidCurrencyCode(currency)) return null
   const digits = minorUnitDigits(currency)
   let text = input.trim().replace(/\s/g, '')
 
@@ -47,7 +59,24 @@ export function minorToMajor(minor: number, currency: string): number {
 
 /** For display only: the stored value stays an integer in minor units. */
 export function formatMinorUnits(minor: number, currency: string, locale?: string): string {
+  if (!isValidCurrencyCode(currency)) {
+    return `${new Intl.NumberFormat(locale, {
+      minimumFractionDigits: DEFAULT_MINOR_UNIT_DIGITS,
+      maximumFractionDigits: DEFAULT_MINOR_UNIT_DIGITS,
+    }).format(minorToMajor(minor, currency))} ${currency}`
+  }
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(
     minorToMajor(minor, currency),
   )
+}
+
+/** What a person would type for this amount: integer arithmetic only, no floats. */
+export function formatMinorForInput(minor: number, currency: string): string {
+  if (!Number.isSafeInteger(minor)) throw new RangeError('Minor units must be a safe integer')
+  const sign = minor < 0 ? '-' : ''
+  const absolute = String(Math.abs(minor))
+  const digits = minorUnitDigits(currency)
+  if (digits === 0) return `${sign}${absolute}`
+  const padded = absolute.padStart(digits + 1, '0')
+  return `${sign}${padded.slice(0, -digits)}.${padded.slice(-digits)}`
 }
