@@ -1,7 +1,8 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { Route, Routes, useLocation } from 'react-router'
+import { StrictMode } from 'react'
+import { Route, Routes, useLocation, useNavigationType } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 import * as authApi from '../api/authApi'
@@ -12,22 +13,29 @@ vi.mock('../api/authApi')
 const TOKEN = 'b'.repeat(64)
 
 function LocationProbe() {
-  return <output aria-label="search">{useLocation().search}</output>
+  return (
+    <>
+      <output aria-label="search">{useLocation().search}</output>
+      <output aria-label="navigation">{useNavigationType()}</output>
+    </>
+  )
 }
 
 function renderReset(route: string) {
   return renderWithProviders(
-    <Routes>
-      <Route
-        path="/reset-password"
-        element={
-          <>
-            <ResetPasswordPage />
-            <LocationProbe />
-          </>
-        }
-      />
-    </Routes>,
+    <StrictMode>
+      <Routes>
+        <Route
+          path="/reset-password"
+          element={
+            <>
+              <ResetPasswordPage />
+              <LocationProbe />
+            </>
+          }
+        />
+      </Routes>
+    </StrictMode>,
     { route },
   )
 }
@@ -63,10 +71,21 @@ describe('ResetPasswordPage', () => {
     expect(screen.queryByLabelText('New password')).not.toBeInTheDocument()
   })
 
-  it('removes the token from the address bar', () => {
+  it('replaces the token in the address bar (no new history entry) and still uses it once to submit', async () => {
+    vi.mocked(authApi.resetPassword).mockResolvedValue()
     renderReset(`/reset-password?token=${TOKEN}`)
 
     expect(screen.getByLabelText('search').textContent).toBe('')
+    expect(screen.getByLabelText('navigation').textContent).toBe('REPLACE')
+
+    await fill('a-long-passphrase', 'a-long-passphrase')
+
+    expect(await screen.findByText(/password has been changed/i)).toBeInTheDocument()
+    expect(authApi.resetPassword).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(authApi.resetPassword).mock.calls[0]?.[0]).toEqual({
+      token: TOKEN,
+      password: 'a-long-passphrase',
+    })
   })
 
   it('rejects mismatched passwords without calling the API', async () => {
@@ -102,6 +121,25 @@ describe('ResetPasswordPage', () => {
 
     expect(await screen.findByText(/invalid or has expired/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Request a new link' })).toBeInTheDocument()
+  })
+
+  it('treats a rejected token as a dead link even when the password is also flagged', async () => {
+    vi.mocked(authApi.resetPassword).mockRejectedValue(
+      badRequest({
+        message: 'Validation failed',
+        errors: [
+          { path: 'token', message: 'Invalid token' },
+          { path: 'password', message: 'That password is too common' },
+        ],
+      }),
+    )
+    renderReset(`/reset-password?token=${TOKEN}`)
+
+    await fill('password123456', 'password123456')
+
+    expect(await screen.findByText(/invalid or has expired/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Request a new link' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('New password')).not.toBeInTheDocument()
   })
 
   it('shows why a rejected password was refused and keeps the form so the link can be retried', async () => {

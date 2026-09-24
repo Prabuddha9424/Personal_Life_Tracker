@@ -36,7 +36,9 @@ export default function ResetPasswordPage() {
 
   // A 400 that explains itself through the password field is a rejected password, not a dead
   // link: the token was not consumed, so keep the form and let the user try another password.
-  const passwordRejected = hasFieldErrorFor(reset.error, FIELDS)
+  // If the token itself is also rejected it can never succeed, so treat that as a dead link.
+  const passwordRejected =
+    hasFieldErrorFor(reset.error, FIELDS) && !hasFieldErrorFor(reset.error, ['token'])
   const linkExpired =
     axios.isAxiosError(reset.error) && reset.error.response?.status === 400 && !passwordRejected
 

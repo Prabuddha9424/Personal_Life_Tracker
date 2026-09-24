@@ -70,6 +70,33 @@ describe('VerifyEmailPage', () => {
     expect(screen.getByLabelText('search').textContent).toBe('')
   })
 
+  it('offers a retry with the same token when the failure is not a bad link', async () => {
+    vi.mocked(authApi.verifyEmail)
+      .mockRejectedValueOnce(
+        new AxiosError('bad', 'ERR_BAD_RESPONSE', undefined, null, {
+          status: 503,
+          statusText: '',
+          data: {},
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        }),
+      )
+      .mockResolvedValueOnce()
+
+    renderVerify(`/verify-email?token=${TOKEN}`)
+
+    expect(await screen.findByText(/server is waking up/i)).toBeInTheDocument()
+    expect(screen.queryByText(/invalid or has expired/i)).not.toBeInTheDocument()
+    expect(authApi.verifyEmail).toHaveBeenCalledTimes(1)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByRole('heading', { name: 'Email verified' })).toBeInTheDocument()
+    expect(authApi.verifyEmail).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(authApi.verifyEmail).mock.calls[1]?.[0]).toEqual({ token: TOKEN })
+    expect(screen.getByLabelText('search').textContent).toBe('')
+  })
+
   it('asks the user to check their inbox when there is no token, without calling the API', () => {
     renderVerify('/verify-email')
 
