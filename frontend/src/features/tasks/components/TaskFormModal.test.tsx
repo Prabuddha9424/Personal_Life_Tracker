@@ -269,6 +269,26 @@ describe('TaskFormModal (edit)', () => {
     expect(screen.getByLabelText('Title')).toBeEnabled()
   })
 
+  it('ignores Keep it in the same tick as Yes, delete, so the delete can still finish and close', async () => {
+    let finish: () => void = () => undefined
+    vi.mocked(taskApi.deleteTask).mockReturnValue(
+      new Promise<void>((resolve) => (finish = resolve)),
+    )
+    const onClose = vi.fn()
+    renderWithProviders(<TaskFormModal mode={{ kind: 'edit', task: existing }} onClose={onClose} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+    const yes = screen.getByRole('button', { name: 'Yes, delete' })
+    const keep = screen.getByRole('button', { name: 'Keep it' })
+
+    await act(async () => {
+      yes.click()
+      keep.click()
+    })
+    await act(async () => finish())
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+  })
+
   it('moves focus to the safe choice when asking to confirm and back when cancelled', async () => {
     renderWithProviders(
       <TaskFormModal mode={{ kind: 'edit', task: existing }} onClose={() => {}} />,

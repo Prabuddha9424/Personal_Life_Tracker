@@ -107,6 +107,8 @@ export function TaskFormModal({ mode, onClose }: TaskFormModalProps) {
   }
 
   function onKeepTask() {
+    // Resetting a running delete would drop its callbacks and leave the form locked for good.
+    if (inFlight.current) return
     deleteTask.reset()
     setConfirmingDelete(false)
   }
