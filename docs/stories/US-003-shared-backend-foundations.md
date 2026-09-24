@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | In Progress |
+| **Status** | In Review |
 | **Epic** | E0 Project setup |
 | **Priority** | Must |
 | **Size** | M |
@@ -29,8 +29,8 @@
 | US-003-T1 | Add `REFRESH_TOKEN_TTL_DAYS`, `TRUST_PROXY_HOPS` and `CRON_SECRET` to the validated env, the test env and `.env.example`; use the hop count for `trust proxy` | [M0 Foundation](../plans/01-foundation.md), Task 3, step 3 | Done |
 | US-003-T2 | Add the rate-limiter factory and the `auth`, `mail` and `internal` limiters, with a test | [M0 Foundation](../plans/01-foundation.md), Task 3, steps 1-2 | Done |
 | US-003-T3 | Add the `requireCronSecret` guard with a test covering missing, wrong, empty and different-length secrets | [M0 Foundation](../plans/01-foundation.md), Task 4 | Done |
-| US-003-T4 | Add the shared request schemas (id, pagination, calendar date, month) with tests | [M0 Foundation](../plans/01-foundation.md), Task 5, steps 1-2 | To do |
-| US-003-T5 | Add the UTC calendar-date helpers with tests | [M0 Foundation](../plans/01-foundation.md), Task 5, steps 3-4 | To do |
+| US-003-T4 | Add the shared request schemas (id, pagination, calendar date, month) with tests | [M0 Foundation](../plans/01-foundation.md), Task 5, steps 1-2 | Done |
+| US-003-T5 | Add the UTC calendar-date helpers with tests | [M0 Foundation](../plans/01-foundation.md), Task 5, steps 3-4 | Done |
 
 ## Out of scope
 
@@ -46,6 +46,6 @@ The shared [Definition of Done](./README.md#definition-of-done) applies, plus ev
 
 - [ ] Acceptance criterion 1
 - [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
