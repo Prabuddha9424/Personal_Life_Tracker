@@ -1,5 +1,5 @@
 import { request } from '../../test/http.ts'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { app } from '../../app.ts'
 import { testUser } from '../../test/auth.ts'
 import { clearTestDb, startTestDb, stopTestDb } from '../../test/mongo.ts'
@@ -163,6 +163,20 @@ describe('PATCH /api/tasks/:id', () => {
     expect(res.status).toBe(200)
     expect(res.body.status).toBe('todo')
     expect(res.body.position).toBe(created.body.position)
+  })
+
+  it('answers 404 rather than 500 when the task is deleted just before the write lands', async () => {
+    const created = await create({ title: 'doomed' })
+    const write = Task.findOneAndUpdate.bind(Task)
+    vi.spyOn(Task, 'findOneAndUpdate').mockImplementationOnce(((
+      ...args: Parameters<typeof write>
+    ) => {
+      return Task.deleteOne({ _id: created.body.id }).then(() => write(...args))
+    }) as typeof write)
+
+    await patch(created.body.id, { title: 'too late' }).expect(404)
+
+    expect(await Task.countDocuments()).toBe(0)
   })
 
   it('rejects an empty update, a blank title and an unknown id', async () => {

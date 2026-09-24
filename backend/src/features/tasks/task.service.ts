@@ -1,4 +1,4 @@
-import { Types, type QueryFilter } from 'mongoose'
+import { Types, type QueryFilter, type UpdateQuery } from 'mongoose'
 import { parseCalendarDate } from '../../shared/dates/calendarDate.ts'
 import { AppError } from '../../shared/errors/AppError.ts'
 import { paginated, toSkip, type Paginated } from '../../shared/validation/requestSchemas.ts'
@@ -57,19 +57,21 @@ export async function updateTask(
   id: string,
   input: UpdateTaskInput,
 ): Promise<TaskDto> {
-  const task = await Task.findOne({ _id: id, userId: new Types.ObjectId(userId) })
-  if (!task) throw new AppError(404, 'Task not found')
-
-  if (input.title !== undefined) task.title = input.title
-  if (input.description !== undefined) task.description = input.description
-  if (input.priority !== undefined) task.priority = input.priority
-  if (input.tags !== undefined) task.tags = input.tags
-  if (input.dueDate !== undefined) {
-    task.dueDate = input.dueDate === null ? undefined : parseCalendarDate(input.dueDate)
+  const changes: UpdateQuery<TaskAttrs> = {}
+  const { dueDate, ...fields } = input
+  if (Object.keys(fields).length > 0) changes.$set = fields
+  if (dueDate !== undefined) {
+    if (dueDate === null) changes.$unset = { dueDate: 1 }
+    else changes.$set = { ...changes.$set, dueDate: parseCalendarDate(dueDate) }
   }
 
-  await task.save()
-  return toTaskDto(task.toObject<TaskRecord>())
+  const task = (await Task.findOneAndUpdate(
+    { _id: id, userId: new Types.ObjectId(userId) },
+    changes,
+    { returnDocument: 'after', runValidators: true, lean: true },
+  )) as TaskRecord | null
+  if (!task) throw new AppError(404, 'Task not found')
+  return toTaskDto(task)
 }
 
 export async function deleteTask(userId: string, id: string): Promise<void> {
