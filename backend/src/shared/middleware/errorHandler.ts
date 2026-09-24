@@ -4,6 +4,7 @@ import { ZodError } from 'zod'
 import { isProduction } from '../config/env.ts'
 import { AppError } from '../errors/AppError.ts'
 import { logger } from '../logger/logger.ts'
+import { pathOnly } from '../logger/pathOnly.ts'
 
 interface ErrorBody {
   message: string
@@ -44,7 +45,7 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req, res, _next)
   }
 
   if (status >= 500) {
-    logger.error({ err, method: req.method, url: req.originalUrl }, 'Unhandled error')
+    logger.error({ err, method: req.method, url: pathOnly(req.originalUrl) }, 'Unhandled error')
     if (!isProduction && err instanceof Error) body.message = err.message
   }
 
