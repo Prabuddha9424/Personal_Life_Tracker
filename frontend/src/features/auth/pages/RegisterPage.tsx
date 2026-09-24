@@ -5,10 +5,13 @@ import { getErrorMessage } from '@/shared/api/httpClient'
 import { Button } from '@/shared/ui/Button'
 import { FormField } from '@/shared/ui/FormField'
 import { pushToast } from '@/shared/ui/toast'
+import { applyFieldErrors, hasFieldErrorFor } from '../apiErrors'
 import { useRegister, useResendVerification } from '../api/hooks'
 import { AuthLayout } from '../components/AuthLayout'
 import { CURRENCY_OPTIONS } from '../currencies'
 import { registerFormSchema, type RegisterForm } from '../schemas'
+
+const FIELDS = ['name', 'email', 'password', 'currency'] as const
 
 export default function RegisterPage() {
   const registerUser = useRegister()
@@ -17,6 +20,7 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     getValues,
+    setError,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerFormSchema),
@@ -31,6 +35,7 @@ export default function RegisterPage() {
           We sent a verification link to <strong>{email}</strong>. It expires in 24 hours, so open
           it soon.
         </p>
+        {resend.isError && <p className="form-error">{getErrorMessage(resend.error)}</p>}
         <Button
           loading={resend.isPending}
           onClick={() =>
@@ -57,14 +62,25 @@ export default function RegisterPage() {
       title="Create your account"
       footer={<Link to="/login">I already have an account</Link>}
     >
-      <form onSubmit={handleSubmit((values) => registerUser.mutate(values))} noValidate>
+      <form
+        onSubmit={handleSubmit((values) =>
+          registerUser.mutate(values, {
+            onError: (error) => applyFieldErrors(error, setError, FIELDS),
+          }),
+        )}
+        noValidate
+      >
         <FormField label="Name" error={errors.name?.message}>
           <input autoComplete="name" {...register('name')} />
         </FormField>
         <FormField label="Email" error={errors.email?.message}>
           <input type="email" autoComplete="email" {...register('email')} />
         </FormField>
-        <FormField label="Password" error={errors.password?.message} hint="At least 10 characters">
+        <FormField
+          label="Password"
+          error={errors.password?.message}
+          hint="At least 10 characters, and not a common password"
+        >
           <input type="password" autoComplete="new-password" {...register('password')} />
         </FormField>
         <FormField
@@ -80,7 +96,7 @@ export default function RegisterPage() {
             ))}
           </select>
         </FormField>
-        {registerUser.isError && (
+        {registerUser.isError && !hasFieldErrorFor(registerUser.error, FIELDS) && (
           <p className="form-error">{getErrorMessage(registerUser.error)}</p>
         )}
         <Button type="submit" variant="primary" loading={registerUser.isPending}>

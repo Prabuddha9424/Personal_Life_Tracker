@@ -111,6 +111,21 @@ describe('LoginPage', () => {
     })
   })
 
+  it('shows why resending the verification email failed', async () => {
+    vi.mocked(authApi.login).mockRejectedValue(
+      apiError(403, 'Please verify your email before logging in'),
+    )
+    vi.mocked(authApi.resendVerification).mockRejectedValue(apiError(503, 'unavailable'))
+    renderLogin()
+
+    await fillAndSubmit()
+    await userEvent.click(await screen.findByRole('button', { name: 'Resend verification email' }))
+
+    expect(
+      await screen.findByText('The server is waking up. Please try again in a moment.'),
+    ).toBeInTheDocument()
+  })
+
   it('links to registration and password reset', () => {
     renderLogin()
 

@@ -41,7 +41,7 @@ export default function LoginPage() {
 
   function onResend() {
     resend.mutate(
-      { email: getValues('email') },
+      { email: getValues('email').trim() },
       {
         onSuccess: () =>
           pushToast('If that account needs verifying, a new link is on its way.', 'success'),
@@ -70,6 +70,7 @@ export default function LoginPage() {
         <Button type="submit" variant="primary" loading={login.isPending}>
           Log in
         </Button>
+        {resend.isError && <p className="form-error">{getErrorMessage(resend.error)}</p>}
         {unverified && (
           <Button onClick={onResend} loading={resend.isPending}>
             Resend verification email

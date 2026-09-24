@@ -33,7 +33,9 @@ describe('RegisterPage', () => {
   it('announces validation errors and hints together with their fields', async () => {
     renderWithProviders(<RegisterPage />)
 
-    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('At least 10 characters')
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(
+      'At least 10 characters, and not a common password',
+    )
 
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
 
@@ -83,6 +85,75 @@ describe('RegisterPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
 
     expect(await screen.findByText('Validation failed')).toBeInTheDocument()
+  })
+
+  it('shows the reason the server gives for a rejected password next to that field', async () => {
+    vi.mocked(authApi.register).mockRejectedValue(
+      new AxiosError('bad', 'ERR_BAD_REQUEST', undefined, null, {
+        status: 400,
+        statusText: '',
+        data: {
+          message: 'Validation failed',
+          errors: [{ path: 'password', message: 'That password is too common' }],
+        },
+        headers: {},
+        config: {} as InternalAxiosRequestConfig,
+      }),
+    )
+    renderWithProviders(<RegisterPage />)
+
+    await fillForm('password123')
+    await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    const password = screen.getByLabelText('Password')
+    expect(await screen.findByText('That password is too common')).toBeInTheDocument()
+    expect(password).toHaveAttribute('aria-invalid', 'true')
+    expect(password).toHaveAccessibleDescription('That password is too common')
+    expect(screen.queryByText('Validation failed')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).not.toHaveAttribute('aria-invalid')
+  })
+
+  it('clears the server reason once the password is edited', async () => {
+    vi.mocked(authApi.register).mockRejectedValue(
+      new AxiosError('bad', 'ERR_BAD_REQUEST', undefined, null, {
+        status: 400,
+        statusText: '',
+        data: {
+          message: 'Validation failed',
+          errors: [{ path: 'password', message: 'That password is too common' }],
+        },
+        headers: {},
+        config: {} as InternalAxiosRequestConfig,
+      }),
+    )
+    renderWithProviders(<RegisterPage />)
+    await fillForm('password123')
+    await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
+    await screen.findByText('That password is too common')
+
+    await userEvent.type(screen.getByLabelText('Password'), '-x')
+
+    expect(screen.queryByText('That password is too common')).not.toBeInTheDocument()
+  })
+
+  it('shows why resending the email failed', async () => {
+    vi.mocked(authApi.register).mockResolvedValue()
+    vi.mocked(authApi.resendVerification).mockRejectedValue(
+      new AxiosError('bad', 'ERR_BAD_REQUEST', undefined, null, {
+        status: 429,
+        statusText: '',
+        data: { message: 'Too many requests, please try again later' },
+        headers: {},
+        config: {} as InternalAxiosRequestConfig,
+      }),
+    )
+    renderWithProviders(<RegisterPage />)
+    await fillForm()
+    await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Resend the email' }))
+
+    expect(await screen.findByText('Too many requests, please try again later')).toBeInTheDocument()
   })
 
   it('can resend the verification email from the confirmation screen', async () => {
