@@ -512,7 +512,7 @@ git commit -m "feat(backend): add cron secret guard for internal endpoints" -m "
 
 Three slices need these (tasks, finance, fixed expenses), which meets the promote-to-`shared/` threshold.
 
-- [ ] **Step 1: Write the failing validation tests**
+- [x] **Step 1: Write the failing validation tests**
 
 Create `backend/src/shared/validation/requestSchemas.test.ts`:
 
@@ -599,7 +599,7 @@ describe('monthSchema', () => {
 
 Run: `npx vitest run src/shared/validation` → FAIL (module missing).
 
-- [ ] **Step 2: Implement the schemas**
+- [x] **Step 2: Implement the schemas**
 
 Create `backend/src/shared/validation/requestSchemas.ts`:
 
@@ -644,7 +644,7 @@ export function paginated<T>(items: T[], total: number, { page, limit }: PageArg
 
 Run the tests → PASS.
 
-- [ ] **Step 3: Write the failing date tests**
+- [x] **Step 3: Write the failing date tests**
 
 Create `backend/src/shared/dates/calendarDate.test.ts`:
 
@@ -706,7 +706,7 @@ describe('months', () => {
 
 Run: `npx vitest run src/shared/dates` → FAIL.
 
-- [ ] **Step 4: Implement the date helpers**
+- [x] **Step 4: Implement the date helpers**
 
 Create `backend/src/shared/dates/calendarDate.ts`:
 
@@ -754,7 +754,7 @@ export function monthRange(month: string): { start: Date; end: Date } {
 
 Run the date tests → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
