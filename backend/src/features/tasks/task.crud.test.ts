@@ -4,6 +4,7 @@ import { app } from '../../app.ts'
 import { testUser } from '../../test/auth.ts'
 import { clearTestDb, startTestDb, stopTestDb } from '../../test/mongo.ts'
 import { Task } from './task.model.ts'
+import { insertTask } from './task.test-helpers.ts'
 
 beforeAll(startTestDb)
 afterEach(clearTestDb)
@@ -71,6 +72,18 @@ describe('POST /api/tasks', () => {
     expect(todo.body.items.map((t: { title: string }) => t.title)).toEqual(['second', 'first'])
     expect(second.body.position).toBeLessThan(first.body.position)
     expect(otherColumn.body.position).toBe(0)
+  })
+
+  it('renumbers the column and still lands above a top card whose position cannot be split', async () => {
+    await insertTask(alice.id, { title: 'huge', position: 1e300 })
+    await insertTask(alice.id, { title: 'next', position: 2e300 })
+
+    const created = await create({ title: 'new' })
+
+    expect(created.status).toBe(201)
+    const todo = await list('?status=todo')
+    expect(todo.body.items.map((t: { title: string }) => t.title)).toEqual(['new', 'huge', 'next'])
+    expect(todo.body.items.map((t: { position: number }) => t.position)).toEqual([-1024, 0, 1024])
   })
 
   it.each([

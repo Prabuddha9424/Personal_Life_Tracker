@@ -2,20 +2,33 @@ import { Types, type QueryFilter } from 'mongoose'
 import { parseCalendarDate } from '../../shared/dates/calendarDate.ts'
 import { AppError } from '../../shared/errors/AppError.ts'
 import { paginated, toSkip, type Paginated } from '../../shared/validation/requestSchemas.ts'
-import { BOARD_ORDER } from './task.column.ts'
+import { BOARD_ORDER, rebalanceColumn } from './task.column.ts'
 import { toTaskDto, type TaskDto } from './task.dto.ts'
-import { Task, type TaskAttrs, type TaskRecord } from './task.model.ts'
+import { Task, type TaskAttrs, type TaskRecord, type TaskStatus } from './task.model.ts'
 import { positionBetween } from './task.ordering.ts'
 import type { CreateTaskInput, ListTasksQuery, UpdateTaskInput } from './task.schemas.ts'
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-export async function createTask(userId: string, input: CreateTaskInput): Promise<TaskDto> {
-  const owner = new Types.ObjectId(userId)
-  const top = await Task.findOne({ userId: owner, status: input.status })
+async function positionAboveColumn(
+  owner: Types.ObjectId,
+  status: TaskStatus,
+): Promise<number | null> {
+  const top = await Task.findOne({ userId: owner, status })
     .sort(BOARD_ORDER)
     .select('position')
     .lean<{ position: number } | null>()
+  return positionBetween(undefined, top?.position)
+}
+
+export async function createTask(userId: string, input: CreateTaskInput): Promise<TaskDto> {
+  const owner = new Types.ObjectId(userId)
+  let position = await positionAboveColumn(owner, input.status)
+  if (position === null) {
+    await rebalanceColumn(owner, input.status)
+    position = await positionAboveColumn(owner, input.status)
+  }
+  if (position === null) throw new AppError(409, 'The board changed. Refresh and try again.')
 
   const task = await Task.create({
     userId: owner,
@@ -25,7 +38,7 @@ export async function createTask(userId: string, input: CreateTaskInput): Promis
     priority: input.priority,
     dueDate: input.dueDate ? parseCalendarDate(input.dueDate) : undefined,
     tags: input.tags,
-    position: positionBetween(undefined, top?.position) ?? 0,
+    position,
   })
   return toTaskDto(task.toObject<TaskRecord>())
 }
