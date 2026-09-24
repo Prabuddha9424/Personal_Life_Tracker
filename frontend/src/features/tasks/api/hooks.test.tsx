@@ -330,7 +330,7 @@ describe('mutations', () => {
     expect(taskApi.deleteTask).toHaveBeenCalledWith('n', expect.anything())
   })
 
-  it('tell the user why a create, update or delete failed', async () => {
+  it('leave create and update errors to the form but toast a failed delete', async () => {
     vi.mocked(taskApi.createTask).mockRejectedValue(new Error('Title is required'))
     vi.mocked(taskApi.updateTask).mockRejectedValue(new Error('Task not found'))
     vi.mocked(taskApi.deleteTask).mockRejectedValue(new Error('Task not found'))
@@ -344,13 +344,17 @@ describe('mutations', () => {
     await act(async () => {
       await result.current.create.mutateAsync(input).catch(() => undefined)
       await result.current.update.mutateAsync({ id: 'n', input }).catch(() => undefined)
+    })
+
+    await waitFor(() => expect(result.current.create.error?.message).toBe('Title is required'))
+    await waitFor(() => expect(result.current.update.error?.message).toBe('Task not found'))
+    expect(useToastStore.getState().toasts).toEqual([])
+
+    await act(async () => {
       await result.current.remove.mutateAsync('n').catch(() => undefined)
     })
 
-    const messages = useToastStore.getState().toasts.map((toast) => toast.message)
-    expect(messages).toEqual([
-      'Could not create the task. Title is required',
-      'Could not save the task. Task not found',
+    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual([
       'Could not delete the task. Task not found',
     ])
   })
@@ -379,3 +383,174 @@ function allStale(client: QueryClient): boolean {
     .findAll({ queryKey: taskKeys.all })
     .every((query) => query.isStale())
 }
+
+describe('useColumnTasks while the filters change', () => {
+  it('keeps showing the previous cards until the new filter has loaded', async () => {
+    let release: (value: TaskPage) => void = () => {}
+    vi.mocked(taskApi.listTasks).mockImplementation(({ tag }) =>
+      tag === 'home'
+        ? Promise.resolve(page([task('a')]))
+        : new Promise<TaskPage>((resolve) => (release = resolve)),
+    )
+    const { wrapper } = setup()
+    const { result, rerender } = renderHook(
+      ({ tag }: { tag: string }) => useColumnTasks('todo', { tag }),
+      { wrapper, initialProps: { tag: 'home' } },
+    )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    rerender({ tag: 'work' })
+
+    expect(result.current.isPlaceholderData).toBe(true)
+    expect(flattenColumn(result.current.data).map((t) => t.id)).toEqual(['a'])
+
+    release(page([task('w')]))
+    await waitFor(() => expect(flattenColumn(result.current.data).map((t) => t.id)).toEqual(['w']))
+    expect(result.current.isPlaceholderData).toBe(false)
+  })
+})
+
+describe('overlapping moves', () => {
+  interface Deferred {
+    promise: Promise<Task>
+    resolve: (value: Task) => void
+    reject: (error: Error) => void
+  }
+
+  function deferred(): Deferred {
+    let resolve: Deferred['resolve'] = () => {}
+    let reject: Deferred['reject'] = () => {}
+    const promise = new Promise<Task>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  const original: Record<string, Task[]> = {
+    todo: [task('a'), task('b')],
+    done: [task('x', 'done')],
+  }
+
+  async function mountBoard(refetchFails: boolean) {
+    vi.mocked(taskApi.listTasks).mockImplementation(({ status }) =>
+      Promise.resolve(page(original[status ?? 'todo'] ?? [])),
+    )
+    const { client, wrapper } = setup()
+    const hook = renderHook(
+      () => ({
+        todo: useColumnTasks('todo', {}),
+        done: useColumnTasks('done', {}),
+        move: useMoveTask(),
+      }),
+      { wrapper },
+    )
+    await waitFor(() => expect(ids(client, 'done')).toEqual(['x']))
+    vi.mocked(taskApi.listTasks).mockClear()
+    if (refetchFails) vi.mocked(taskApi.listTasks).mockRejectedValue(new Error('offline'))
+
+    const first = deferred()
+    const second = deferred()
+    vi.mocked(taskApi.moveTask)
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise)
+
+    const moveA = () =>
+      hook.result.current.move
+        .mutateAsync({ task: task('a'), toStatus: 'done', toIndex: 0, filters: {}, beforeId: 'x' })
+        .catch(() => undefined)
+    const moveB = () =>
+      hook.result.current.move
+        .mutateAsync({ task: task('b'), toStatus: 'done', toIndex: 0, filters: {}, beforeId: 'x' })
+        .catch(() => undefined)
+    return { client, first, second, moveA, moveB }
+  }
+
+  async function startBoth(board: Awaited<ReturnType<typeof mountBoard>>) {
+    let a: Promise<unknown> = Promise.resolve()
+    let b: Promise<unknown> = Promise.resolve()
+    act(() => {
+      a = board.moveA()
+    })
+    await waitFor(() => expect(ids(board.client, 'done')).toEqual(['a', 'x']))
+    act(() => {
+      b = board.moveB()
+    })
+    await waitFor(() => expect(ids(board.client, 'done')).toEqual(['b', 'a', 'x']))
+    return { a, b }
+  }
+
+  it('ends on the original server state when both moves fail and the refetch fails too', async () => {
+    const board = await mountBoard(true)
+    const { a, b } = await startBoth(board)
+
+    await act(async () => {
+      board.first.reject(new Error('Conflict'))
+      await a
+    })
+    await act(async () => {
+      board.second.reject(new Error('Conflict'))
+      await b
+    })
+
+    expect(ids(board.client, 'todo')).toEqual(['a', 'b'])
+    expect(ids(board.client, 'done')).toEqual(['x'])
+  })
+
+  it('keeps the other move visible while the first one fails, then drops only the refused move', async () => {
+    const board = await mountBoard(true)
+    const { a, b } = await startBoth(board)
+
+    await act(async () => {
+      board.first.reject(new Error('Conflict'))
+      await a
+    })
+
+    expect(ids(board.client, 'done')).toContain('b')
+    expect(vi.mocked(taskApi.listTasks)).not.toHaveBeenCalled()
+
+    await act(async () => {
+      board.second.resolve(task('b', 'done'))
+      await b
+    })
+
+    expect(ids(board.client, 'todo')).toEqual(['a'])
+    expect(ids(board.client, 'done')).toEqual(['b', 'x'])
+    expect(vi.mocked(taskApi.listTasks)).toHaveBeenCalled()
+  })
+
+  it('keeps the accepted move when the later one is refused and the refetch fails', async () => {
+    const board = await mountBoard(true)
+    const { a, b } = await startBoth(board)
+
+    await act(async () => {
+      board.first.resolve(task('a', 'done'))
+      await a
+    })
+    expect(vi.mocked(taskApi.listTasks)).not.toHaveBeenCalled()
+    await act(async () => {
+      board.second.reject(new Error('Conflict'))
+      await b
+    })
+
+    expect(ids(board.client, 'todo')).toEqual(['b'])
+    expect(ids(board.client, 'done')).toEqual(['a', 'x'])
+  })
+
+  it('refetches once, after the last move settles, when both succeed', async () => {
+    const board = await mountBoard(false)
+    const { a, b } = await startBoth(board)
+
+    await act(async () => {
+      board.second.resolve(task('b', 'done'))
+      await b
+    })
+    expect(vi.mocked(taskApi.listTasks)).not.toHaveBeenCalled()
+    await act(async () => {
+      board.first.resolve(task('a', 'done'))
+      await a
+    })
+
+    expect(vi.mocked(taskApi.listTasks)).toHaveBeenCalledTimes(2)
+  })
+})
