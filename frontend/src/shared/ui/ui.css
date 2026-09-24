@@ -109,3 +109,56 @@
   font-size: 0.85rem;
   color: var(--danger);
 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgb(0 0 0 / 0.6);
+}
+.modal {
+  width: min(560px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toasts {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: min(360px, calc(100vw - 2 * var(--space-4)));
+}
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.toast--error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.toast--success {
+  border-color: var(--positive);
+}

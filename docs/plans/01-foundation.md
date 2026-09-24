@@ -1490,7 +1490,7 @@ git commit -m "feat(frontend): add dark-first theme store and toggle" -m "Co-Aut
 **Interfaces:**
 - Produces: `Modal({ title, onClose, children })` (role `dialog`, Escape and backdrop close, focus moves in and returns, Tab is trapped), `pushToast(message, kind?: 'info'|'success'|'error', durationMs?): void`, `useToastStore`, `ToastHost()`.
 
-- [ ] **Step 1: Write the failing Modal test**
+- [x] **Step 1: Write the failing Modal test**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -1565,7 +1565,7 @@ Run: `npx vitest run src/shared/ui/Modal.test.tsx` → FAIL.
 
 Note on the last test: the close button is the first focusable element in DOM order (it sits in the header), so tabbing from the last body button wraps to it.
 
-- [ ] **Step 2: Implement Modal**
+- [x] **Step 2: Implement Modal**
 
 ```tsx
 import { useEffect, useId, useRef, type ReactNode } from 'react'
@@ -1645,7 +1645,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
 
 Run the Modal tests → PASS. (If the backdrop-click assertion fails because `userEvent.click` dispatches `mousedown` on the backdrop element itself, it should pass; the handler checks `event.target === event.currentTarget`.)
 
-- [ ] **Step 3: Write the failing toast tests**
+- [x] **Step 3: Write the failing toast tests**
 
 `frontend/src/shared/ui/toast.test.ts`:
 
@@ -1716,7 +1716,7 @@ describe('ToastHost', () => {
 
 Run → FAIL.
 
-- [ ] **Step 4: Implement toasts**
+- [x] **Step 4: Implement toasts**
 
 `frontend/src/shared/ui/toast.ts`:
 
@@ -1778,7 +1778,7 @@ export function ToastHost() {
 }
 ```
 
-- [ ] **Step 5: Append the styles**
+- [x] **Step 5: Append the styles**
 
 Append to `frontend/src/shared/ui/ui.css`:
 
@@ -1837,7 +1837,7 @@ Append to `frontend/src/shared/ui/ui.css`:
 }
 ```
 
-- [ ] **Step 6: Run all checks and commit**
+- [x] **Step 6: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
