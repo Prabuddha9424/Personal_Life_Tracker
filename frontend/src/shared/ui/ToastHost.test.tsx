@@ -8,8 +8,11 @@ describe('ToastHost', () => {
     useToastStore.setState({ toasts: [] })
   })
 
-  it('renders errors as alerts and other toasts as status messages', () => {
-    render(<ToastHost />)
+  it('renders errors as alerts and other toasts inside the polite live region', () => {
+    const { container } = render(<ToastHost />)
+    const host = container.firstElementChild
+    expect(host).toHaveAttribute('aria-live', 'polite')
+    expect(host).toBeEmptyDOMElement()
 
     act(() => {
       useToastStore.setState({
@@ -20,7 +23,8 @@ describe('ToastHost', () => {
       })
     })
 
-    expect(screen.getByRole('status')).toHaveTextContent('Saved')
+    expect(host).toHaveTextContent('Saved')
+    expect(screen.getByText('Saved').closest('[aria-live="polite"]')).toBe(host)
     expect(screen.getByRole('alert')).toHaveTextContent('Could not save')
   })
 })

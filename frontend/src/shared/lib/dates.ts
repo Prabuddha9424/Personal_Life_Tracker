@@ -35,7 +35,8 @@ export function currentMonthIso(now: Date = new Date()): string {
 export function shiftMonthIso(month: string, delta: number): string {
   const [year = 0, monthNumber = 1] = month.split('-').map(Number)
   const index = year * 12 + (monthNumber - 1) + delta
-  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`
+  const shiftedYear = String(Math.floor(index / 12)).padStart(4, '0')
+  return `${shiftedYear}-${String((index % 12) + 1).padStart(2, '0')}`
 }
 
 export function formatMonth(month: string, locale?: string): string {

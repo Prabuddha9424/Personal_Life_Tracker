@@ -32,7 +32,7 @@ export function AppShell() {
     <div className="shell">
       <aside className={`shell__sidebar${drawerOpen ? ' is-open' : ''}`} aria-label="Primary">
         <div className="shell__brand">Tracker</div>
-        <nav ref={navRef}>
+        <nav ref={navRef} aria-label="Main">
           {navItems.map((item) => (
             <NavLink
               key={item.to}

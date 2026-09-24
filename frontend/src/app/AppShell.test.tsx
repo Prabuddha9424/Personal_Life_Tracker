@@ -24,6 +24,13 @@ describe('AppShell', () => {
     expect(screen.getByRole('button', { name: /switch to light theme/i })).toBeInTheDocument()
   })
 
+  it('names both landmarks so they are distinguishable', () => {
+    renderShell()
+
+    expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: 'Primary' })).toBeInTheDocument()
+  })
+
   it('opens and closes the navigation drawer on small screens', async () => {
     renderShell()
     const sidebar = screen.getByLabelText('Primary')

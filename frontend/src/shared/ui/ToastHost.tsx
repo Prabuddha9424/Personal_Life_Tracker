@@ -5,12 +5,12 @@ export function ToastHost() {
   const dismiss = useToastStore((state) => state.dismiss)
 
   return (
-    <div className="toasts">
+    <div className="toasts" aria-live="polite">
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={`toast toast--${toast.kind}`}
-          role={toast.kind === 'error' ? 'alert' : 'status'}
+          role={toast.kind === 'error' ? 'alert' : undefined}
         >
           <span>{toast.message}</span>
           <button

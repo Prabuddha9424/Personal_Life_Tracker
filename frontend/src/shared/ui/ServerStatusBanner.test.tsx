@@ -8,12 +8,20 @@ describe('ServerStatusBanner', () => {
     useServerStatus.getState().setWaking(false)
   })
 
-  it('appears only while the server is waking up', () => {
+  it('keeps an empty polite live region present and fills it only while waking', () => {
     render(<ServerStatusBanner />)
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    const region = screen.getByRole('status')
+    expect(region).toHaveAttribute('aria-live', 'polite')
+    expect(region).toBeEmptyDOMElement()
 
     act(() => useServerStatus.getState().setWaking(true))
 
-    expect(screen.getByRole('status')).toHaveTextContent(/waking up the server/i)
+    expect(screen.getByRole('status')).toBe(region)
+    expect(region).toHaveTextContent(/waking up the server/i)
+
+    act(() => useServerStatus.getState().setWaking(false))
+
+    expect(screen.getByRole('status')).toBe(region)
+    expect(region).toBeEmptyDOMElement()
   })
 })

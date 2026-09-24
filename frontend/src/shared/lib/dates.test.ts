@@ -44,6 +44,8 @@ describe('months', () => {
     ['2026-12', 1, '2027-01'],
     ['2026-01', -1, '2025-12'],
     ['2026-03', -14, '2025-01'],
+    ['0999-11', 1, '0999-12'],
+    ['1000-01', -1, '0999-12'],
   ])('shifts %s by %i to %s', (month, delta, expected) => {
     expect(shiftMonthIso(month, delta)).toBe(expected)
   })
