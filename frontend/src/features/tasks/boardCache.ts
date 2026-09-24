@@ -23,8 +23,11 @@ export function removeTask(data: ColumnData, taskId: string): ColumnData {
 /**
  * Inserts a card at `index` counted across all loaded pages. Cards are edited in place per page
  * rather than merged into one page, so `pageParams` still lets a refetch reload every page.
+ * An index past the end appends to the last loaded page. With no pages loaded there is nowhere to
+ * put the card, so the data is returned unchanged (and no `total` is touched).
  */
 export function insertTask(data: ColumnData, task: Task, index: number): ColumnData {
+  if (data.pages.length === 0) return data
   const pages = data.pages.map((page) => ({
     ...page,
     items: [...page.items],
@@ -34,7 +37,7 @@ export function insertTask(data: ColumnData, task: Task, index: number): ColumnD
 
   for (const [position, page] of pages.entries()) {
     const isLastPage = position === pages.length - 1
-    if (remaining < page.items.length || (remaining === page.items.length && isLastPage)) {
+    if (remaining < page.items.length || isLastPage) {
       page.items.splice(remaining, 0, task)
       break
     }

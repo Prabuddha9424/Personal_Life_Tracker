@@ -427,6 +427,8 @@ describe('overlapping moves', () => {
     return { promise, resolve, reject }
   }
 
+  type MoveArgs = Parameters<ReturnType<typeof useMoveTask>['mutate']>[0]
+
   const original: Record<string, Task[]> = {
     todo: [task('a'), task('b')],
     done: [task('x', 'done')],
@@ -463,7 +465,9 @@ describe('overlapping moves', () => {
       hook.result.current.move
         .mutateAsync({ task: task('b'), toStatus: 'done', toIndex: 0, filters: {}, beforeId: 'x' })
         .catch(() => undefined)
-    return { client, first, second, moveA, moveB }
+    const moveWith = (variables: Pick<MoveArgs, 'task' | 'toStatus' | 'toIndex'>) =>
+      hook.result.current.move.mutateAsync({ ...variables, filters: {} }).catch(() => undefined)
+    return { client, first, second, moveA, moveB, moveWith }
   }
 
   async function startBoth(board: Awaited<ReturnType<typeof mountBoard>>) {
@@ -552,5 +556,141 @@ describe('overlapping moves', () => {
     })
 
     expect(vi.mocked(taskApi.listTasks)).toHaveBeenCalledTimes(2)
+  })
+
+  it.each([
+    ['accepted', 'accepted', ['todo', []], ['done', ['b', 'a', 'x']]],
+    ['refused', 'refused', ['todo', ['a', 'b']], ['done', ['x']]],
+    ['accepted', 'refused', ['todo', ['b']], ['done', ['a', 'x']]],
+    ['refused', 'accepted', ['todo', ['a']], ['done', ['b', 'x']]],
+  ] as const)(
+    'closes the batch when moves A (%s) and B (%s) settle in the same tick',
+    async (outcomeA, outcomeB, [todoStatus, todoIds], [doneStatus, doneIds]) => {
+      const board = await mountBoard(true)
+      const invalidate = vi.spyOn(board.client, 'invalidateQueries')
+      const { a, b } = await startBoth(board)
+      const settle = (move: Deferred, outcome: 'accepted' | 'refused', id: string) =>
+        outcome === 'accepted' ? move.resolve(task(id, 'done')) : move.reject(new Error('Conflict'))
+
+      await act(async () => {
+        settle(board.first, outcomeA, 'a')
+        settle(board.second, outcomeB, 'b')
+        await Promise.all([a, b])
+      })
+
+      expect(ids(board.client, todoStatus)).toEqual(todoIds)
+      expect(ids(board.client, doneStatus)).toEqual(doneIds)
+      expect(invalidate).toHaveBeenCalledTimes(1)
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: taskKeys.all })
+
+      // The batch is gone: a new move takes a fresh baseline from the cache as it is now.
+      const before = {
+        todo: board.client.getQueryData(taskKeys.column('todo', {})),
+        done: board.client.getQueryData(taskKeys.column('done', {})),
+      }
+      vi.mocked(taskApi.moveTask).mockRejectedValueOnce(new Error('Conflict'))
+      const moveC = board.moveWith({ task: task('x', 'done'), toStatus: 'todo', toIndex: 0 })
+      await act(async () => {
+        await moveC
+      })
+
+      expect(board.client.getQueryData(taskKeys.column('todo', {}))).toEqual(before.todo)
+      expect(board.client.getQueryData(taskKeys.column('done', {}))).toEqual(before.done)
+    },
+  )
+
+  it('starts a second batch from the cache as the first one left it', async () => {
+    const board = await mountBoard(true)
+    const { a, b } = await startBoth(board)
+    await act(async () => {
+      board.first.resolve(task('a', 'done'))
+      board.second.resolve(task('b', 'done'))
+      await Promise.all([a, b])
+    })
+    vi.mocked(taskApi.moveTask).mockRejectedValueOnce(new Error('Conflict'))
+
+    await act(async () => {
+      await board.moveWith({ task: task('x', 'done'), toStatus: 'todo', toIndex: 0 })
+    })
+
+    expect(ids(board.client, 'done')).toEqual(['b', 'a', 'x'])
+    expect(ids(board.client, 'todo')).toEqual([])
+  })
+
+  it('does not bring back old columns after the cache was cleared', async () => {
+    const board = await mountBoard(true)
+    const { a, b } = await startBoth(board)
+    await act(async () => {
+      board.first.reject(new Error('Conflict'))
+      board.second.reject(new Error('Conflict'))
+      await Promise.all([a, b])
+    })
+
+    board.client.clear()
+    board.client.setQueryData<ColumnData>(taskKeys.column('todo', {}), {
+      pageParams: [1],
+      pages: [page([task('q')])],
+    })
+    board.client.setQueryData<ColumnData>(taskKeys.column('done', {}), {
+      pageParams: [1],
+      pages: [page([])],
+    })
+    vi.mocked(taskApi.moveTask).mockRejectedValueOnce(new Error('Conflict'))
+    await act(async () => {
+      await board.moveWith({ task: task('q'), toStatus: 'done', toIndex: 0 })
+    })
+
+    expect(ids(board.client, 'todo')).toEqual(['q'])
+    expect(ids(board.client, 'done')).toEqual([])
+  })
+
+  it('keeps a card appended after a refused move that also appended', async () => {
+    const board = await mountBoard(true)
+    vi.mocked(taskApi.moveTask).mockReset()
+    vi.mocked(taskApi.moveTask)
+      .mockReturnValueOnce(board.first.promise)
+      .mockReturnValueOnce(board.second.promise)
+    let a: Promise<unknown> = Promise.resolve()
+    let b: Promise<unknown> = Promise.resolve()
+    act(() => {
+      a = board.moveWith({ task: task('a'), toStatus: 'done', toIndex: 1 })
+    })
+    await waitFor(() => expect(ids(board.client, 'done')).toEqual(['x', 'a']))
+    act(() => {
+      b = board.moveWith({ task: task('b'), toStatus: 'done', toIndex: 2 })
+    })
+    await waitFor(() => expect(ids(board.client, 'done')).toEqual(['x', 'a', 'b']))
+
+    await act(async () => {
+      board.first.reject(new Error('Conflict'))
+      board.second.resolve(task('b', 'done'))
+      await Promise.all([a, b])
+    })
+
+    expect(ids(board.client, 'todo')).toEqual(['a'])
+    expect(ids(board.client, 'done')).toEqual(['x', 'b'])
+  })
+
+  it('treats a move whose optimistic write threw as refused and still closes the batch', async () => {
+    const board = await mountBoard(true)
+    const invalidate = vi.spyOn(board.client, 'invalidateQueries')
+    const original = board.client.setQueryData.bind(board.client)
+    let writes = 0
+    vi.spyOn(board.client, 'setQueryData').mockImplementation(((
+      ...args: Parameters<typeof original>
+    ) => {
+      writes += 1
+      if (writes === 2) throw new Error('cache write failed')
+      return original(...args)
+    }) as typeof original)
+
+    await act(async () => {
+      await board.moveWith({ task: task('a'), toStatus: 'done', toIndex: 0 })
+    })
+
+    expect(ids(board.client, 'todo')).toEqual(['a', 'b'])
+    expect(ids(board.client, 'done')).toEqual(['x'])
+    expect(invalidate).toHaveBeenCalledTimes(1)
+    expect(taskApi.moveTask).not.toHaveBeenCalled()
   })
 })

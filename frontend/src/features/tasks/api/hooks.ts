@@ -90,13 +90,15 @@ interface TrackedMove {
   variables: MoveVariables
   /** False when the card was not on the board, so nothing was written to the cache. */
   applied: boolean
-  refused: boolean
+  state: 'pending' | 'accepted' | 'refused'
 }
 
 /** Every move that is in flight together, and the column caches as they were before the first. */
 interface MoveBatch {
   baseline: Map<string, ColumnSnapshot>
   moves: TrackedMove[]
+  /** Moves that have started (counted before the first await) and not yet settled. */
+  pending: number
 }
 
 const MOVE_KEY = ['tasks', 'move'] as const
@@ -126,10 +128,14 @@ function reconcile(client: QueryClient, batch: MoveBatch) {
     if (data !== undefined) client.setQueryData(key, data)
   }
   for (const move of batch.moves) {
-    if (move.applied && !move.refused && isOnBoard(client, move.variables)) {
+    if (move.applied && move.state !== 'refused' && isOnBoard(client, move.variables)) {
       writeMove(client, move.variables)
     }
   }
+}
+
+function findPending(batch: MoveBatch | undefined, variables: MoveVariables) {
+  return batch?.moves.find((move) => move.variables === variables && move.state === 'pending')
 }
 
 /**
@@ -140,6 +146,11 @@ function reconcile(client: QueryClient, batch: MoveBatch) {
  * batch was refused, the board is then rebuilt from the state before the batch plus the moves the
  * server accepted, so it is correct even if the refetch that follows fails. That refetch always
  * runs, on success or error.
+ *
+ * "Last" is a counter kept on the batch, raised before the first await and lowered in onSettled,
+ * so it cannot be fooled by moves that settle in the same tick. The batch is deleted when the
+ * counter reaches zero. A move is matched to its record by its variables object, not by the
+ * mutation context, so a move whose onMutate threw still counts as refused.
  */
 export function useMoveTask() {
   const client = useQueryClient()
@@ -149,14 +160,17 @@ export function useMoveTask() {
     mutationFn: ({ task, toStatus, afterId, beforeId }: MoveVariables) =>
       moveTask(task.id, { status: toStatus, afterId, beforeId }),
 
-    onMutate: async (variables): Promise<{ move: TrackedMove }> => {
-      await client.cancelQueries({ queryKey: taskKeys.columns })
-
+    onMutate: async (variables) => {
       const batch = batches.get(client) ?? {
         baseline: new Map<string, ColumnSnapshot>(),
         moves: [],
+        pending: 0,
       }
       batches.set(client, batch)
+      batch.pending += 1
+
+      await client.cancelQueries({ queryKey: taskKeys.columns })
+
       const { task, toStatus, filters } = variables
       for (const key of [
         taskKeys.column(task.status, filters),
@@ -168,22 +182,31 @@ export function useMoveTask() {
         }
       }
 
-      const move: TrackedMove = { variables, applied: isOnBoard(client, variables), refused: false }
+      const move: TrackedMove = {
+        variables,
+        applied: isOnBoard(client, variables),
+        state: 'pending',
+      }
       batch.moves.push(move)
       if (move.applied) writeMove(client, variables)
-      return { move }
     },
 
-    onError: (error, _variables, context) => {
-      if (context) context.move.refused = true
+    onError: (error, variables) => {
+      const move = findPending(batches.get(client), variables)
+      if (move) move.state = 'refused'
       pushToast(`Could not move the task. ${getErrorMessage(error)}`, 'error')
     },
 
-    onSettled: () => {
-      if (client.isMutating({ mutationKey: MOVE_KEY }) > 1) return
+    onSettled: (_data, _error, variables) => {
       const batch = batches.get(client)
+      if (!batch) return client.invalidateQueries({ queryKey: taskKeys.all })
+      const move = findPending(batch, variables)
+      if (move) move.state = 'accepted'
+
+      batch.pending -= 1
+      if (batch.pending > 0) return
       batches.delete(client)
-      if (batch?.moves.some((move) => move.refused)) reconcile(client, batch)
+      if (batch.moves.some((tracked) => tracked.state === 'refused')) reconcile(client, batch)
       return client.invalidateQueries({ queryKey: taskKeys.all })
     },
   })

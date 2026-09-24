@@ -68,6 +68,19 @@ describe('insertTask', () => {
     expect(result.pages.map((p) => p.total)).toEqual([6, 6])
   })
 
+  it('appends when the index is past the end instead of dropping the card', () => {
+    const result = insertTask(twoPages(), task('x'), 9)
+
+    expect(ids(result)).toEqual(['a', 'b', 'c', 'd', 'x'])
+    expect(result.pages.map((p) => p.total)).toEqual([6, 6])
+  })
+
+  it('returns the data unchanged, total included, when no page is loaded', () => {
+    const none: ColumnData = { pageParams: [], pages: [] }
+
+    expect(insertTask(none, task('x'), 0)).toBe(none)
+  })
+
   it('does not change the page parameters, so a refetch still asks for every page', () => {
     expect(insertTask(twoPages(), task('x'), 1).pageParams).toEqual([1, 2])
   })
