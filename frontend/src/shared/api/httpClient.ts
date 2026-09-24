@@ -38,7 +38,12 @@ httpClient.interceptors.response.use(
       const config = error.config
       // Only requests that carried a token can have an expired session; a bare 401 (wrong
       // password) must not trigger a refresh.
-      if (config && !config.skipAuthRefresh && !config.authRetried && config.headers.Authorization) {
+      if (
+        config &&
+        !config.skipAuthRefresh &&
+        !config.authRetried &&
+        config.headers.Authorization
+      ) {
         config.authRetried = true
         if (await onUnauthorized()) return httpClient.request(config)
       }

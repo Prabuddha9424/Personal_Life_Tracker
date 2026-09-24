@@ -4,7 +4,8 @@ import { configureAuth, getErrorMessage, httpClient } from './httpClient'
 
 const originalAdapter = httpClient.defaults.adapter
 
-const bearer = (config: InternalAxiosRequestConfig) => String(config.headers.get('Authorization') ?? '')
+const bearer = (config: InternalAxiosRequestConfig) =>
+  String(config.headers.get('Authorization') ?? '')
 
 /** Points the shared client at a fake server. Returns the Authorization header of each call. */
 function useServer(statusFor: (config: InternalAxiosRequestConfig) => number): string[] {
@@ -76,7 +77,9 @@ describe('httpClient auth handling', () => {
     const refresh = vi.fn(async () => true)
     configureAuth({ getToken: () => 'tok', onUnauthorized: refresh })
 
-    await expect(httpClient.post('/auth/refresh', undefined, { skipAuthRefresh: true })).rejects.toThrow()
+    await expect(
+      httpClient.post('/auth/refresh', undefined, { skipAuthRefresh: true }),
+    ).rejects.toThrow()
 
     expect(refresh).not.toHaveBeenCalled()
   })
@@ -108,16 +111,24 @@ describe('getErrorMessage', () => {
   })
 
   it('says the server is waking up for a gateway error or no response at all', () => {
-    const gateway = new AxiosError('Request failed with status code 504', 'ERR_BAD_RESPONSE', undefined, null, {
-      status: 504,
-      statusText: '',
-      data: {},
-      headers: {},
-      config: {} as InternalAxiosRequestConfig,
-    })
+    const gateway = new AxiosError(
+      'Request failed with status code 504',
+      'ERR_BAD_RESPONSE',
+      undefined,
+      null,
+      {
+        status: 504,
+        statusText: '',
+        data: {},
+        headers: {},
+        config: {} as InternalAxiosRequestConfig,
+      },
+    )
     const noResponse = new AxiosError('Network Error', 'ERR_NETWORK')
 
     expect(getErrorMessage(gateway)).toBe('The server is waking up. Please try again in a moment.')
-    expect(getErrorMessage(noResponse)).toBe('The server is waking up. Please try again in a moment.')
+    expect(getErrorMessage(noResponse)).toBe(
+      'The server is waking up. Please try again in a moment.',
+    )
   })
 })
