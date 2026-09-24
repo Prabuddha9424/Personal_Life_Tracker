@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Epic** | E0 Project setup |
 | **Priority** | Must |
 | **Size** | M |
@@ -30,9 +30,9 @@
 | US-001-T3 | Write and get approval for the PRD and the design decisions (`docs/PRD.md`, `docs/design-decisions.md`) | No plan task (new work described here) | Done |
 | US-001-T4 | Write the implementation plans, one per milestone (`docs/plans/`) | No plan task (new work described here) | Done |
 | US-001-T5 | Write the user stories with tasks and status (`docs/stories/`) | No plan task (new work described here) | Done |
-| US-001-T6 | Run lint, typecheck and tests in both apps and record that the baseline is green | [M0 Foundation](../plans/01-foundation.md), Task 1, steps 1-2 | To do |
-| US-001-T7 | Check that no generated or secret files would be committed | [M0 Foundation](../plans/01-foundation.md), Task 1, step 3 | To do |
-| US-001-T8 | Create branch `chore/foundation`, make the baseline commit, then create `main` at it | [M0 Foundation](../plans/01-foundation.md), Task 1, step 4 | To do |
+| US-001-T6 | Run lint, typecheck and tests in both apps and record that the baseline is green | [M0 Foundation](../plans/01-foundation.md), Task 1, steps 1-2 | Done |
+| US-001-T7 | Check that no generated or secret files would be committed | [M0 Foundation](../plans/01-foundation.md), Task 1, step 3 | Done |
+| US-001-T8 | Create branch `chore/foundation`, make the baseline commit, then create `main` at it | [M0 Foundation](../plans/01-foundation.md), Task 1, step 4 | Done |
 
 ## Out of scope
 
@@ -46,7 +46,7 @@ The outer `/Users/samurdhi/Desktop/AI/.git` is an empty repository with no commi
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
