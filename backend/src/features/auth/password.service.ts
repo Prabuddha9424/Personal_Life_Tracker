@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import { AppError } from '../../shared/errors/AppError.ts'
 import { sendPasswordResetEmail } from './auth.emails.ts'
 import { RESET_TOKEN_TTL_MS } from './constants.ts'
+import { EmailToken } from './email-token.model.ts'
 import { consumeEmailToken, createEmailToken } from './email-tokens.ts'
 import { revokeAllSessions, startSession, type Session } from './session.service.ts'
 import { User } from './user.model.ts'
@@ -37,6 +38,8 @@ export async function changePassword(
   }
   user.password = newPassword
   await user.save()
+  // A reset link requested before this change must not be able to override it.
+  await EmailToken.deleteMany({ userId: user._id, purpose: 'reset' })
   await revokeAllSessions(user._id)
   return startSession(user)
 }

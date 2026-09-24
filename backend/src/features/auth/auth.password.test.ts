@@ -215,6 +215,36 @@ describe('POST /api/auth/change-password', () => {
     await request(app).post('/api/auth/refresh').set('Cookie', refreshCookie(res)).expect(200)
   })
 
+  it('rejects a common new password and keeps the current one valid', async () => {
+    const user = await registerVerified()
+    const { body } = await login(user.email, user.password)
+
+    await change(body.accessToken, {
+      currentPassword: VALID_PASSWORD,
+      newPassword: 'password1234',
+    }).expect(400)
+
+    await login(user.email, VALID_PASSWORD).expect(200)
+  })
+
+  it('invalidates a reset link requested before the change', async () => {
+    const user = await registerVerified()
+    const { body } = await login(user.email, user.password)
+    await forgot(user.email)
+    const resetToken = lastMailToken()
+
+    await change(body.accessToken, {
+      currentPassword: VALID_PASSWORD,
+      newPassword: NEW_PASSWORD,
+    }).expect(200)
+    const res = await reset(resetToken, 'yet-another-passphrase')
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({ message: 'Invalid or expired token' })
+    await login(user.email, NEW_PASSWORD).expect(200)
+    await login(user.email, 'yet-another-passphrase').expect(401)
+  })
+
   it('stores the new password as a bcrypt hash', async () => {
     const user = await registerVerified()
     const { body } = await login(user.email, user.password)
