@@ -121,6 +121,33 @@ describe('BoardToolbar', () => {
     expect(onChange).toHaveBeenLastCalledWith({ tag: 'work', q: 'y'.repeat(99) })
   })
 
+  it('turns a tab in a pasted search into a space, as the server rejects control characters', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(<BoardToolbar filters={{}} onChange={onChange} onNew={() => {}} />)
+
+    await userEvent.click(screen.getByLabelText('Search tasks'))
+    await userEvent.paste('buy\tmilk')
+    await userEvent.keyboard('{Enter}')
+
+    expect(onChange).toHaveBeenLastCalledWith({ q: 'buy milk' })
+  })
+
+  it('replaces control characters, NUL included, before trimming and cutting', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(
+      <BoardToolbar
+        filters={{ q: `\u0000\t${'a'.repeat(99)}\u0000b` }}
+        onChange={onChange}
+        onNew={() => {}}
+      />,
+    )
+    await screen.findByRole('option', { name: 'work' })
+
+    await userEvent.selectOptions(screen.getByLabelText('Filter by tag'), 'work')
+
+    expect(onChange).toHaveBeenLastCalledWith({ tag: 'work', q: 'a'.repeat(99) })
+  })
+
   it('exposes the search as a labelled landmark', () => {
     renderWithProviders(<BoardToolbar filters={{}} onChange={() => {}} onNew={() => {}} />)
 

@@ -14,12 +14,17 @@ interface BoardToolbarProps {
 const MAX_SEARCH_LENGTH = 100
 
 /**
- * The server rejects blank q/tag and an over-long q, so a blank value is left out of the filters
- * entirely and the search is cut to the length the server accepts.
+ * The server rejects blank q/tag, an over-long q and control characters in q. A blank value is
+ * left out of the filters entirely, control characters (tab, NUL, ...) become spaces, and the
+ * search is cut to the length the server accepts.
  */
 function buildFilters(tag: string | undefined, q: string | undefined): BoardFilters {
   const cleanTag = tag?.trim()
-  const cleanQ = q?.trim().slice(0, MAX_SEARCH_LENGTH).trim()
+  const cleanQ = q
+    ?.replace(/\p{Cc}/gu, ' ')
+    .trim()
+    .slice(0, MAX_SEARCH_LENGTH)
+    .trim()
   return { ...(cleanTag ? { tag: cleanTag } : {}), ...(cleanQ ? { q: cleanQ } : {}) }
 }
 
