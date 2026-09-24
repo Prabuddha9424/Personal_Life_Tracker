@@ -203,6 +203,24 @@ describe('BoardPage', () => {
     )
   })
 
+  it('never asks the server for a search longer than it accepts', async () => {
+    serve({ todo: [task('1', 'todo', 'Buy milk')] })
+    renderWithProviders(<BoardPage />)
+
+    await userEvent.click(screen.getByLabelText('Search tasks'))
+    await userEvent.paste('m'.repeat(150))
+    await userEvent.keyboard('{Enter}')
+
+    await vi.waitFor(() =>
+      expect(
+        vi.mocked(taskApi.listTasks).mock.calls.some(([params]) => params.q === 'm'.repeat(100)),
+      ).toBe(true),
+    )
+    const lengths = vi.mocked(taskApi.listTasks).mock.calls.map(([params]) => params.q?.length ?? 0)
+    expect(Math.max(...lengths)).toBe(100)
+    expect(await within(column('To Do')).findByText('Buy milk')).toBeInTheDocument()
+  })
+
   it('opens the new-task dialog for the column whose plus button was used', async () => {
     serve({})
     renderWithProviders(<BoardPage />)

@@ -88,6 +88,39 @@ describe('BoardToolbar', () => {
     expect(onChange).toHaveBeenLastCalledWith({ q: 'milk' })
   })
 
+  it('limits the search box to what the server accepts', () => {
+    renderWithProviders(<BoardToolbar filters={{}} onChange={() => {}} onNew={() => {}} />)
+
+    expect(screen.getByLabelText('Search tasks')).toHaveAttribute('maxlength', '100')
+  })
+
+  it('cuts a pasted 150-character search to 100 characters', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(<BoardToolbar filters={{}} onChange={onChange} onNew={() => {}} />)
+
+    await userEvent.click(screen.getByLabelText('Search tasks'))
+    await userEvent.paste('x'.repeat(150))
+    await userEvent.keyboard('{Enter}')
+
+    expect(onChange).toHaveBeenLastCalledWith({ q: 'x'.repeat(100) })
+  })
+
+  it('never passes on more than 100 characters, even from a value set programmatically', async () => {
+    const onChange = vi.fn()
+    renderWithProviders(
+      <BoardToolbar
+        filters={{ q: `${'y'.repeat(99)}   z` }}
+        onChange={onChange}
+        onNew={() => {}}
+      />,
+    )
+    await screen.findByRole('option', { name: 'work' })
+
+    await userEvent.selectOptions(screen.getByLabelText('Filter by tag'), 'work')
+
+    expect(onChange).toHaveBeenLastCalledWith({ tag: 'work', q: 'y'.repeat(99) })
+  })
+
   it('exposes the search as a labelled landmark', () => {
     renderWithProviders(<BoardToolbar filters={{}} onChange={() => {}} onNew={() => {}} />)
 
