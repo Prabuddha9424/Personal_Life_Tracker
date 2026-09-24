@@ -361,6 +361,31 @@ describe('GET /api/finance/monthly', () => {
     ])
   })
 
+  it('puts the leap day in February and the day after it in March', async () => {
+    const category = await insertCategory(alice.id)
+    await insertTransaction(alice.id, {
+      date: '2028-02-29',
+      amountMinor: 11,
+      categoryId: category._id,
+    })
+    await insertTransaction(alice.id, {
+      date: '2028-03-01',
+      amountMinor: 220,
+      categoryId: category._id,
+    })
+
+    const monthly = await get('/api/finance/monthly?to=2028-03')
+    const february = await get('/api/finance/summary?month=2028-02')
+    const march = await get('/api/finance/summary?month=2028-03')
+
+    expect(monthly.body.items.slice(-2)).toEqual([
+      { month: '2028-02', incomeMinor: 0, expenseMinor: 11, netMinor: -11 },
+      { month: '2028-03', incomeMinor: 0, expenseMinor: 220, netMinor: -220 },
+    ])
+    expect(february.body).toMatchObject({ expenseMinor: 11 })
+    expect(march.body).toMatchObject({ expenseMinor: 220 })
+  })
+
   it('keeps December and January apart', async () => {
     const category = await insertCategory(alice.id)
     await insertTransaction(alice.id, {
