@@ -1857,7 +1857,7 @@ git commit -m "feat(frontend): add modal dialog and toast notifications" -m "Co-
 - Consumes: `ThemeToggle`, `ToastHost`.
 - Produces: `renderWithProviders(ui, { route? })` returning the RTL result plus `queryClient`; `NavItem = { to: string; label: string }`; `navItems: NavItem[]` (each milestone appends its own entry); `AppShell()` (sidebar, top bar, `<Outlet />`).
 
-- [ ] **Step 1: Create the shared test helper**
+- [x] **Step 1: Create the shared test helper**
 
 `frontend/src/test/render.tsx`:
 
@@ -1887,7 +1887,7 @@ export function renderWithProviders(ui: ReactElement, { route = '/' }: Options =
 }
 ```
 
-- [ ] **Step 2: Write the failing AppShell test**
+- [x] **Step 2: Write the failing AppShell test**
 
 `frontend/src/app/AppShell.test.tsx`:
 
@@ -1934,7 +1934,7 @@ describe('AppShell', () => {
 
 Run: `npx vitest run src/app` → FAIL (`./AppShell` missing).
 
-- [ ] **Step 3: Implement navigation and the shell**
+- [x] **Step 3: Implement navigation and the shell**
 
 `frontend/src/app/navigation.ts`:
 
@@ -2098,7 +2098,7 @@ export function AppShell() {
 
 Run `npx vitest run src/app` → PASS.
 
-- [ ] **Step 4: Wire the shell into the router and root layout**
+- [x] **Step 4: Wire the shell into the router and root layout**
 
 `frontend/src/app/RootLayout.tsx`:
 

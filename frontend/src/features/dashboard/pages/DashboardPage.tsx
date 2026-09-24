@@ -1,7 +1,7 @@
 export default function DashboardPage() {
   return (
-    <main>
+    <section>
       <h1>Personal Life Tracker</h1>
-    </main>
+    </section>
   )
 }
