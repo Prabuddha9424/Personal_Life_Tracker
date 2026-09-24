@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router'
+import { UserMenu } from '@/features/auth'
 import { ThemeToggle } from '@/shared/theme/ThemeToggle'
 import { navItems } from './navigation'
 import './shell.css'
@@ -63,6 +64,7 @@ export function AppShell() {
           </button>
           <div className="shell__actions">
             <ThemeToggle />
+            <UserMenu />
           </div>
         </header>
         <main className="shell__content">

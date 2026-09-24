@@ -1,11 +1,12 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { Route, Routes } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '@/shared/lib/queryClient'
 import { renderWithProviders } from '@/test/render'
 import * as authApi from '../api/authApi'
+import { ProtectedRoute } from '../components/ProtectedRoute'
 import { useAuthStore } from '../store/authStore'
 import LoginPage from './LoginPage'
 
@@ -34,6 +35,11 @@ function renderLogin() {
     </Routes>,
     { route: '/login' },
   )
+}
+
+function BoardProbe() {
+  const location = useLocation()
+  return <p>Board at {location.pathname + location.search + location.hash}</p>
 }
 
 async function fillAndSubmit() {
@@ -73,6 +79,23 @@ describe('LoginPage', () => {
     expect(useAuthStore.getState()).toMatchObject({ status: 'authenticated', accessToken: 'token' })
     expect(localStorage.length).toBe(0)
     expect(sessionStorage.length).toBe(0)
+  })
+
+  it('returns to the exact deep link, query string and hash included, after logging in', async () => {
+    vi.mocked(authApi.login).mockResolvedValue(session)
+    renderWithProviders(
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/board" element={<BoardProbe />} />
+        </Route>
+      </Routes>,
+      { route: '/board?filter=done#top' },
+    )
+
+    await fillAndSubmit()
+
+    expect(await screen.findByText('Board at /board?filter=done#top')).toBeInTheDocument()
   })
 
   it('drops cached data from a previous user on the same browser', async () => {

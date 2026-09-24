@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router'
+import { authRoutes, ProtectedRoute } from '@/features/auth'
 import { dashboardRoutes } from '@/features/dashboard'
 import { NotFoundPage } from '@/shared/ui/NotFoundPage'
 import { AppShell } from './AppShell'
@@ -9,7 +10,11 @@ export const router = createBrowserRouter([
     path: '/',
     Component: RootLayout,
     children: [
-      { Component: AppShell, children: [...dashboardRoutes] },
+      ...authRoutes,
+      {
+        Component: ProtectedRoute,
+        children: [{ Component: AppShell, children: [...dashboardRoutes] }],
+      },
       { path: '*', Component: NotFoundPage },
     ],
   },

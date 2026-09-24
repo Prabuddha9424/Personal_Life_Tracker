@@ -1,0 +1,6 @@
+export { useChangePassword, useSessionUser, useUpdateProfile } from './api/hooks'
+export { ProtectedRoute } from './components/ProtectedRoute'
+export { SessionGate } from './components/SessionGate'
+export { UserMenu } from './components/UserMenu'
+export { authRoutes } from './routes'
+export { initAuth, updateSessionUser } from './session'
