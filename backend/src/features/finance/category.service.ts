@@ -7,6 +7,7 @@ import { isDuplicateKeyError } from './duplicate-key.ts'
 import { toCategoryDto, type CategoryDto } from './finance.dto.ts'
 import { Transaction } from './transaction.model.ts'
 
+const MAX_CATEGORIES_PER_KIND = 100
 const DUPLICATE_NAME = 'A category with that name already exists'
 
 /**
@@ -47,8 +48,17 @@ export async function createCategory(
   userId: string,
   input: { name: string; kind: CategoryKind },
 ): Promise<CategoryDto> {
+  const owner = new Types.ObjectId(userId)
+  if (
+    (await Category.countDocuments({ userId: owner, kind: input.kind })) >= MAX_CATEGORIES_PER_KIND
+  ) {
+    throw new AppError(
+      409,
+      `You can have at most ${MAX_CATEGORIES_PER_KIND} ${input.kind} categories`,
+    )
+  }
   try {
-    const category = await Category.create({ userId: new Types.ObjectId(userId), ...input })
+    const category = await Category.create({ userId: owner, ...input })
     return toCategoryDto(category.toObject<CategoryRecord>())
   } catch (err) {
     if (isDuplicateKeyError(err)) throw new AppError(409, DUPLICATE_NAME)

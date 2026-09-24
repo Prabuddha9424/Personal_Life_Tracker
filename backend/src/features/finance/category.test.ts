@@ -169,6 +169,75 @@ describe('POST /api/categories', () => {
     expect(otherKind.status).toBe(201)
   })
 
+  describe('the per-kind cap of 100', () => {
+    const fill = (userId: string, kind: 'income' | 'expense', count: number) =>
+      Category.insertMany(
+        Array.from({ length: count }, (_, i) => ({
+          userId,
+          kind,
+          name: `${kind} ${i}`,
+        })),
+      )
+
+    it('accepts the 100th category of a kind and refuses the 101st with a 409', async () => {
+      await fill(alice.id, 'expense', 99)
+
+      await create({ name: 'The hundredth', kind: 'expense' }).expect(201)
+      const res = await create({ name: 'One too many', kind: 'expense' })
+
+      expect(res.status).toBe(409)
+      expect(res.body).toEqual({ message: 'You can have at most 100 expense categories' })
+      expect(await Category.countDocuments({ userId: alice.id, kind: 'expense' })).toBe(100)
+    })
+
+    it('does not limit the other kind', async () => {
+      await fill(alice.id, 'expense', 100)
+
+      await create({ name: 'Bonus', kind: 'income' }).expect(201)
+    })
+
+    it('does not limit another user', async () => {
+      await fill(alice.id, 'expense', 100)
+
+      await create({ name: 'Pets', kind: 'expense' }, testUser()).expect(201)
+    })
+
+    it('frees a slot when a category is deleted', async () => {
+      await fill(alice.id, 'expense', 100)
+      await create({ name: 'Pets', kind: 'expense' }).expect(409)
+      const [first] = await Category.find({ userId: alice.id }).limit(1).lean()
+
+      await request(app).delete(`/api/categories/${first?._id}`).set(alice.headers).expect(204)
+
+      await create({ name: 'Pets', kind: 'expense' }).expect(201)
+    })
+
+    it('still renames and deletes at the cap', async () => {
+      await fill(alice.id, 'expense', 100)
+      const [first] = await Category.find({ userId: alice.id }).limit(1).lean()
+
+      await request(app)
+        .patch(`/api/categories/${first?._id}`)
+        .set(alice.headers)
+        .send({ name: 'Renamed' })
+        .expect(200)
+    })
+
+    it('counts the seeded defaults toward the cap and seeds them even when the cap is already reached', async () => {
+      await fill(alice.id, 'expense', 100)
+
+      const res = await list('?kind=income')
+
+      expect(res.body.items).toHaveLength(
+        DEFAULT_CATEGORIES.filter((c) => c.kind === 'income').length,
+      )
+      expect(await Category.countDocuments({ userId: alice.id, kind: 'expense' })).toBe(
+        100 + DEFAULT_CATEGORIES.filter((c) => c.kind === 'expense').length,
+      )
+      await create({ name: 'Pets', kind: 'expense' }).expect(409)
+    })
+  })
+
   it('treats an accented name as distinct from the plain one but folds case', async () => {
     await create({ name: 'Caf\u00e9', kind: 'expense' }).expect(201)
 
