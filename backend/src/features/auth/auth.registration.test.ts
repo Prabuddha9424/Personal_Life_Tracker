@@ -112,6 +112,64 @@ describe('POST /api/auth/register', () => {
     await verify(newToken).expect(200)
   })
 
+  it('lets the latest sign-up of an unverified email win', async () => {
+    const first = newUserInput({ password: 'first-password-abc', name: 'First Name' })
+    await register(first)
+    const oldToken = lastMailToken()
+
+    const second = {
+      ...first,
+      password: 'second-password-xyz',
+      name: 'Second Name',
+      currency: 'EUR',
+    }
+    await register(second).expect(202)
+    const newToken = lastMailToken()
+    await verify(oldToken).expect(400)
+    await verify(newToken).expect(200)
+
+    const loginWith = (password: string) =>
+      request(app).post('/api/auth/login').send({ email: first.email, password })
+    await loginWith(first.password).expect(401)
+    await loginWith(second.password).expect(200)
+    const user = await User.findOne({ email: first.email })
+    expect(user?.name).toBe('Second Name')
+    expect(user?.currency).toBe('EUR')
+    expect(await User.countDocuments({ email: first.email })).toBe(1)
+  })
+
+  it('answers a repeated unverified sign-up exactly like a fresh one', async () => {
+    const input = newUserInput()
+    const fresh = await register(newUserInput())
+    await register(input)
+
+    const repeated = await register({ ...input, password: 'another-password-123' })
+
+    expect(repeated.status).toBe(fresh.status)
+    expect(repeated.body).toEqual(fresh.body)
+  })
+
+  it('does not change a verified account when someone signs up again with its email', async () => {
+    const existing = await registerVerified()
+    const before = await User.findOne({ email: existing.email }).select('+password')
+
+    await register({
+      ...existing,
+      password: 'attacker-password-123',
+      name: 'Attacker',
+      currency: 'EUR',
+    }).expect(202)
+
+    const after = await User.findOne({ email: existing.email }).select('+password')
+    expect(after?.password).toBe(before?.password)
+    expect(after?.name).toBe(existing.name)
+    expect(after?.currency).toBe(existing.currency)
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: existing.email, password: existing.password })
+      .expect(200)
+  })
+
   it('still answers 202 when the mail provider is down', async () => {
     sendMailMock.mockRejectedValueOnce(new Error('smtp down'))
     const input = newUserInput()
