@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Progress |
 | **Epic** | E0 Project setup |
 | **Priority** | Must |
 | **Size** | S |
@@ -25,8 +25,8 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-006-T1 | Add the money helpers (`minorUnitDigits`, `toMinorUnits`, `minorToMajor`, `formatMinorUnits`) with tests for USD, JPY, BHD and EU formats | [M0 Foundation](../plans/01-foundation.md), Task 11, steps 1-2 | To do |
-| US-006-T2 | Add the date helpers (`todayIso`, `addDaysIso`, `daysBetween`, `formatDate`, month helpers) with tests | [M0 Foundation](../plans/01-foundation.md), Task 11, steps 3-4 | To do |
+| US-006-T1 | Add the money helpers (`minorUnitDigits`, `toMinorUnits`, `minorToMajor`, `formatMinorUnits`) with tests for USD, JPY, BHD and EU formats | [M0 Foundation](../plans/01-foundation.md), Task 11, steps 1-2 | Done |
+| US-006-T2 | Add the date helpers (`todayIso`, `addDaysIso`, `daysBetween`, `formatDate`, month helpers) with tests | [M0 Foundation](../plans/01-foundation.md), Task 11, steps 3-4 | Done |
 | US-006-T3 | Add `formatMinorForInput` for pre-filling edit forms with integer arithmetic | [M3 Finance](../plans/04-finance.md), Task 7, step 1 | To do |
 
 ## Out of scope
