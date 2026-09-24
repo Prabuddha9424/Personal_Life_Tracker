@@ -14,17 +14,16 @@ export const taskFormSchema = z.object({
   title: z.string().trim().min(1, 'Enter a title').max(200, 'Use at most 200 characters'),
   description: z.string().max(5000, 'Use at most 5000 characters'),
   priority: z.enum(TASK_PRIORITIES),
-  dueDate: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, 'Use a valid date'),
-  tags: z
+  dueDate: z
     .string()
-    .max(400)
-    .superRefine((value, context) => {
-      const tags = parseTags(value)
-      if (tags.length > 10) context.addIssue({ code: 'custom', message: 'Use at most 10 tags' })
-      if (tags.some((tag) => tag.length > 30)) {
-        context.addIssue({ code: 'custom', message: 'Each tag can have at most 30 characters' })
-      }
-    }),
+    .refine((value) => value === '' || z.iso.date().safeParse(value).success, 'Use a valid date'),
+  tags: z.string().superRefine((value, context) => {
+    const tags = parseTags(value)
+    if (tags.length > 10) context.addIssue({ code: 'custom', message: 'Use at most 10 tags' })
+    if (tags.some((tag) => tag.length > 30)) {
+      context.addIssue({ code: 'custom', message: 'Each tag can have at most 30 characters' })
+    }
+  }),
 })
 
 export type TaskFormValues = z.infer<typeof taskFormSchema>

@@ -20,6 +20,13 @@ describe('taskFormSchema', () => {
     ['a blank title', { title: '   ' }, 'Enter a title'],
     ['a long title', { title: 'x'.repeat(201) }, 'Use at most 200 characters'],
     ['a malformed date', { dueDate: '01/02/2026' }, 'Use a valid date'],
+    ['an impossible calendar date', { dueDate: '2026-02-31' }, 'Use a valid date'],
+    ['a non-leap-year Feb 29', { dueDate: '2027-02-29' }, 'Use a valid date'],
+    [
+      'a description over 5000 characters',
+      { description: 'x'.repeat(5001) },
+      'Use at most 5000 characters',
+    ],
     ['11 tags', { tags: 'a,b,c,d,e,f,g,h,i,j,k' }, 'Use at most 10 tags'],
     ['a 31-character tag', { tags: 't'.repeat(31) }, 'Each tag can have at most 30 characters'],
   ])('rejects %s', (_name, override, message) => {
@@ -27,6 +34,30 @@ describe('taskFormSchema', () => {
 
     expect(result.success).toBe(false)
     expect(result.error?.issues.map((issue) => issue.message)).toContain(message)
+  })
+})
+
+describe('taskFormSchema boundaries', () => {
+  const valid = { title: 'Pay rent', description: '', priority: 'medium', dueDate: '', tags: '' }
+
+  it.each([
+    ['a real calendar date', { dueDate: '2026-02-28' }],
+    ['a leap day', { dueDate: '2028-02-29' }],
+    ['an empty date', { dueDate: '' }],
+    ['a 200-character title', { title: 'x'.repeat(200) }],
+    ['a 5000-character description', { description: 'x'.repeat(5000) }],
+    ['exactly 10 tags', { tags: 'a,b,c,d,e,f,g,h,i,j' }],
+    ['a 30-character tag', { tags: 't'.repeat(30) }],
+    [
+      '10 maximum-length tags',
+      { tags: Array.from({ length: 10 }, (_v, i) => `${i}`.padEnd(30, 't')).join(', ') },
+    ],
+    [
+      'many repeats of the same tag',
+      { tags: Array.from({ length: 200 }, () => 'home').join(', ') },
+    ],
+  ])('accepts %s', (_name, override) => {
+    expect(taskFormSchema.safeParse({ ...valid, ...override }).success).toBe(true)
   })
 })
 
