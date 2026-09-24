@@ -209,7 +209,10 @@ export function parseSignedAmount(
 }
 
 export interface MappedRows {
+  /** Rows in the shape the bulk endpoint takes, in file order. */
   valid: TransactionInput[]
+  /** `lines[i]` is the file line on which `valid[i]` starts. */
+  lines: number[]
   problems: ImportProblem[]
 }
 
@@ -248,6 +251,11 @@ function cleanNote(text: string): string {
  * Turns parsed rows into transactions in the shape the bulk endpoint takes. Every row that cannot
  * be turned into one is reported with its file line; none is dropped silently. The result keeps
  * the order of the file.
+ *
+ * The server numbers a rejected row ("Row N") from 1 within the batch it was sent, which holds
+ * only valid rows, so it is not a file line. `lines` runs parallel to `valid` for that: send
+ * `chunk(valid, size)` and, for a batch that starts at `valid` index `offset`, the file line of
+ * "Row N" is `lines[offset + N - 1]`.
  */
 export function mapRows(
   rows: readonly CsvRow[],
@@ -255,6 +263,7 @@ export function mapRows(
   hasHeader: boolean,
 ): MappedRows {
   const valid: TransactionInput[] = []
+  const lines: number[] = []
   const problems: ImportProblem[] = []
 
   const categoryIds = new Map<string, string>()
@@ -331,8 +340,9 @@ export function mapRows(
 
     const noteText = mapping.noteColumn === null ? '' : (cells[mapping.noteColumn] ?? '')
     valid.push({ kind, amountMinor: amount.minor, categoryId, date, note: cleanNote(noteText) })
+    lines.push(line)
   }
-  return { valid, problems }
+  return { valid, lines, problems }
 }
 
 function findColumn(header: readonly string[], patterns: RegExp[], taken: number[]): number | null {

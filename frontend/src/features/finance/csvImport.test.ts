@@ -165,9 +165,10 @@ describe('mapRows', () => {
   ])
 
   it('skips the header and turns rows into transactions with the chosen categories', () => {
-    const { valid, problems } = mapRows(rows, mapping, true)
+    const { valid, lines, problems } = mapRows(rows, mapping, true)
 
     expect(problems).toEqual([])
+    expect(lines).toEqual([2, 3])
     expect(valid).toEqual([
       {
         kind: 'expense',
@@ -282,6 +283,24 @@ describe('mapRows', () => {
     ])
   })
 
+  it('keeps the file line of every valid row, for mapping a server "Row N" back to the file', () => {
+    const text = [
+      'date,amount,note',
+      '',
+      '2026-09-01,-1.00,"two',
+      'lines"',
+      '',
+      'oops,-2.00,bad date',
+      '2026-09-03,-3.00,fine',
+    ].join('\r\n')
+
+    const { valid, lines, problems } = mapRows(readCsv(text).rows, mapping, true)
+
+    expect(valid.map((row) => row.note)).toEqual(['two lines', 'fine'])
+    expect(lines).toEqual([3, 7])
+    expect(problems.map((problem) => problem.line)).toEqual([6])
+  })
+
   it('reports a malformed header row too', () => {
     const { valid, problems } = mapRows(
       [
@@ -357,9 +376,10 @@ describe('mapRows', () => {
   it('returns nothing for a header-only file and for no rows', () => {
     expect(mapRows(fileRows([['Date', 'Amount']]), mapping, true)).toEqual({
       valid: [],
+      lines: [],
       problems: [],
     })
-    expect(mapRows([], mapping, true)).toEqual({ valid: [], problems: [] })
+    expect(mapRows([], mapping, true)).toEqual({ valid: [], lines: [], problems: [] })
   })
 
   it('uses whole minor units for currencies without decimals and three decimals for BHD', () => {
