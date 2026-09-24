@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import { pinoHttp } from 'pino-http'
 import { authRouter } from './features/auth/index.ts'
 import { healthRouter } from './features/health/index.ts'
+import { taskRouter } from './features/tasks/index.ts'
 import { env } from './shared/config/env.ts'
 import { logger } from './shared/logger/logger.ts'
 import { errorHandler } from './shared/middleware/errorHandler.ts'
@@ -21,6 +22,7 @@ app.use(pinoHttp({ logger }))
 // Feature slices
 app.use('/api/health', healthRouter)
 app.use('/api/auth', authRouter)
+app.use('/api/tasks', taskRouter)
 
 app.use(notFound)
 app.use(errorHandler)
