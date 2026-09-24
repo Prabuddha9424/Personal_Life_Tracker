@@ -1311,7 +1311,7 @@ Expected: all pass.
 
 The theme is a UI preference, so `localStorage` is allowed (only JWTs are forbidden there). Every storage access is wrapped because private windows can throw (Review Focus 5). The tiny `theme-init.js` runs before first paint to avoid a flash of the wrong theme; it is a separate file, not inline, so a strict Content-Security-Policy in M6 does not need `unsafe-inline` for scripts.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `frontend/src/shared/theme/themeStore.test.ts`:
 
@@ -1381,7 +1381,7 @@ describe('ThemeToggle', () => {
 
 Run: `npx vitest run src/shared/theme` → FAIL.
 
-- [ ] **Step 2: Implement the store**
+- [x] **Step 2: Implement the store**
 
 `frontend/src/shared/theme/themeStore.ts`:
 
@@ -1450,7 +1450,7 @@ export function ThemeToggle() {
 
 Run the theme tests → PASS.
 
-- [ ] **Step 3: Apply the theme before first paint and at start-up**
+- [x] **Step 3: Apply the theme before first paint and at start-up**
 
 Create `frontend/public/theme-init.js`:
 
@@ -1471,7 +1471,7 @@ In `frontend/index.html`, inside `<head>` before the `<title>`, add:
 
 In `frontend/src/main.tsx` add `import { initTheme } from '@/shared/theme/themeStore'` and call `initTheme()` on the line before `createRoot(...)`. (This keeps the store and the document in sync even if the static script was blocked.)
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
