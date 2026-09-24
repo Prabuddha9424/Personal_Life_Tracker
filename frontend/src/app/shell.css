@@ -65,10 +65,17 @@
     inset: 0 auto 0 0;
     z-index: 40;
     transform: translateX(-100%);
-    transition: transform 0.2s ease;
+    visibility: hidden;
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
   }
   .shell__sidebar.is-open {
     transform: translateX(0);
+    visibility: visible;
+    transition:
+      transform 0.2s ease,
+      visibility 0s;
   }
   .shell__scrim {
     display: block;
@@ -82,7 +89,8 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .shell__sidebar {
+  .shell__sidebar,
+  .shell__sidebar.is-open {
     transition: none;
   }
 }

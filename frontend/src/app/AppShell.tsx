@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { ThemeToggle } from '@/shared/theme/ThemeToggle'
 import { navItems } from './navigation'
@@ -6,12 +6,33 @@ import './shell.css'
 
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const navRef = useRef<HTMLElement>(null)
+  const wasOpenRef = useRef(false)
+
+  useEffect(() => {
+    if (drawerOpen) {
+      navRef.current?.querySelector('a')?.focus()
+    } else if (wasOpenRef.current) {
+      menuButtonRef.current?.focus()
+    }
+    wasOpenRef.current = drawerOpen
+  }, [drawerOpen])
+
+  useEffect(() => {
+    if (!drawerOpen) return
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setDrawerOpen(false)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [drawerOpen])
 
   return (
     <div className="shell">
       <aside className={`shell__sidebar${drawerOpen ? ' is-open' : ''}`} aria-label="Primary">
         <div className="shell__brand">Tracker</div>
-        <nav>
+        <nav ref={navRef}>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -25,13 +46,16 @@ export function AppShell() {
           ))}
         </nav>
       </aside>
-      {drawerOpen && <div className="shell__scrim" onClick={() => setDrawerOpen(false)} />}
+      {drawerOpen && (
+        <div className="shell__scrim" aria-hidden="true" onClick={() => setDrawerOpen(false)} />
+      )}
       <div className="shell__main">
         <header className="shell__topbar">
           <button
+            ref={menuButtonRef}
             type="button"
             className="btn btn--ghost shell__menu"
-            aria-label="Open navigation"
+            aria-label={drawerOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen((open) => !open)}
           >
