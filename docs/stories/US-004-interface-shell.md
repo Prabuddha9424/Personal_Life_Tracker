@@ -48,5 +48,5 @@ The shared [Definition of Done](./README.md#definition-of-done) applies, plus ev
 - [ ] Acceptance criterion 2
 - [x] Acceptance criterion 3
 - [x] Acceptance criterion 4
-- [x] Acceptance criterion 5
+- [ ] Acceptance criterion 5
 - [x] Acceptance criterion 6

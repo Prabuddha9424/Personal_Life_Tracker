@@ -43,8 +43,8 @@ Netlify's proxy gives up after 26 s while a cold Render start takes about a minu
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
 - [ ] Acceptance criterion 5

@@ -44,7 +44,7 @@ A wrong hop count would put every visitor in one rate-limit bucket. It is verifi
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
+- [x] Acceptance criterion 1
 - [ ] Acceptance criterion 2
 - [x] Acceptance criterion 3
 - [x] Acceptance criterion 4

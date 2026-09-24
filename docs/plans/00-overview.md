@@ -144,7 +144,7 @@ These exact names and signatures are relied on by later plans. If a plan must ch
 
 ### Shared frontend helpers (created in M0)
 
-`@/shared/lib/money` (`minorUnitDigits`, `toMinorUnits`, `formatMinorUnits`), `@/shared/lib/dates` (`todayIso`, `addDaysIso`, `daysBetween`, `formatDate`, `currentMonthIso`, `shiftMonthIso`), `@/shared/ui/*` (`Button`, `Card`, `Spinner`, `LoadingState`, `EmptyState`, `ErrorState`, `FormField`, `Modal`, `ToastHost`, `pushToast`), `@/shared/theme/themeStore`.
+`@/shared/lib/money` (`minorUnitDigits`, `toMinorUnits`, `minorToMajor`, `formatMinorUnits`; `formatMinorForInput` is added in M3), `@/shared/lib/dates` (`todayIso`, `addDaysIso`, `daysBetween`, `formatDate`, `currentMonthIso`, `shiftMonthIso`, `formatMonth`), `@/shared/ui/*` (`Button`, `Card`, `Spinner`, `LoadingState`, `EmptyState`, `ErrorState`, `FormField`, `Modal`, `ToastHost`, `pushToast`), `@/shared/theme/themeStore`.
 
 ## API contract (all routes under `/api`)
 

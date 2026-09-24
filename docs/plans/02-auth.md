@@ -31,6 +31,15 @@
 6. **Wrong current password on change-password must be 403, not 401**, because the client treats 401 as "session expired". [Task 6 test]
 7. **Known limitation (documented, not fixed):** `resend-verification` and `forgot-password` do slightly more work for existing accounts (sending mail), which a patient attacker could time. The 5-per-hour-per-IP mail rate limit makes bulk enumeration impractical. `register` is timing-equalised.
 
+## Carried over from the M0 review
+
+Decisions and gaps found in the whole-branch review of M0 that land in this milestone:
+
+1. **A waking-server message for a POST.** `getErrorMessage` (Task 8) says "The server is waking up. Please try again in a moment." for a 502, 503, 504 or no response, because only `GET`s are retried automatically (M0 Task 10) and the first action after idle is often the login `POST`.
+2. **`FormField` must link errors to controls.** M0's `FormField` wraps the control but does not set `aria-describedby` or `aria-invalid`. When the first real form (Task 10) is built, extend `FormField` so a screen reader user hears the error with the field, keeping its tests passing.
+3. **Currency codes must be validated before they reach `minorUnitDigits`.** An invalid code makes `Intl.NumberFormat` throw a `RangeError`. The register schema already restricts the code to `Intl.supportedValuesOf('currency')`; never pass an unvalidated string to the money helpers.
+4. **Interceptor order.** Keep the refresh-on-401 interceptor registered **before** `installColdStartRetry(httpClient)` (Task 8 does), so a 401 is handled once.
+
 ---
 
 ## Part A: Backend
@@ -2189,6 +2198,20 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(new Error('Network Error'))).toBe('Network Error')
     expect(getErrorMessage('nonsense')).toBe('Something went wrong')
   })
+
+  it('says the server is waking up for a gateway error or no response at all', () => {
+    const gateway = new AxiosError('Request failed with status code 504', 'ERR_BAD_RESPONSE', undefined, null, {
+      status: 504,
+      statusText: '',
+      data: {},
+      headers: {},
+      config: {} as InternalAxiosRequestConfig,
+    })
+    const noResponse = new AxiosError('Network Error', 'ERR_NETWORK')
+
+    expect(getErrorMessage(gateway)).toBe('The server is waking up. Please try again in a moment.')
+    expect(getErrorMessage(noResponse)).toBe('The server is waking up. Please try again in a moment.')
+  })
 })
 ```
 
@@ -2269,10 +2292,18 @@ httpClient.interceptors.response.use(
 
 installColdStartRetry(httpClient)
 
-/** Extracts the `{ message }` from an API error, falling back to a generic message. */
+/**
+ * Extracts the `{ message }` from an API error, falling back to a generic message. A gateway
+ * timeout (502, 503, 504) or no response at all usually means the free backend is waking up, so
+ * say that instead of a raw Axios message (POSTs are never retried automatically).
+ */
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError<{ message?: string }>(error)) {
-    return error.response?.data?.message ?? error.message
+    const status = error.response?.status
+    if (!error.response || status === 502 || status === 503 || status === 504) {
+      return 'The server is waking up. Please try again in a moment.'
+    }
+    return error.response.data?.message ?? error.message
   }
   if (error instanceof Error) return error.message
   return 'Something went wrong'
