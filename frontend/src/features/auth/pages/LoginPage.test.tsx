@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '@/shared/lib/queryClient'
 import { renderWithProviders } from '@/test/render'
 import * as authApi from '../api/authApi'
+import { GuestRoute } from '../components/GuestRoute'
 import { ProtectedRoute } from '../components/ProtectedRoute'
 import { useAuthStore } from '../store/authStore'
 import LoginPage from './LoginPage'
@@ -30,7 +31,9 @@ function apiError(status: number, message: string) {
 function renderLogin() {
   return renderWithProviders(
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route element={<GuestRoute />}>
+        <Route path="/login" element={<LoginPage />} />
+      </Route>
       <Route path="/" element={<p>Dashboard home</p>} />
     </Routes>,
     { route: '/login' },
@@ -85,7 +88,10 @@ describe('LoginPage', () => {
     vi.mocked(authApi.login).mockResolvedValue(session)
     renderWithProviders(
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route element={<GuestRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+        </Route>
+        <Route path="/" element={<p>Dashboard home</p>} />
         <Route element={<ProtectedRoute />}>
           <Route path="/board" element={<BoardProbe />} />
         </Route>

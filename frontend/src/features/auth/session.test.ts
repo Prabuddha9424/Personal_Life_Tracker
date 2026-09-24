@@ -241,6 +241,24 @@ describe('bootstrapSession', () => {
     expect(useServerStatus.getState().waking).toBe(false)
   })
 
+  it('never leaves the status unknown when the session changed while it was waiting', async () => {
+    let reject: (reason: unknown) => void = () => undefined
+    vi.mocked(authApi.refresh).mockReturnValue(
+      new Promise((_resolve, rej) => {
+        reject = rej
+      }),
+    )
+
+    const done = retryBootstrap()
+    await vi.advanceTimersByTimeAsync(0)
+    startSession(session)
+    useAuthStore.setState({ status: 'unknown' })
+    reject(httpError(503))
+    await done
+
+    expect(useAuthStore.getState().status).toBe('anonymous')
+  })
+
   it('tries again from scratch when asked, after the server was unavailable', async () => {
     useAuthStore.setState({ status: 'unavailable' })
     vi.mocked(authApi.refresh).mockResolvedValue(session)

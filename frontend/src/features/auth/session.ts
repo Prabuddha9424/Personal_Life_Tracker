@@ -70,11 +70,10 @@ export async function refreshSession(): Promise<boolean> {
 async function restoreSession(): Promise<void> {
   const { setWaking } = useServerStatus.getState()
   await warmUpServer()
+  let outcome: RefreshOutcome = 'unavailable'
   for (let attempt = 1; attempt <= BOOTSTRAP_ATTEMPTS; attempt += 1) {
-    if ((await attemptRefresh()) !== 'unavailable') {
-      setWaking(false)
-      return
-    }
+    outcome = await attemptRefresh()
+    if (outcome !== 'unavailable') break
     // A valid cookie must not be mistaken for a logged-out user just because the server is cold.
     setWaking(true)
     if (attempt < BOOTSTRAP_ATTEMPTS) {
@@ -82,7 +81,10 @@ async function restoreSession(): Promise<void> {
     }
   }
   setWaking(false)
-  if (useAuthStore.getState().status === 'unknown') useAuthStore.setState({ status: 'unavailable' })
+  // Whatever happened, never leave the app waiting on an answer that is not coming.
+  if (useAuthStore.getState().status === 'unknown') {
+    useAuthStore.setState({ status: outcome === 'unavailable' ? 'unavailable' : 'anonymous' })
+  }
 }
 
 /** Wakes the backend if it is asleep, then restores the session from the cookie. Runs once. */

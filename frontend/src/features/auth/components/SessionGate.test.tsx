@@ -22,10 +22,12 @@ beforeEach(() => {
 })
 
 describe('SessionGate', () => {
-  it('renders the app while the session is being restored', () => {
+  it('renders the app while the session is being restored', async () => {
+    vi.mocked(authApi.refresh).mockResolvedValue(session)
     renderWithProviders(<SessionGate>App content</SessionGate>)
 
     expect(screen.getByText('App content')).toBeInTheDocument()
+    await vi.waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'))
   })
 
   it('replaces the app with a message and a retry button when the server never came up', async () => {

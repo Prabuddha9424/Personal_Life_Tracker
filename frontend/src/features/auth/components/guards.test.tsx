@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react'
-import { Route, Routes, useLocation } from 'react-router'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 import { useAuthStore } from '../store/authStore'
@@ -21,6 +21,14 @@ function renderApp(route: string) {
         <Route path="/login" element={<LoginProbe />} />
       </Route>
       <Route path="/" element={<p>Home</p>} />
+      <Route
+        path="/from-elsewhere"
+        element={<Navigate to="/login" state={{ from: '//evil.example' }} />}
+      />
+      <Route
+        path="/from-board"
+        element={<Navigate to="/login" state={{ from: '/board?tab=1#top' }} />}
+      />
     </Routes>,
     { route },
   )
@@ -81,6 +89,31 @@ describe('GuestRoute', () => {
     renderApp('/login')
 
     expect(screen.getByText('Home')).toBeInTheDocument()
+  })
+
+  it('sends a signed-in user on to the page they were heading to', () => {
+    useAuthStore.setState({ status: 'authenticated', accessToken: 't', user })
+
+    renderApp('/from-board')
+
+    expect(screen.getByText('Board')).toBeInTheDocument()
+  })
+
+  it('ignores an unsafe origin and goes home instead', () => {
+    useAuthStore.setState({ status: 'authenticated', accessToken: 't', user })
+
+    renderApp('/from-elsewhere')
+
+    expect(screen.getByText('Home')).toBeInTheDocument()
+  })
+
+  it('never shows the login form while it is unknown whether a session exists', () => {
+    useAuthStore.setState({ status: 'unavailable' })
+
+    renderApp('/login')
+
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(screen.queryByText(/Login page/)).not.toBeInTheDocument()
   })
 
   it('waits while the session is unknown, then shows the login page to anonymous visitors', () => {

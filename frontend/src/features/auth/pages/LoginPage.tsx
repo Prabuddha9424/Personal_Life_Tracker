@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { useForm } from 'react-hook-form'
-import { Link, useLocation, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import { getErrorMessage } from '@/shared/api/httpClient'
 import { Button } from '@/shared/ui/Button'
 import { FormField } from '@/shared/ui/FormField'
@@ -10,18 +10,7 @@ import { useLogin, useResendVerification } from '../api/hooks'
 import { AuthLayout } from '../components/AuthLayout'
 import { loginFormSchema, type LoginForm } from '../schemas'
 
-/** Where to go after login: the page the user was sent away from, if it is a local path. */
-function redirectTarget(state: unknown): string {
-  if (typeof state === 'object' && state !== null && 'from' in state) {
-    const from = state.from
-    if (typeof from === 'string' && from.startsWith('/') && !from.startsWith('//')) return from
-  }
-  return '/'
-}
-
 export default function LoginPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
   const login = useLogin()
   const resend = useResendVerification()
   const {
@@ -34,9 +23,7 @@ export default function LoginPage() {
   const unverified = axios.isAxiosError(login.error) && login.error.response?.status === 403
 
   function onSubmit(values: LoginForm) {
-    login.mutate(values, {
-      onSuccess: () => navigate(redirectTarget(location.state), { replace: true }),
-    })
+    login.mutate(values)
   }
 
   function onResend() {
