@@ -425,7 +425,7 @@ git commit -m "feat(backend): add configurable proxy hops, refresh TTL, cron sec
 - Consumes: `env.CRON_SECRET`, `AppError`, `errorHandler`.
 - Produces: `requireCronSecret: RequestHandler`, which reads the `x-cron-secret` header and throws `AppError(401, 'Not authorized')` unless it equals `env.CRON_SECRET`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 import express from 'express'
@@ -468,7 +468,7 @@ describe('requireCronSecret', () => {
 
 Run: `npx vitest run src/shared/middleware/requireCronSecret.test.ts` → FAIL (module missing).
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 ```ts
 import { createHash, timingSafeEqual } from 'node:crypto'
@@ -491,7 +491,7 @@ export const requireCronSecret: RequestHandler = (req, _res, next) => {
 
 Run the test → PASS (5 cases).
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
