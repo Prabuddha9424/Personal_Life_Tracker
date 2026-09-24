@@ -5,6 +5,7 @@ import { warmUpServer } from '@/shared/api/warmUp'
 import { queryClient } from '@/shared/lib/queryClient'
 import * as authApi from './api/authApi'
 import { useAuthStore } from './store/authStore'
+import { tokenOwnerId } from './tokenOwner'
 import type { SessionResponse, SessionUser } from './types'
 
 type RefreshOutcome = 'renewed' | 'rejected' | 'unavailable' | 'rateLimited'
@@ -73,18 +74,21 @@ function attemptRefresh(): Promise<RefreshOutcome> {
 }
 
 /**
- * Exchanges the refresh cookie for a new access token. Resolves true when the caller may retry
- * with the current session. An answer that arrives after the session changed (logout, a newer
- * login) is dropped, and a network or gateway failure leaves an existing session untouched.
- * A caller that was signed in as one user is never told to retry once a different user is
- * signed in: the retry would carry the new user's token and write the old user's request into
- * the new user's account.
+ * Exchanges the refresh cookie for a new access token. Resolves true when the request that was
+ * sent with `sentAuthorization` (and got a 401) may be sent again with the current session. An
+ * answer that arrives after the session changed (logout, a newer login) is dropped, and a
+ * network or gateway failure leaves an existing session untouched.
+ *
+ * The retry is tied to the user the request was SENT as, not to whoever is signed in when the 401
+ * arrives: it is allowed only when that same user holds the renewed session. Otherwise a request
+ * sent by one user would be replayed with the next user's token and land in their account. A
+ * token with no readable owner is never retried.
  */
-export async function refreshSession(): Promise<boolean> {
-  const callerId = useAuthStore.getState().user?.id
+export async function refreshSession(sentAuthorization: string): Promise<boolean> {
+  const owner = tokenOwnerId(sentAuthorization)
+  if (owner === null) return false
   const outcome = await attemptRefresh()
-  if (outcome !== 'renewed') return false
-  return callerId === undefined || useAuthStore.getState().user?.id === callerId
+  return outcome === 'renewed' && useAuthStore.getState().user?.id === owner
 }
 
 async function restoreSession(): Promise<void> {

@@ -52,6 +52,21 @@ describe('httpClient auth handling', () => {
     expect(refresh).toHaveBeenCalledTimes(1)
   })
 
+  it('tells the handler which Authorization header the failed request was sent with', async () => {
+    let token = 'old'
+    useServer((config) => (bearer(config) === 'Bearer old' ? 401 : 200))
+    const refresh = vi.fn(async (sent: string) => {
+      expect(sent).toBe('Bearer old')
+      token = 'new'
+      return true
+    })
+    configureAuth({ getToken: () => token, onUnauthorized: refresh })
+
+    await httpClient.get('/things')
+
+    expect(refresh).toHaveBeenCalledWith('Bearer old')
+  })
+
   it('does not loop when the retry is also unauthorized', async () => {
     const calls = useServer(() => 401)
     const refresh = vi.fn(async () => true)

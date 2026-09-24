@@ -24,6 +24,18 @@ const session = {
   user: { id: '1', email: 'ada@example.com', name: 'Ada', currency: 'USD' },
 }
 
+const encode = (value: unknown) =>
+  btoa(JSON.stringify(value)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+
+/** An access token as the server issues it: only the `sub` matters to the client. */
+const tokenFor = (userId: string, label = 'a') =>
+  `${encode({ alg: 'HS256' })}.${encode({ sub: userId })}.${label}`
+
+/** The Authorization header a request sent as this user carries. */
+const sentBy = (userId: string, label = 'a') => `Bearer ${tokenFor(userId, label)}`
+
+const bob = { id: '2', email: 'bob@example.com', name: 'Bob', currency: 'USD' }
+
 function httpError(status: number) {
   return new AxiosError('failed', 'ERR_BAD_REQUEST', undefined, null, {
     status,
@@ -44,7 +56,7 @@ describe('refreshSession', () => {
   it('stores the new session', async () => {
     vi.mocked(authApi.refresh).mockResolvedValue(session)
 
-    expect(await refreshSession()).toBe(true)
+    expect(await refreshSession(sentBy('1'))).toBe(true)
 
     expect(useAuthStore.getState()).toMatchObject({
       status: 'authenticated',
@@ -56,7 +68,11 @@ describe('refreshSession', () => {
   it('shares one request between concurrent callers', async () => {
     vi.mocked(authApi.refresh).mockResolvedValue(session)
 
-    const results = await Promise.all([refreshSession(), refreshSession(), refreshSession()])
+    const results = await Promise.all([
+      refreshSession(sentBy('1')),
+      refreshSession(sentBy('1')),
+      refreshSession(sentBy('1')),
+    ])
 
     expect(results).toEqual([true, true, true])
     expect(authApi.refresh).toHaveBeenCalledTimes(1)
@@ -65,8 +81,8 @@ describe('refreshSession', () => {
   it('makes a new request once the previous one has finished', async () => {
     vi.mocked(authApi.refresh).mockResolvedValue(session)
 
-    await refreshSession()
-    await refreshSession()
+    await refreshSession(sentBy('1'))
+    await refreshSession(sentBy('1'))
 
     expect(authApi.refresh).toHaveBeenCalledTimes(2)
   })
@@ -76,7 +92,7 @@ describe('refreshSession', () => {
     queryClient.setQueryData(['tasks'], ['previous user data'])
     vi.mocked(authApi.refresh).mockRejectedValue(httpError(401))
 
-    expect(await refreshSession()).toBe(false)
+    expect(await refreshSession(sentBy('1'))).toBe(false)
 
     expect(useAuthStore.getState()).toMatchObject({
       status: 'anonymous',
@@ -91,7 +107,7 @@ describe('refreshSession', () => {
     queryClient.setQueryData(['tasks'], ['still mine'])
     vi.mocked(authApi.refresh).mockRejectedValue(httpError(504))
 
-    expect(await refreshSession()).toBe(false)
+    expect(await refreshSession(sentBy('1'))).toBe(false)
 
     expect(useAuthStore.getState().status).toBe('authenticated')
     expect(queryClient.getQueryData(['tasks'])).toEqual(['still mine'])
@@ -100,7 +116,7 @@ describe('refreshSession', () => {
   it('does not treat an unreachable server as a logged-out user at start-up', async () => {
     vi.mocked(authApi.refresh).mockRejectedValue(new Error('Network Error'))
 
-    expect(await refreshSession()).toBe(false)
+    expect(await refreshSession(sentBy('1'))).toBe(false)
 
     expect(useAuthStore.getState().status).toBe('unknown')
   })
@@ -143,7 +159,7 @@ describe('refreshing while another tab refreshes too', () => {
     useAuthStore.setState({ status: 'unknown' })
 
     const otherTab = request('auth-refresh', () => authApi.refresh())
-    const result = await refreshSession()
+    const result = await refreshSession(sentBy('1'))
     await otherTab
 
     expect(result).toBe(true)
@@ -156,7 +172,7 @@ describe('refreshing while another tab refreshes too', () => {
     Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true })
     vi.mocked(authApi.refresh).mockResolvedValue(session)
 
-    expect(await refreshSession()).toBe(true)
+    expect(await refreshSession(sentBy('1'))).toBe(true)
 
     expect(useAuthStore.getState().status).toBe('authenticated')
   })
@@ -167,7 +183,7 @@ describe('refreshing while another tab refreshes too', () => {
     queryClient.setQueryData(['tasks'], ['previous user data'])
     vi.mocked(authApi.refresh).mockRejectedValue(httpError(401))
 
-    expect(await refreshSession()).toBe(false)
+    expect(await refreshSession(sentBy('1'))).toBe(false)
 
     expect(useAuthStore.getState().status).toBe('anonymous')
     expect(queryClient.getQueryData(['tasks'])).toBeUndefined()
@@ -183,7 +199,7 @@ describe('refreshing while another tab refreshes too', () => {
       () => new Promise<void>((resolve) => (release = resolve)),
     )
 
-    const pending = refreshSession()
+    const pending = refreshSession(sentBy('1'))
     vi.mocked(authApi.logout).mockResolvedValue()
     await logoutUser()
     release()
@@ -211,7 +227,7 @@ describe('a refresh that finishes after the session changed', () => {
     startSession({ ...session, accessToken: 'old' })
     const late = deferredRefresh()
     vi.mocked(authApi.logout).mockResolvedValue()
-    const pending = refreshSession()
+    const pending = refreshSession(sentBy('1'))
 
     await logoutUser()
     late.resolve(session)
@@ -227,7 +243,7 @@ describe('a refresh that finishes after the session changed', () => {
   it('does not wipe the session or cache a newer login has since established', async () => {
     startSession({ ...session, accessToken: 'old' })
     const late = deferredRefresh()
-    const pending = refreshSession()
+    const pending = refreshSession(sentBy('1'))
 
     startSession({ ...session, accessToken: 'new' })
     queryClient.setQueryData(['tasks'], ['new login data'])
@@ -241,53 +257,21 @@ describe('a refresh that finishes after the session changed', () => {
     startSession({ ...session, accessToken: 'old' })
     const late = deferredRefresh()
     vi.mocked(authApi.logout).mockResolvedValue()
-    const pending = refreshSession()
+    const pending = refreshSession(sentBy('1'))
 
     await logoutUser()
-    startSession({ accessToken: 'bob-token', user: { ...session.user, id: '2', name: 'Bob' } })
+    startSession({ accessToken: tokenFor('2'), user: bob })
     late.resolve(session)
 
     expect(await pending).toBe(false)
-    expect(useAuthStore.getState()).toMatchObject({
-      status: 'authenticated',
-      accessToken: 'bob-token',
-    })
-  })
-
-  it('never retries the first user request with the second user token', async () => {
-    const originalAdapter = httpClient.defaults.adapter
-    const calls: string[] = []
-    const adapter: AxiosAdapter = async (config) => {
-      calls.push(String(config.headers.get('Authorization') ?? ''))
-      const response = { data: {}, status: 401, statusText: '', headers: {}, config }
-      throw new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, response)
-    }
-    httpClient.defaults.adapter = adapter
-    initAuth()
-    try {
-      startSession({ ...session, accessToken: 'ada-token' })
-      const late = deferredRefresh()
-      vi.mocked(authApi.logout).mockResolvedValue()
-      const request = httpClient.post('/tasks', { title: 'Ada private title' })
-      const outcome = request.catch((error: unknown) => error)
-      await vi.waitFor(() => expect(authApi.refresh).toHaveBeenCalled())
-
-      await logoutUser()
-      startSession({ accessToken: 'bob-token', user: { ...session.user, id: '2', name: 'Bob' } })
-      late.resolve(session)
-
-      expect(await outcome).toMatchObject({ response: { status: 401 } })
-      expect(calls).toEqual(['Bearer ada-token'])
-    } finally {
-      httpClient.defaults.adapter = originalAdapter
-    }
+    expect(useAuthStore.getState()).toMatchObject({ status: 'authenticated', user: bob })
   })
 
   it('still reports a renewal when the same user has logged in again since', async () => {
     startSession({ ...session, accessToken: 'old' })
     const late = deferredRefresh()
     vi.mocked(authApi.logout).mockResolvedValue()
-    const pending = refreshSession()
+    const pending = refreshSession(sentBy('1'))
 
     await logoutUser()
     startSession({ ...session, accessToken: 'newer' })
@@ -296,10 +280,139 @@ describe('a refresh that finishes after the session changed', () => {
     expect(await pending).toBe(true)
   })
 
-  it('still reports a renewal for a refresh that starts with nobody signed in', async () => {
+  it('does not report a renewal when nobody was signed in and the refresh renews someone else', async () => {
+    vi.mocked(authApi.refresh).mockResolvedValue({ accessToken: tokenFor('2'), user: bob })
+
+    expect(await refreshSession(sentBy('1'))).toBe(false)
+  })
+
+  it.each([
+    ['a token without a subject', `Bearer ${encode({})}.${encode({})}.x`],
+    ['a malformed token', 'Bearer nonsense'],
+    ['no token at all', ''],
+  ])('never reports a renewal for %s, and does not even refresh', async (_name, sent) => {
     vi.mocked(authApi.refresh).mockResolvedValue(session)
 
-    expect(await refreshSession()).toBe(true)
+    expect(await refreshSession(sent)).toBe(false)
+
+    expect(authApi.refresh).not.toHaveBeenCalled()
+  })
+})
+
+describe('a request sent by one user that gets its 401 after the session changed', () => {
+  const originalAdapter = httpClient.defaults.adapter
+  const ada = sentBy('1', 'ada')
+
+  afterEach(() => {
+    httpClient.defaults.adapter = originalAdapter
+  })
+
+  /** Ada's POST is held until `release()`, then answered 401; anything else is a 201. */
+  function serve() {
+    const calls: string[] = []
+    let release: () => void = () => undefined
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    const adapter: AxiosAdapter = async (config) => {
+      const authorization = String(config.headers.get('Authorization') ?? '')
+      calls.push(authorization)
+      const isAda = authorization === ada
+      if (isAda) await gate
+      const status = isAda ? 401 : 201
+      const response = { data: {}, status, statusText: '', headers: {}, config }
+      if (status >= 400) throw new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, response)
+      return response
+    }
+    httpClient.defaults.adapter = adapter
+    initAuth()
+    return { calls, release }
+  }
+
+  function deferredRefresh() {
+    let resolve: (value: typeof session) => void = () => undefined
+    let reject: (reason: unknown) => void = () => undefined
+    vi.mocked(authApi.refresh).mockReturnValue(
+      new Promise((res, rej) => {
+        resolve = res
+        reject = rej
+      }),
+    )
+    return { resolve, reject }
+  }
+
+  async function sendAsAda() {
+    startSession({ accessToken: tokenFor('1', 'ada'), user: session.user })
+    const outcome = httpClient
+      .post('/tasks', { title: 'Ada private title' })
+      .then(() => 'sent' as const)
+      .catch((error: unknown) => error)
+    return outcome
+  }
+
+  it('is not replayed as the next user when the 401 arrives with nobody signed in', async () => {
+    const { calls, release } = serve()
+    vi.mocked(authApi.logout).mockResolvedValue()
+    const late = deferredRefresh()
+    const outcome = sendAsAda()
+    await vi.waitFor(() => expect(calls).toEqual([ada]))
+
+    await logoutUser()
+    release()
+    await vi.waitFor(() => expect(authApi.refresh).toHaveBeenCalled())
+    startSession({ accessToken: tokenFor('2', 'bob'), user: bob })
+    late.reject(httpError(401))
+
+    expect(await outcome).toMatchObject({ response: { status: 401 } })
+    expect(calls).toEqual([ada])
+  })
+
+  it('is not replayed as the next user when they were already signed in when the 401 arrived', async () => {
+    const { calls, release } = serve()
+    vi.mocked(authApi.logout).mockResolvedValue()
+    vi.mocked(authApi.refresh).mockResolvedValue({ accessToken: tokenFor('2', 'bob'), user: bob })
+    const outcome = sendAsAda()
+    await vi.waitFor(() => expect(calls).toEqual([ada]))
+
+    await logoutUser()
+    startSession({ accessToken: tokenFor('2', 'bob'), user: bob })
+    release()
+
+    expect(await outcome).toMatchObject({ response: { status: 401 } })
+    expect(calls).toEqual([ada])
+  })
+
+  it('is still retried, with the new token, when the same user signed in again', async () => {
+    const { calls, release } = serve()
+    vi.mocked(authApi.logout).mockResolvedValue()
+    vi.mocked(authApi.refresh).mockResolvedValue({
+      accessToken: tokenFor('1', 'ada-2'),
+      user: session.user,
+    })
+    const outcome = sendAsAda()
+    await vi.waitFor(() => expect(calls).toEqual([ada]))
+
+    await logoutUser()
+    startSession({ accessToken: tokenFor('1', 'ada-1b'), user: session.user })
+    release()
+
+    expect(await outcome).toBe('sent')
+    expect(calls).toHaveLength(2)
+    expect(calls[1]).toBe(sentBy('1', 'ada-2'))
+  })
+
+  it('is not retried when the token it was sent with cannot be read', async () => {
+    const calls: string[] = []
+    httpClient.defaults.adapter = async (config) => {
+      calls.push(String(config.headers.get('Authorization') ?? ''))
+      const response = { data: {}, status: 401, statusText: '', headers: {}, config }
+      throw new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, response)
+    }
+    initAuth()
+    startSession({ accessToken: 'not-a-jwt', user: session.user })
+    vi.mocked(authApi.refresh).mockResolvedValue(session)
+
+    await expect(httpClient.post('/tasks', {})).rejects.toMatchObject({ response: { status: 401 } })
+
+    expect(calls).toEqual(['Bearer not-a-jwt'])
   })
 })
 

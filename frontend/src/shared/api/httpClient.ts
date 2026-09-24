@@ -3,8 +3,12 @@ import { env } from '@/shared/config/env'
 import { installColdStartRetry } from './coldStartRetry'
 
 type TokenGetter = () => string | null
-/** Tries to obtain a fresh access token. Resolves true when the session was refreshed. */
-type UnauthorizedHandler = () => Promise<boolean>
+/**
+ * Tries to obtain a fresh access token for a request that was answered 401. Receives the
+ * Authorization header that request was SENT with, so the handler can tell whose request it is.
+ * Resolves true only when that request may be sent again.
+ */
+type UnauthorizedHandler = (sentAuthorization: string) => Promise<boolean>
 
 let getAccessToken: TokenGetter = () => null
 let onUnauthorized: UnauthorizedHandler = async () => false
@@ -38,14 +42,10 @@ httpClient.interceptors.response.use(
       const config = error.config
       // Only requests that carried a token can have an expired session; a bare 401 (wrong
       // password) must not trigger a refresh.
-      if (
-        config &&
-        !config.skipAuthRefresh &&
-        !config.authRetried &&
-        config.headers.Authorization
-      ) {
+      const sent = config?.headers.Authorization
+      if (config && !config.skipAuthRefresh && !config.authRetried && sent) {
         config.authRetried = true
-        if (await onUnauthorized()) return httpClient.request(config)
+        if (await onUnauthorized(String(sent))) return httpClient.request(config)
       }
     }
     return Promise.reject(error)
