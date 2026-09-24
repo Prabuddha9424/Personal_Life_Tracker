@@ -2709,7 +2709,7 @@ git commit -m "feat(frontend): add integer-safe money and calendar-date helpers"
 **Interfaces:**
 - Produces: a CI workflow that runs lint, typecheck and tests for both apps on every pull request and on pushes to `main`.
 
-- [ ] **Step 1: Confirm the action versions exist**
+- [x] **Step 1: Confirm the action versions exist**
 
 ```bash
 for r in actions/checkout actions/setup-node; do
@@ -2719,7 +2719,7 @@ done
 
 Expected: a major version tag for each. Use the printed majors in the workflow below (the file uses `v7` for both, which was the latest on 2026-09-24; adjust if the output differs).
 
-- [ ] **Step 2: Write the workflow**
+- [x] **Step 2: Write the workflow**
 
 Create `.github/workflows/ci.yml`:
 
@@ -2774,7 +2774,7 @@ jobs:
 
 `node-version-file: .nvmrc` resolves relative to the repository root, where `.nvmrc` lives (`24`).
 
-- [ ] **Step 3: Run the same commands locally as a dry run**
+- [x] **Step 3: Run the same commands locally as a dry run**
 
 ```bash
 (cd backend && npm ci && npm run lint && npm run typecheck && npm test && npm run build)
@@ -2783,7 +2783,7 @@ jobs:
 
 Expected: everything passes, and `backend/dist` contains no `test` folder (`ls backend/dist` shows `app.js`, `features`, `shared`, `server.js`, `types`).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .github
