@@ -2166,7 +2166,7 @@ git commit -m "feat(frontend): add app shell with sidebar navigation and drawer"
 
 Behaviour (PRD UI-5, 6.4): the free backend sleeps and takes about a minute to wake, while Netlify's proxy gives up after 26 s, so the first call after idle often answers 504. `GET` and `HEAD` requests that get 502/503/504 or no response at all are retried automatically (with a "waking the server" banner). Other methods are **never** retried, because a `POST` may already have reached the waking server and a retry could create a duplicate.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `frontend/src/shared/api/coldStartRetry.test.ts`:
 
@@ -2281,7 +2281,7 @@ describe('ServerStatusBanner', () => {
 
 Run: `npx vitest run src/shared` → the two new files FAIL (modules missing).
 
-- [ ] **Step 2: Implement the store, the type augmentation and the retry interceptor**
+- [x] **Step 2: Implement the store, the type augmentation and the retry interceptor**
 
 `frontend/src/shared/api/axios-augment.d.ts`:
 
@@ -2368,7 +2368,7 @@ export function installColdStartRetry(
 
 Run `npx vitest run src/shared/api` → PASS (5 tests).
 
-- [ ] **Step 3: Install it on the shared client and add the warm-up call**
+- [x] **Step 3: Install it on the shared client and add the warm-up call**
 
 In `frontend/src/shared/api/httpClient.ts` add `import { installColdStartRetry } from './coldStartRetry'` at the top and, directly after the existing `httpClient.interceptors.response.use(...)` block, add:
 
@@ -2396,7 +2396,7 @@ export async function warmUpServer(): Promise<void> {
 
 (`warmUpServer` is consumed by the auth slice's `SessionGate` in M1. It is exported here because it belongs with the client it wraps.)
 
-- [ ] **Step 4: Implement the banner**
+- [x] **Step 4: Implement the banner**
 
 `frontend/src/shared/ui/ServerStatusBanner.tsx`:
 
@@ -2433,7 +2433,7 @@ In `frontend/src/app/RootLayout.tsx`, add `import { ServerStatusBanner } from '@
 
 Run: `npx vitest run src/shared/ui/ServerStatusBanner.test.tsx` → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test

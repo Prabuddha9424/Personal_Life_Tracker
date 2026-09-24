@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { env } from '@/shared/config/env'
+import { installColdStartRetry } from './coldStartRetry'
 
 type TokenGetter = () => string | null
 type UnauthorizedHandler = () => void
@@ -36,6 +37,8 @@ httpClient.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
+installColdStartRetry(httpClient)
 
 /** Extracts the `{ message }` from an API error, falling back to a generic message. */
 export function getErrorMessage(error: unknown): string {
