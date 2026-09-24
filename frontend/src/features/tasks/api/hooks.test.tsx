@@ -693,4 +693,84 @@ describe('overlapping moves', () => {
     expect(invalidate).toHaveBeenCalledTimes(1)
     expect(taskApi.moveTask).not.toHaveBeenCalled()
   })
+
+  describe('when the cache is cleared while a move is in flight', () => {
+    function seedOtherUser(client: QueryClient) {
+      client.setQueryData<ColumnData>(taskKeys.column('todo', {}), {
+        pageParams: [1],
+        pages: [page([task('q'), task('r')])],
+      })
+      client.setQueryData<ColumnData>(taskKeys.column('done', {}), {
+        pageParams: [1],
+        pages: [page([])],
+      })
+    }
+
+    async function startAndClear(board: Awaited<ReturnType<typeof mountBoard>>) {
+      let a: Promise<unknown> = Promise.resolve()
+      act(() => {
+        a = board.moveA()
+      })
+      await waitFor(() => expect(ids(board.client, 'done')).toEqual(['a', 'x']))
+      board.client.clear()
+      seedOtherUser(board.client)
+      return { a }
+    }
+
+    it('keeps the new data when the old move is refused, refetches once and closes the batch', async () => {
+      const board = await mountBoard(true)
+      const invalidate = vi.spyOn(board.client, 'invalidateQueries')
+      const { a } = await startAndClear(board)
+
+      await act(async () => {
+        board.first.reject(new Error('Not found'))
+        await a
+      })
+
+      expect(ids(board.client, 'todo')).toEqual(['q', 'r'])
+      expect(ids(board.client, 'done')).toEqual([])
+      expect(invalidate).toHaveBeenCalledTimes(1)
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: taskKeys.all })
+
+      await act(async () => {
+        const c = board.moveWith({ task: task('q'), toStatus: 'done', toIndex: 0 })
+        await waitFor(() => expect(ids(board.client, 'done')).toEqual(['q']))
+        board.second.reject(new Error('Conflict'))
+        await c
+      })
+      expect(ids(board.client, 'todo')).toEqual(['q', 'r'])
+      expect(ids(board.client, 'done')).toEqual([])
+    })
+
+    it.each([['old move first'], ['new move first']])(
+      'restores the new data, never the old, when a move started after the clear is refused (%s)',
+      async (order) => {
+        const board = await mountBoard(true)
+        const invalidate = vi.spyOn(board.client, 'invalidateQueries')
+        const { a } = await startAndClear(board)
+        let c: Promise<unknown> = Promise.resolve()
+        act(() => {
+          c = board.moveWith({ task: task('q'), toStatus: 'done', toIndex: 0 })
+        })
+        await waitFor(() => expect(ids(board.client, 'done')).toEqual(['q']))
+
+        await act(async () => {
+          if (order === 'old move first') {
+            board.first.reject(new Error('Not found'))
+            await a
+            board.second.reject(new Error('Conflict'))
+          } else {
+            board.second.reject(new Error('Conflict'))
+            await c
+            board.first.reject(new Error('Not found'))
+          }
+          await Promise.all([a, c])
+        })
+
+        expect(ids(board.client, 'todo')).toEqual(['q', 'r'])
+        expect(ids(board.client, 'done')).toEqual([])
+        expect(invalidate).toHaveBeenCalledTimes(1)
+      },
+    )
+  })
 })

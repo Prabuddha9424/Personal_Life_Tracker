@@ -5,6 +5,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type Query,
   type QueryClient,
 } from '@tanstack/react-query'
 import { getErrorMessage } from '@/shared/api/httpClient'
@@ -84,12 +85,19 @@ interface MoveVariables {
 interface ColumnSnapshot {
   key: ReturnType<typeof taskKeys.column>
   data: ColumnData | undefined
+  /**
+   * The cache entry the data came from. A cleared or rebuilt cache (logout, another user) holds a
+   * different instance under the same key, which is how a stale snapshot is recognised.
+   */
+  query: Query | undefined
 }
 
 interface TrackedMove {
   variables: MoveVariables
   /** False when the card was not on the board, so nothing was written to the cache. */
   applied: boolean
+  /** Hashes of the two columns the move touched. */
+  columns: string[]
   state: 'pending' | 'accepted' | 'refused'
 }
 
@@ -122,8 +130,30 @@ function writeMove(client: QueryClient, { task, toStatus, toIndex, filters }: Mo
   )
 }
 
-/** Rebuilds the board from the state before the batch plus only the moves the server allowed. */
+function isStale(client: QueryClient, id: string, snapshot: ColumnSnapshot): boolean {
+  return snapshot.query !== undefined && client.getQueryCache().get(id) !== snapshot.query
+}
+
+/** Forgets snapshots (and the moves that touched them) whose cache entry has since been replaced. */
+function dropStale(client: QueryClient, batch: MoveBatch) {
+  const stale = new Set<string>()
+  for (const [id, snapshot] of batch.baseline) {
+    if (isStale(client, id, snapshot)) stale.add(id)
+  }
+  if (stale.size === 0) return
+  for (const id of stale) batch.baseline.delete(id)
+  batch.moves = batch.moves.filter((move) => !move.columns.some((id) => stale.has(id)))
+}
+
+/**
+ * Rebuilds the board from the state before the batch plus only the moves the server allowed.
+ * If the cache was cleared or rebuilt since the batch began, the whole rebuild is skipped: the
+ * columns now belong to someone else, and the refetch that follows puts things right.
+ */
 function reconcile(client: QueryClient, batch: MoveBatch) {
+  for (const [id, snapshot] of batch.baseline) {
+    if (isStale(client, id, snapshot)) return
+  }
   for (const { key, data } of batch.baseline.values()) {
     if (data !== undefined) client.setQueryData(key, data)
   }
@@ -171,20 +201,24 @@ export function useMoveTask() {
 
       await client.cancelQueries({ queryKey: taskKeys.columns })
 
+      dropStale(client, batch)
       const { task, toStatus, filters } = variables
-      for (const key of [
-        taskKeys.column(task.status, filters),
-        taskKeys.column(toStatus, filters),
-      ]) {
+      const keys = [taskKeys.column(task.status, filters), taskKeys.column(toStatus, filters)]
+      for (const key of keys) {
         const id = hashKey(key)
         if (!batch.baseline.has(id)) {
-          batch.baseline.set(id, { key, data: client.getQueryData<ColumnData>(key) })
+          batch.baseline.set(id, {
+            key,
+            data: client.getQueryData<ColumnData>(key),
+            query: client.getQueryCache().get(id),
+          })
         }
       }
 
       const move: TrackedMove = {
         variables,
         applied: isOnBoard(client, variables),
+        columns: keys.map((key) => hashKey(key)),
         state: 'pending',
       }
       batch.moves.push(move)
