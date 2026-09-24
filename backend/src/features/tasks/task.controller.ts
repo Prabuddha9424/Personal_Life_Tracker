@@ -1,6 +1,12 @@
 import type { Request, Response } from 'express'
 import { authUserId } from '../../shared/auth/requestUser.ts'
-import type { CreateTaskInput, ListTasksQuery, UpdateTaskInput } from './task.schemas.ts'
+import { moveTask } from './task.move.ts'
+import type {
+  CreateTaskInput,
+  ListTasksQuery,
+  MoveTaskInput,
+  UpdateTaskInput,
+} from './task.schemas.ts'
 import * as taskService from './task.service.ts'
 
 export async function list(req: Request, res: Response) {
@@ -32,4 +38,8 @@ export async function update(req: Request, res: Response) {
 export async function remove(req: Request, res: Response) {
   await taskService.deleteTask(authUserId(req), req.params.id as string)
   res.status(204).end()
+}
+
+export async function move(req: Request, res: Response) {
+  res.json(await moveTask(authUserId(req), req.params.id as string, req.body as MoveTaskInput))
 }
