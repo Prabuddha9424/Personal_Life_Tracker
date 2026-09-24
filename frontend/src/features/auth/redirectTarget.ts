@@ -6,7 +6,8 @@ export function redirectTarget(state: unknown): string {
       typeof from === 'string' &&
       from.startsWith('/') &&
       !from.startsWith('//') &&
-      !from.startsWith('/\\')
+      !from.startsWith('/\\') &&
+      !/[\t\r\n]/.test(from)
     ) {
       return from
     }

@@ -10,6 +10,8 @@ describe('redirectTarget', () => {
     ['an absolute URL', 'https://evil.example/steal'],
     ['a protocol-relative URL', '//evil.example'],
     ['a slash-backslash prefix, which browsers read as //host', '/\\evil.example'],
+    ['a tab that URL parsing would strip, leaving //host', '/\t/evil.example'],
+    ['a newline that URL parsing would strip', '/\n/evil.example'],
     ['a relative path', 'board'],
     ['a non-string', 42],
   ])('falls back to the home page for %s', (_label, from) => {
