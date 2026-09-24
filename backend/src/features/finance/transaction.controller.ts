@@ -1,10 +1,12 @@
 import type { Request, Response } from 'express'
 import { authUserId } from '../../shared/auth/requestUser.ts'
 import type {
+  BulkTransactionsInput,
   CreateTransactionInput,
   ListTransactionsQuery,
   UpdateTransactionInput,
 } from './finance.schemas.ts'
+import { bulkCreateTransactions } from './transaction.bulk.ts'
 import * as transactionService from './transaction.service.ts'
 
 export async function list(req: Request, res: Response) {
@@ -25,6 +27,12 @@ export async function create(req: Request, res: Response) {
         req.body as CreateTransactionInput,
       ),
     )
+}
+
+export async function bulk(req: Request, res: Response) {
+  res
+    .status(201)
+    .json(await bulkCreateTransactions(authUserId(req), req.body as BulkTransactionsInput))
 }
 
 export async function update(req: Request, res: Response) {

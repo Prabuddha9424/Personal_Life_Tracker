@@ -1,0 +1,53 @@
+import { Types } from 'mongoose'
+import { parseCalendarDate } from '../../shared/dates/calendarDate.ts'
+import { AppError } from '../../shared/errors/AppError.ts'
+import { Category, type CategoryKind } from './category.model.ts'
+import type { BulkTransactionsInput } from './finance.schemas.ts'
+import { Transaction } from './transaction.model.ts'
+import { requireProfile } from './transaction.service.ts'
+
+/**
+ * Inserts up to 500 rows, all or nothing: every row is checked against the user's categories
+ * before anything is written, and if the insert itself fails part way the rows it did write are
+ * removed again (MongoDB does not make a multi-document insert atomic on its own).
+ */
+export async function bulkCreateTransactions(
+  userId: string,
+  input: BulkTransactionsInput,
+): Promise<{ created: number }> {
+  const owner = new Types.ObjectId(userId)
+  const profile = await requireProfile(userId)
+
+  const categoryIds = [...new Set(input.rows.map((row) => row.categoryId))].map(
+    (id) => new Types.ObjectId(id),
+  )
+  const categories = await Category.find({ _id: { $in: categoryIds }, userId: owner })
+    .select('kind')
+    .lean<{ _id: Types.ObjectId; kind: CategoryKind }[]>()
+  const kindById = new Map(categories.map((category) => [category._id.toString(), category.kind]))
+
+  for (const [index, row] of input.rows.entries()) {
+    const kind = kindById.get(row.categoryId)
+    if (!kind) throw new AppError(400, `Row ${index + 1}: unknown category`)
+    if (kind !== row.kind) throw new AppError(400, `Row ${index + 1}: that is an ${kind} category`)
+  }
+
+  const docs = input.rows.map((row) => ({
+    _id: new Types.ObjectId(),
+    userId: owner,
+    kind: row.kind,
+    amountMinor: row.amountMinor,
+    currency: profile.currency,
+    categoryId: new Types.ObjectId(row.categoryId),
+    date: parseCalendarDate(row.date),
+    note: row.note,
+  }))
+
+  try {
+    await Transaction.insertMany(docs)
+  } catch (err) {
+    await Transaction.deleteMany({ _id: { $in: docs.map((doc) => doc._id) }, userId: owner })
+    throw err
+  }
+  return { created: docs.length }
+}
