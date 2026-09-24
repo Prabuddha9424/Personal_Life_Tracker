@@ -36,7 +36,7 @@ const taskSchema = new Schema<TaskAttrs>(
   { timestamps: true },
 )
 
-taskSchema.index({ userId: 1, status: 1, position: 1 })
+taskSchema.index({ userId: 1, status: 1, position: 1, _id: -1 })
 taskSchema.index({ userId: 1, dueDate: 1 })
 taskSchema.index({ userId: 1, tags: 1 })
 

@@ -28,7 +28,8 @@ async function findNeighbour(
   movedId: string,
 ): Promise<Neighbour | undefined> {
   if (neighbourId === undefined) return undefined
-  if (neighbourId === movedId) throw new AppError(400, 'A card cannot be next to itself')
+  if (new Types.ObjectId(neighbourId).equals(movedId))
+    throw new AppError(400, 'A card cannot be next to itself')
   const neighbour = await Task.findOne({ _id: neighbourId, userId: owner, status })
     .select('position')
     .lean<{ _id: Types.ObjectId; position: number } | null>()

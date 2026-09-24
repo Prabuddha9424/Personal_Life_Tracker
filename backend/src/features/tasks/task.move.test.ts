@@ -124,6 +124,17 @@ describe('POST /api/tasks/:id/move', () => {
     await move(idOf(a), { status: 'todo', beforeId: idOf(a) }).expect(400)
   })
 
+  it('answers 400 when a neighbour is the moved card itself written in upper case', async () => {
+    const { a, b } = await seedABC()
+    const upper = idOf(a).toUpperCase()
+
+    await move(idOf(a), { status: 'todo', afterId: upper }).expect(400)
+    await move(idOf(a), { status: 'todo', beforeId: upper }).expect(400)
+    await move(upper, { status: 'todo', afterId: idOf(a) }).expect(400)
+    expect(await column('todo')).toEqual(['A', 'B', 'C'])
+    expect(await Task.findById(b._id).lean()).toMatchObject({ position: POSITION_STEP })
+  })
+
   it('answers 409 when a neighbour was deleted meanwhile, and the board is unchanged', async () => {
     const { a, b } = await seedABC()
     await Task.deleteOne({ _id: b._id })

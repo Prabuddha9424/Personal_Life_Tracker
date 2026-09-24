@@ -15,7 +15,7 @@ export async function rebalanceColumn(owner: Types.ObjectId, status: TaskStatus)
   await Task.bulkWrite(
     cards.map((card, index) => ({
       updateOne: {
-        filter: { _id: card._id, userId: owner },
+        filter: { _id: card._id, userId: owner, status },
         update: { $set: { position: index * POSITION_STEP } },
       },
     })),
