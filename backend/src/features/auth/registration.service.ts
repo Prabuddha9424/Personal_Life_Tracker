@@ -1,14 +1,11 @@
 import bcrypt from 'bcryptjs'
 import { AppError } from '../../shared/errors/AppError.ts'
+import { isDuplicateKeyError } from '../../shared/errors/isDuplicateKeyError.ts'
 import { sendAlreadyRegisteredEmail, sendVerificationEmail } from './auth.emails.ts'
 import type { RegisterInput } from './auth.schemas.ts'
 import { BCRYPT_COST, VERIFY_TOKEN_TTL_MS } from './constants.ts'
 import { consumeEmailToken, createEmailToken } from './email-tokens.ts'
 import { User, type UserDoc } from './user.model.ts'
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && 'code' in err && err.code === 11000
-}
 
 async function sendVerification(user: Pick<UserDoc, '_id' | 'email' | 'name'>): Promise<void> {
   const token = await createEmailToken(user._id, 'verify', VERIFY_TOKEN_TTL_MS)

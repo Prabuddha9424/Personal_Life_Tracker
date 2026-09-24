@@ -1,9 +1,9 @@
 import { Types } from 'mongoose'
 import { AppError } from '../../shared/errors/AppError.ts'
+import { isDuplicateKeyError } from '../../shared/errors/isDuplicateKeyError.ts'
 import { CategorySeed } from './category-seed.model.ts'
 import { Category, type CategoryKind, type CategoryRecord } from './category.model.ts'
 import { DEFAULT_CATEGORIES } from './default-categories.ts'
-import { isDuplicateKeyError } from './duplicate-key.ts'
 import { toCategoryDto, type CategoryDto } from './finance.dto.ts'
 import { Transaction } from './transaction.model.ts'
 

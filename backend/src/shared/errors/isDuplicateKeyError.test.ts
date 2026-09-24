@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isDuplicateKeyError } from './duplicate-key.ts'
+import { isDuplicateKeyError } from './isDuplicateKeyError.ts'
 
 const DUPLICATE = 11000
 const VALIDATION_FAILED = 121
