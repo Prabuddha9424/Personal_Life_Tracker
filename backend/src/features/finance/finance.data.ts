@@ -1,4 +1,5 @@
 import { Types } from 'mongoose'
+import { CategorySeed } from './category-seed.model.ts'
 import { Category, type CategoryRecord } from './category.model.ts'
 import {
   toCategoryDto,
@@ -37,12 +38,13 @@ export async function exportFinance(
   }
 }
 
-/** Removes every finance row of one user, for account deletion. */
+/** Removes every finance row of one user, including the "defaults created" marker, for account deletion. */
 export async function deleteAllFinance(userId: string): Promise<void> {
   const owner = ownerOf(userId)
   await Promise.all([
     Transaction.deleteMany({ userId: owner }),
     Category.deleteMany({ userId: owner }),
+    CategorySeed.deleteMany({ userId: owner }),
   ])
 }
 

@@ -2,6 +2,7 @@ import { Types } from 'mongoose'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { testUser } from '../../test/auth.ts'
 import { clearTestDb, startTestDb, stopTestDb } from '../../test/mongo.ts'
+import { CategorySeed } from './category-seed.model.ts'
 import { Category } from './category.model.ts'
 import { insertCategory, insertTransaction } from './finance.test-helpers.ts'
 import { deleteFinanceForUser, exportFinanceForUser, hasFinanceDataForUser } from './index.ts'
@@ -96,5 +97,22 @@ describe('finance public API', () => {
     expect(await hasFinanceDataForUser(stranger)).toBe(false)
     expect(await Transaction.countDocuments({ userId: bob.id })).toBe(1)
     expect(await Category.countDocuments({ userId: bob.id })).toBe(1)
+  })
+
+  it("removes the user's seed marker too, and only theirs", async () => {
+    const alice = testUser()
+    const bob = testUser()
+    await insertTransaction(alice.id)
+    await insertTransaction(bob.id)
+    await CategorySeed.create([{ userId: alice.id }, { userId: bob.id }])
+
+    await deleteFinanceForUser(alice.id)
+
+    expect(await Transaction.countDocuments({ userId: alice.id })).toBe(0)
+    expect(await Category.countDocuments({ userId: alice.id })).toBe(0)
+    expect(await CategorySeed.countDocuments({ userId: alice.id })).toBe(0)
+    expect(await Transaction.countDocuments({ userId: bob.id })).toBe(1)
+    expect(await Category.countDocuments({ userId: bob.id })).toBe(1)
+    expect(await CategorySeed.countDocuments({ userId: bob.id })).toBe(1)
   })
 })
