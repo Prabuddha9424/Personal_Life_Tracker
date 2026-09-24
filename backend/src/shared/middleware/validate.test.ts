@@ -1,5 +1,5 @@
 import express from 'express'
-import request from 'supertest'
+import { request } from '../../test/http.ts'
 import { describe, expect, it } from 'vitest'
 import { idParamsSchema, paginationQuerySchema } from '../validation/requestSchemas.ts'
 import { errorHandler } from './errorHandler.ts'

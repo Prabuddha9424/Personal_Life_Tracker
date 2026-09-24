@@ -1,6 +1,7 @@
-import request, { type Response } from 'supertest'
+import type { Response } from 'supertest'
 import { vi } from 'vitest'
 import { app } from '../../app.ts'
+import { request } from '../../test/http.ts'
 import { sendMail } from '../../shared/mailer/mailer.ts'
 
 /** The test file must call vi.mock('../../shared/mailer/mailer.ts', ...) for this to be a mock. */

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import request from 'supertest'
+import { request } from '../../test/http.ts'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { app } from '../../app.ts'
 import { clearTestDb, startTestDb, stopTestDb } from '../../test/mongo.ts'

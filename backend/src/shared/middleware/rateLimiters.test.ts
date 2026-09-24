@@ -1,5 +1,5 @@
 import express from 'express'
-import request from 'supertest'
+import { request } from '../../test/http.ts'
 import { describe, expect, it } from 'vitest'
 import { createRateLimiter } from './rateLimiters.ts'
 

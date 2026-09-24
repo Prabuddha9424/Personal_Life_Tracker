@@ -17,12 +17,13 @@ function startServer(overrides: Record<string, string>) {
     cwd: process.cwd(),
     env: { ...baseEnv, ...overrides },
     encoding: 'utf8',
-    timeout: 15_000,
+    timeout: 60_000,
   })
 }
 
-// Each case spawns a real node process, so allow more than vitest's 5 s default.
-vi.setConfig({ testTimeout: 20_000 })
+// Each case spawns a real node process. The generous limits only matter on a loaded machine;
+// a healthy start-up takes well under a second.
+vi.setConfig({ testTimeout: 70_000 })
 
 describe('server startup', () => {
   it('refuses to start with NODE_ENV=test', () => {

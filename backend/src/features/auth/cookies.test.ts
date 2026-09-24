@@ -1,5 +1,5 @@
 import express from 'express'
-import request from 'supertest'
+import { request } from '../../test/http.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parseCookies } from './cookies.ts'
 

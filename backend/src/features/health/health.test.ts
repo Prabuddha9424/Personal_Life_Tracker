@@ -1,4 +1,4 @@
-import request from 'supertest'
+import { request } from '../../test/http.ts'
 import { describe, expect, it } from 'vitest'
 import { app } from '../../app.ts'
 
