@@ -76,9 +76,15 @@ function attemptRefresh(): Promise<RefreshOutcome> {
  * Exchanges the refresh cookie for a new access token. Resolves true when the caller may retry
  * with the current session. An answer that arrives after the session changed (logout, a newer
  * login) is dropped, and a network or gateway failure leaves an existing session untouched.
+ * A caller that was signed in as one user is never told to retry once a different user is
+ * signed in: the retry would carry the new user's token and write the old user's request into
+ * the new user's account.
  */
 export async function refreshSession(): Promise<boolean> {
-  return (await attemptRefresh()) === 'renewed'
+  const callerId = useAuthStore.getState().user?.id
+  const outcome = await attemptRefresh()
+  if (outcome !== 'renewed') return false
+  return callerId === undefined || useAuthStore.getState().user?.id === callerId
 }
 
 async function restoreSession(): Promise<void> {

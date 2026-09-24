@@ -1,11 +1,13 @@
-import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { httpClient } from '@/shared/api/httpClient'
 import { queryClient } from '@/shared/lib/queryClient'
 import * as authApi from './api/authApi'
 import { useServerStatus } from '@/shared/api/serverStatus'
 import { warmUpServer } from '@/shared/api/warmUp'
 import {
   bootstrapSession,
+  initAuth,
   logoutUser,
   refreshSession,
   retryBootstrap,
@@ -234,6 +236,70 @@ describe('a refresh that finishes after the session changed', () => {
     expect(await pending).toBe(true)
     expect(useAuthStore.getState()).toMatchObject({ status: 'authenticated', accessToken: 'new' })
     expect(queryClient.getQueryData(['tasks'])).toEqual(['new login data'])
+  })
+  it('does not report a renewal when a different user has logged in since', async () => {
+    startSession({ ...session, accessToken: 'old' })
+    const late = deferredRefresh()
+    vi.mocked(authApi.logout).mockResolvedValue()
+    const pending = refreshSession()
+
+    await logoutUser()
+    startSession({ accessToken: 'bob-token', user: { ...session.user, id: '2', name: 'Bob' } })
+    late.resolve(session)
+
+    expect(await pending).toBe(false)
+    expect(useAuthStore.getState()).toMatchObject({
+      status: 'authenticated',
+      accessToken: 'bob-token',
+    })
+  })
+
+  it('never retries the first user request with the second user token', async () => {
+    const originalAdapter = httpClient.defaults.adapter
+    const calls: string[] = []
+    const adapter: AxiosAdapter = async (config) => {
+      calls.push(String(config.headers.get('Authorization') ?? ''))
+      const response = { data: {}, status: 401, statusText: '', headers: {}, config }
+      throw new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, response)
+    }
+    httpClient.defaults.adapter = adapter
+    initAuth()
+    try {
+      startSession({ ...session, accessToken: 'ada-token' })
+      const late = deferredRefresh()
+      vi.mocked(authApi.logout).mockResolvedValue()
+      const request = httpClient.post('/tasks', { title: 'Ada private title' })
+      const outcome = request.catch((error: unknown) => error)
+      await vi.waitFor(() => expect(authApi.refresh).toHaveBeenCalled())
+
+      await logoutUser()
+      startSession({ accessToken: 'bob-token', user: { ...session.user, id: '2', name: 'Bob' } })
+      late.resolve(session)
+
+      expect(await outcome).toMatchObject({ response: { status: 401 } })
+      expect(calls).toEqual(['Bearer ada-token'])
+    } finally {
+      httpClient.defaults.adapter = originalAdapter
+    }
+  })
+
+  it('still reports a renewal when the same user has logged in again since', async () => {
+    startSession({ ...session, accessToken: 'old' })
+    const late = deferredRefresh()
+    vi.mocked(authApi.logout).mockResolvedValue()
+    const pending = refreshSession()
+
+    await logoutUser()
+    startSession({ ...session, accessToken: 'newer' })
+    late.resolve(session)
+
+    expect(await pending).toBe(true)
+  })
+
+  it('still reports a renewal for a refresh that starts with nobody signed in', async () => {
+    vi.mocked(authApi.refresh).mockResolvedValue(session)
+
+    expect(await refreshSession()).toBe(true)
   })
 })
 
