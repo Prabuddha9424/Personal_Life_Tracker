@@ -30,13 +30,26 @@ function endSession(): void {
   queryClient.clear()
 }
 
+/**
+ * Tabs share one refresh cookie and refresh tokens are single use, so two tabs refreshing at
+ * once would make the loser see a 401 for a session that is in fact fine. The Web Locks API makes
+ * the second tab wait and then refresh with the cookie the first tab just rotated. Without it
+ * (old browsers) the refresh simply runs unguarded.
+ */
+function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
+  const locks: LockManager | undefined = navigator.locks
+  return locks ? locks.request('auth-refresh', task) : task()
+}
+
 async function runRefresh(): Promise<RefreshOutcome> {
+  // Captured before waiting for the lock: an answer that arrives after a logout or a newer login
+  // is dropped however long the wait was.
   const started = generation
   const stale = () => started !== generation
   const current = (): RefreshOutcome =>
     useAuthStore.getState().status === 'authenticated' ? 'renewed' : 'rejected'
   try {
-    const session = await authApi.refresh()
+    const session = await withRefreshLock(() => authApi.refresh())
     if (stale()) return current()
     startSession(session)
     return 'renewed'

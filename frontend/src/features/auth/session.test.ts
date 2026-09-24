@@ -104,6 +104,94 @@ describe('refreshSession', () => {
   })
 })
 
+describe('refreshing while another tab refreshes too', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, 'locks')
+  })
+
+  /** Two tabs share one cookie: a second refresh that overlaps the first is answered with 401. */
+  function backendRejectingOverlaps() {
+    let active = 0
+    let calls = 0
+    vi.mocked(authApi.refresh).mockImplementation(async () => {
+      calls += 1
+      if (active > 0) throw httpError(401)
+      active += 1
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      active -= 1
+      return session
+    })
+    return () => calls
+  }
+
+  function installSerialisingLocks() {
+    let tail: Promise<unknown> = Promise.resolve()
+    const request = vi.fn((_name: string, callback: () => Promise<unknown>) => {
+      const run = tail.then(callback)
+      tail = run.catch(() => undefined)
+      return run
+    })
+    Object.defineProperty(navigator, 'locks', { value: { request }, configurable: true })
+    return request
+  }
+
+  it('waits its turn behind the other tab, so its refresh uses the rotated cookie', async () => {
+    const calls = backendRejectingOverlaps()
+    const request = installSerialisingLocks()
+    useAuthStore.setState({ status: 'unknown' })
+
+    const otherTab = request('auth-refresh', () => authApi.refresh())
+    const result = await refreshSession()
+    await otherTab
+
+    expect(result).toBe(true)
+    expect(calls()).toBe(2)
+    expect(useAuthStore.getState().status).toBe('authenticated')
+    expect(request.mock.calls.map(([name]) => name)).toEqual(['auth-refresh', 'auth-refresh'])
+  })
+
+  it('still refreshes when the Web Locks API is not available', async () => {
+    Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true })
+    vi.mocked(authApi.refresh).mockResolvedValue(session)
+
+    expect(await refreshSession()).toBe(true)
+
+    expect(useAuthStore.getState().status).toBe('authenticated')
+  })
+
+  it('still ends the session on an ordinary 401 when locks are available', async () => {
+    installSerialisingLocks()
+    startSession(session)
+    queryClient.setQueryData(['tasks'], ['previous user data'])
+    vi.mocked(authApi.refresh).mockRejectedValue(httpError(401))
+
+    expect(await refreshSession()).toBe(false)
+
+    expect(useAuthStore.getState().status).toBe('anonymous')
+    expect(queryClient.getQueryData(['tasks'])).toBeUndefined()
+  })
+
+  it('drops the answer of a refresh that waited for the lock while the session changed', async () => {
+    const request = installSerialisingLocks()
+    useAuthStore.setState({ status: 'unknown' })
+    vi.mocked(authApi.refresh).mockResolvedValue(session)
+    let release: () => void = () => undefined
+    const otherTab = request(
+      'auth-refresh',
+      () => new Promise<void>((resolve) => (release = resolve)),
+    )
+
+    const pending = refreshSession()
+    vi.mocked(authApi.logout).mockResolvedValue()
+    await logoutUser()
+    release()
+    await otherTab
+
+    expect(await pending).toBe(false)
+    expect(useAuthStore.getState().status).toBe('anonymous')
+  })
+})
+
 describe('a refresh that finishes after the session changed', () => {
   function deferredRefresh() {
     let resolve: (value: typeof session) => void = () => undefined
