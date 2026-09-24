@@ -4,4 +4,7 @@ export interface NavItem {
 }
 
 /** Each milestone appends its own entry when its pages exist. */
-export const navItems: NavItem[] = [{ to: '/', label: 'Dashboard' }]
+export const navItems: NavItem[] = [
+  { to: '/', label: 'Dashboard' },
+  { to: '/board', label: 'Board' },
+]

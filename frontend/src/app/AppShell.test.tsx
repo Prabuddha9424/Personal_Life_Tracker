@@ -24,6 +24,12 @@ describe('AppShell', () => {
     expect(screen.getByRole('button', { name: /switch to light theme/i })).toBeInTheDocument()
   })
 
+  it('links to the board', () => {
+    renderShell()
+
+    expect(screen.getByRole('link', { name: 'Board' })).toHaveAttribute('href', '/board')
+  })
+
   it('names both landmarks so they are distinguishable', () => {
     renderShell()
 
