@@ -14,7 +14,7 @@ import type { Category, Transaction } from './types'
 
 /** Rows numbered like a file without blank lines or multi-line fields. */
 function fileRows(cells: string[][]): CsvRow[] {
-  return cells.map((row, index) => ({ line: index + 1, cells: row }))
+  return cells.map((row, index) => ({ line: index + 1, endLine: index + 1, cells: row }))
 }
 
 describe('parseDate', () => {
@@ -261,15 +261,37 @@ describe('mapRows', () => {
     expect(problems).toEqual([{ line: 2, message: 'The quote opened on line 2 is never closed' }])
   })
 
+  it('names every line a stray quote swallowed and still imports the rows after it', () => {
+    const text = [
+      'date,amount,note',
+      '2026-09-01,-5,"12',
+      '2026-09-02,-6,fine',
+      '2026-09-03,-7,"Joe\'s" diner',
+      '2026-09-04,-8,ok',
+    ].join('\n')
+
+    const { valid, problems } = mapRows(readCsv(text).rows, mapping, true)
+
+    expect(valid.map((row) => row.note)).toEqual(['ok'])
+    expect(problems).toEqual([
+      {
+        line: 2,
+        message:
+          'Lines 2\u20134: a quoted field runs over several lines and ends with unexpected text (check for a stray quote)',
+      },
+    ])
+  })
+
   it('reports a malformed header row too', () => {
     const { valid, problems } = mapRows(
       [
         {
           line: 1,
+          endLine: 1,
           cells: ['date', 'amount', 'note'],
           problem: 'Unexpected text after a closing quote',
         },
-        { line: 2, cells: ['2026-09-01', '-1', 'x'] },
+        { line: 2, endLine: 2, cells: ['2026-09-01', '-1', 'x'] },
       ],
       mapping,
       true,

@@ -4,6 +4,8 @@ const BYTE_ORDER_MARK = '﻿'
 export interface CsvRow {
   /** 1-based physical line of the file on which the row starts (blank lines and multi-line fields counted). */
   line: number
+  /** The physical line on which the row ends; larger than `line` when a quoted field runs over several lines. */
+  endLine: number
   cells: string[]
   /** Set when the row is malformed and may not hold what its author meant. */
   problem?: string
@@ -61,6 +63,18 @@ function isBlank(cells: readonly string[]): boolean {
   return cells.every((cell) => cell.trim() === '')
 }
 
+const TEXT_AFTER_QUOTE = 'Unexpected text after a closing quote'
+
+/** A flagged row that spans several lines must name all of them, or the user cannot tell which were swallowed. */
+function describeProblem(problem: string, first: number, last: number): string {
+  if (last <= first) return problem
+  const lines = `Lines ${first}\u2013${last}`
+  if (problem === TEXT_AFTER_QUOTE) {
+    return `${lines}: a quoted field runs over several lines and ends with unexpected text (check for a stray quote)`
+  }
+  return `${lines}: ${problem}`
+}
+
 /**
  * One pass over the text, linear in its length. With `recover`, a quote that is never closed does
  * not swallow the rest of the file: the text is read again from just after that quote, which is
@@ -86,12 +100,13 @@ function scan(text: string, delimiter: string, recover: boolean): CsvRow[] {
   let quoteCellCount = 0
   let quoteProblem: string | undefined
 
-  const endRow = () => {
+  const endRow = (endLine: number) => {
     cells.push(field)
-    if (problem !== undefined || !isBlank(cells)) {
-      rows.push(
-        problem === undefined ? { line: rowLine, cells } : { line: rowLine, cells, problem },
-      )
+    if (problem !== undefined) {
+      const described = describeProblem(problem, rowLine, endLine)
+      rows.push({ line: rowLine, endLine, cells, problem: described })
+    } else if (!isBlank(cells)) {
+      rows.push({ line: rowLine, endLine, cells })
     }
     cells = []
     field = ''
@@ -126,7 +141,7 @@ function scan(text: string, delimiter: string, recover: boolean): CsvRow[] {
       } else if (char === '\n' || char === '\r') {
         if (char === '\r' && text.charAt(index + 1) === '\n') index += 1
         line += 1
-        endRow()
+        endRow(line - 1)
       } else if (char === delimiter) {
         cells.push(field)
         field = ''
@@ -144,7 +159,7 @@ function scan(text: string, delimiter: string, recover: boolean): CsvRow[] {
         quoteProblem = problem
       } else {
         atFieldStart = false
-        if (justClosed && char !== ' ') problem = 'Unexpected text after a closing quote'
+        if (justClosed && char !== ' ') problem = TEXT_AFTER_QUOTE
         field += char
       }
     }
@@ -169,7 +184,7 @@ function scan(text: string, delimiter: string, recover: boolean): CsvRow[] {
     index = quoteIndex + 1
   }
 
-  if (field !== '' || cells.length > 0 || problem !== undefined) endRow()
+  if (field !== '' || cells.length > 0 || problem !== undefined) endRow(line)
   return rows
 }
 

@@ -121,10 +121,49 @@ describe('readCsv', () => {
 
     expect(delimiter).toBe(';')
     expect(rows).toEqual([
-      { line: 1, cells: ['a', 'b'] },
-      { line: 2, cells: ['1', '2'] },
-      { line: 3, cells: ['3', '4'] },
+      { line: 1, endLine: 1, cells: ['a', 'b'] },
+      { line: 2, endLine: 2, cells: ['1', '2'] },
+      { line: 3, endLine: 3, cells: ['3', '4'] },
     ])
+  })
+
+  it('records the last line of each row, so a multi-line row can be named in full', () => {
+    const { rows } = readCsv('h\n\n"x\ny\nz",1\n\nlast,2')
+
+    expect(rows.map((row) => [row.line, row.endLine])).toEqual([
+      [1, 1],
+      [3, 5],
+      [7, 7],
+    ])
+  })
+
+  it('names every line a flagged multi-line row swallowed', () => {
+    const { rows } = readCsv(
+      [
+        'date,amount,note',
+        '2026-09-01,-5,"12',
+        '2026-09-02,-6,fine',
+        '2026-09-03,-7,"Joe\'s" diner',
+        '2026-09-04,-8,ok',
+      ].join('\n'),
+    )
+
+    expect(rows.map((row) => [row.line, row.endLine])).toEqual([
+      [1, 1],
+      [2, 4],
+      [5, 5],
+    ])
+    expect(rows[1]?.problem).toBe(
+      'Lines 2\u20134: a quoted field runs over several lines and ends with unexpected text (check for a stray quote)',
+    )
+    expect(rows[2]?.problem).toBeUndefined()
+  })
+
+  it('names the lines of a multi-line row that also holds an unclosed quote', () => {
+    const { rows } = readCsv('h\n"a\nb",x,"oops\nnext,1\n')
+
+    expect(rows[1]).toMatchObject({ line: 2, endLine: 3 })
+    expect(rows[1]?.problem).toBe('Lines 2\u20133: The quote opened on line 3 is never closed')
   })
 
   it('counts blank lines', () => {
@@ -149,15 +188,17 @@ describe('readCsv', () => {
     const { rows } = readCsv('﻿date,amount\n1,2')
 
     expect(rows).toEqual([
-      { line: 1, cells: ['date', 'amount'] },
-      { line: 2, cells: ['1', '2'] },
+      { line: 1, endLine: 1, cells: ['date', 'amount'] },
+      { line: 2, endLine: 2, cells: ['1', '2'] },
     ])
   })
 
   it('returns nothing for an empty file and only the header for a header-only file', () => {
     expect(readCsv('').rows).toEqual([])
     expect(readCsv('\r\n\r\n').rows).toEqual([])
-    expect(readCsv('date,amount\r\n').rows).toEqual([{ line: 1, cells: ['date', 'amount'] }])
+    expect(readCsv('date,amount\r\n').rows).toEqual([
+      { line: 1, endLine: 1, cells: ['date', 'amount'] },
+    ])
   })
 
   it('flags an unterminated quote on its row and still reads the rows after it', () => {
@@ -166,17 +207,17 @@ describe('readCsv', () => {
     expect(rows.map((row) => row.line)).toEqual([1, 2, 3, 4])
     expect(rows[1]?.problem).toMatch(/quote opened on line 2/i)
     expect(rows[1]?.cells).toEqual(['1', '"oops'])
-    expect(rows[2]).toEqual({ line: 3, cells: ['2', 'fine'] })
-    expect(rows[3]).toEqual({ line: 4, cells: ['3', 'fine'] })
+    expect(rows[2]).toEqual({ line: 3, endLine: 3, cells: ['2', 'fine'] })
+    expect(rows[3]).toEqual({ line: 4, endLine: 4, cells: ['3', 'fine'] })
   })
 
   it('finds the line of an unterminated quote that opens after a multi-line field', () => {
     const { rows } = readCsv('h\n"a\nb",1\nx,"y\nz,2\n')
 
-    expect(rows[1]).toEqual({ line: 2, cells: ['a\nb', '1'] })
+    expect(rows[1]).toEqual({ line: 2, endLine: 3, cells: ['a\nb', '1'] })
     expect(rows[2]?.line).toBe(4)
     expect(rows[2]?.problem).toMatch(/line 4/)
-    expect(rows[3]).toEqual({ line: 5, cells: ['z', '2'] })
+    expect(rows[3]).toEqual({ line: 5, endLine: 5, cells: ['z', '2'] })
   })
 
   it('flags text after a closing quote instead of silently gluing it on', () => {
@@ -206,6 +247,7 @@ describe('readCsv', () => {
     expect(rows).toHaveLength(110_001)
     expect(rows.at(-1)).toEqual({
       line: 110_001,
+      endLine: 110_001,
       cells: ['2026-09-01', '-12.50', 'Coffee, "large" cup'],
     })
     expect(elapsed).toBeLessThan(1000)
