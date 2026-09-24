@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Progress |
 | **Epic** | E5 Dashboard and account |
 | **Priority** | Must |
 | **Size** | S |
@@ -25,7 +25,7 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-053-T1 | Add the theme store, the no-flash init script and the toggle with tests (storage failures included) | [M0 Foundation](../plans/01-foundation.md), Task 7 | To do |
+| US-053-T1 | Add the theme store, the no-flash init script and the toggle with tests (storage failures included) | [M0 Foundation](../plans/01-foundation.md), Task 7 | Done |
 | US-053-T2 | Add the Appearance section to Settings with a test | [M5 Dashboard and account](../plans/06-dashboard-account.md), Task 6 (appearance section) | To do |
 
 ## Out of scope
