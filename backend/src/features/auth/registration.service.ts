@@ -16,20 +16,23 @@ async function sendVerification(user: UserDoc): Promise<void> {
 }
 
 async function handleExistingAccount(user: UserDoc, input: RegisterInput): Promise<void> {
-  if (user.emailVerifiedAt) {
-    // Same bcrypt work as creating an account, so response time does not reveal that it exists.
-    await bcrypt.hash(input.password, BCRYPT_COST)
-    await sendAlreadyRegisteredEmail(user.email, user.name)
-    return
+  // The same bcrypt work whichever branch runs, so response time does not reveal the account state.
+  const passwordHash = await bcrypt.hash(input.password, BCRYPT_COST)
+  if (!user.emailVerifiedAt) {
+    // An abandoned sign-up: the latest submission wins, so whoever verifies gets the password they
+    // just chose and an earlier submission (for example an attacker pre-registering the address)
+    // cannot keep its password on the account. The filter makes this atomic: if the owner verified
+    // since the lookup, nothing is overwritten and this falls through to the verified branch.
+    const overwritten = await User.updateOne(
+      { _id: user._id, emailVerifiedAt: { $exists: false } },
+      { password: passwordHash, name: input.name, currency: input.currency },
+    )
+    if (overwritten.matchedCount === 1) {
+      await sendVerification(user)
+      return
+    }
   }
-  // An abandoned sign-up: the latest submission wins, so whoever verifies gets the password they
-  // just chose and an earlier submission (for example an attacker pre-registering the address)
-  // cannot keep its password on the account. Saving hashes it, the same work as a new account.
-  user.password = input.password
-  user.name = input.name
-  user.currency = input.currency
-  await user.save()
-  await sendVerification(user)
+  await sendAlreadyRegisteredEmail(user.email, user.name)
 }
 
 /** Always resolves the same way whether or not the email is already registered. */

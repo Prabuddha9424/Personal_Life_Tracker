@@ -170,6 +170,34 @@ describe('POST /api/auth/register', () => {
       .expect(200)
   })
 
+  it('does not overwrite an account the owner verified after the lookup', async () => {
+    const input = newUserInput()
+    await register(input)
+    const findOne = User.findOne.bind(User)
+    const before = await User.findOne({ email: input.email }).select('+password')
+    sendMailMock.mockClear()
+    vi.spyOn(User, 'findOne').mockImplementationOnce(((filter: object) => {
+      const found = findOne(filter)
+      return found.then(async (user) => {
+        await User.updateOne({ email: input.email }, { emailVerifiedAt: new Date() })
+        return user
+      })
+    }) as unknown as typeof User.findOne)
+
+    const res = await register({ ...input, password: 'attacker-password-123', name: 'Attacker' })
+
+    expect(res.status).toBe(202)
+    const after = await User.findOne({ email: input.email }).select('+password')
+    expect(after?.emailVerifiedAt).toBeInstanceOf(Date)
+    expect(after?.password).toBe(before?.password)
+    expect(after?.name).toBe(input.name)
+    expect(sendMailMock).toHaveBeenCalledTimes(1)
+    expect(sendMailMock.mock.calls[0]?.[0]).toMatchObject({
+      to: input.email,
+      subject: 'You already have an account',
+    })
+  })
+
   it('still answers 202 when the mail provider is down', async () => {
     sendMailMock.mockRejectedValueOnce(new Error('smtp down'))
     const input = newUserInput()
