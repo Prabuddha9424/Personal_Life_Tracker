@@ -296,219 +296,224 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
     )
   }
 
-  if (finished) {
-    return (
-      <ImportResult
-        run={run}
-        resultRef={resultRef}
-        onRetry={() => void send(run.plan, run.next)}
-        onClose={onClose}
-      />
-    )
-  }
-
   const noteHint =
     header && noteColumn !== null && (header[noteColumn] ?? '').trim() === ''
       ? 'This column has no name in the header. Check that it holds the descriptions.'
       : undefined
   return (
-    <div className="import">
-      <fieldset className="import__fields" disabled={importing}>
-        <FormField label="CSV file" error={fileError ?? undefined}>
-          <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={onFile} />
-        </FormField>
+    <div
+      className="import import__result"
+      ref={resultRef}
+      tabIndex={-1}
+      data-testid="import-result"
+    >
+      {/* One live region from the start: text added to a region that already exists is announced reliably. */}
+      <div role="status" className="import__status">
+        {run?.status === 'running' && <Progress plan={run.plan} next={run.next} />}
+        {run?.status === 'done' && (
+          <p>Imported {plural(countAll(run.plan), 'transaction', 'transactions')}</p>
+        )}
+      </div>
+      {finished ? (
+        <ImportResult run={run} onRetry={() => void send(run.plan, run.next)} onClose={onClose} />
+      ) : (
+        <fieldset className="import__fields" disabled={importing}>
+          <FormField label="CSV file" error={fileError ?? undefined}>
+            <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={onFile} />
+          </FormField>
 
-        {fileWarning && <p className="import__warning">{fileWarning}</p>}
+          {fileWarning && <p className="import__warning">{fileWarning}</p>}
 
-        {rows && (
-          <>
-            <p className="muted import__help">
-              The first row is normally a header with the column names. If the file starts with a
-              title or other lines above the header, enter how many rows to skip. Rows that cannot
-              be read are skipped and listed below, and a column with no name in the header is
-              marked. Letter-only currency symbols (Rs, kr, zł) are not supported: remove the symbol
-              or use the ISO code, such as {currency}.
-            </p>
-            <div className="import__grid">
-              <FormField label="Rows to skip at the top">
-                <input
-                  type="number"
-                  min={0}
-                  max={rows.length - 1}
-                  inputMode="numeric"
-                  value={skip}
-                  onChange={onSkipChange}
+          {rows && (
+            <>
+              <p className="muted import__help">
+                The first row is normally a header with the column names. If the file starts with a
+                title or other lines above the header, enter how many rows to skip. Rows that cannot
+                be read are skipped and listed below, and a column with no name in the header is
+                marked. Letter-only currency symbols (Rs, kr, zł) are not supported: remove the
+                symbol or use the ISO code, such as {currency}.
+              </p>
+              <div className="import__grid">
+                <FormField label="Rows to skip at the top">
+                  <input
+                    type="number"
+                    min={0}
+                    max={rows.length - 1}
+                    inputMode="numeric"
+                    value={skip}
+                    onChange={onSkipChange}
+                  />
+                </FormField>
+                <label className="import__check">
+                  <input
+                    type="checkbox"
+                    checked={hasHeader}
+                    onChange={(event) => onHeaderChange(event.target.checked)}
+                  />
+                  First row is a header
+                </label>
+              </div>
+              <div className="import__grid">
+                <ColumnSelect
+                  label="Date column"
+                  value={dateColumn}
+                  onChange={(next) => setDateColumn(next ?? 0)}
+                  header={header}
+                  count={columnCount}
                 />
-              </FormField>
+                <ColumnSelect
+                  label="Amount column"
+                  value={amountColumn}
+                  onChange={(next) => setAmountColumn(next ?? 0)}
+                  header={header}
+                  count={columnCount}
+                />
+                <ColumnSelect
+                  label="Note column"
+                  value={noteColumn}
+                  onChange={setNoteColumn}
+                  header={header}
+                  count={columnCount}
+                  optional
+                  hint={noteHint}
+                />
+                <ColumnSelect
+                  label="Type column (income or expense)"
+                  value={kindColumn}
+                  onChange={setKindColumn}
+                  header={header}
+                  count={columnCount}
+                  optional
+                />
+                <ColumnSelect
+                  label="Category column"
+                  value={categoryColumn}
+                  onChange={setCategoryColumn}
+                  header={header}
+                  count={columnCount}
+                  optional
+                />
+                <FormField label="Date format">
+                  <select
+                    value={dateFormat}
+                    onChange={(event) => setDateFormat(event.target.value as DateFormat)}
+                  >
+                    {DATE_FORMATS.map((format) => (
+                      <option key={format} value={format}>
+                        {format}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <CategorySelect
+                  label="Category for spending"
+                  list={expenseCategories}
+                  value={expenseCategoryId}
+                  onChange={setExpenseChoice}
+                />
+                <CategorySelect
+                  label="Category for income"
+                  list={incomeCategories}
+                  value={incomeCategoryId}
+                  onChange={setIncomeChoice}
+                />
+              </div>
               <label className="import__check">
                 <input
                   type="checkbox"
-                  checked={hasHeader}
-                  onChange={(event) => onHeaderChange(event.target.checked)}
+                  checked={!negativeIsExpense}
+                  disabled={kindColumn !== null}
+                  onChange={(event) => setNegativeIsExpense(!event.target.checked)}
                 />
-                First row is a header
+                Positive amounts are spending
               </label>
-            </div>
-            <div className="import__grid">
-              <ColumnSelect
-                label="Date column"
-                value={dateColumn}
-                onChange={(next) => setDateColumn(next ?? 0)}
-                header={header}
-                count={columnCount}
-              />
-              <ColumnSelect
-                label="Amount column"
-                value={amountColumn}
-                onChange={(next) => setAmountColumn(next ?? 0)}
-                header={header}
-                count={columnCount}
-              />
-              <ColumnSelect
-                label="Note column"
-                value={noteColumn}
-                onChange={setNoteColumn}
-                header={header}
-                count={columnCount}
-                optional
-                hint={noteHint}
-              />
-              <ColumnSelect
-                label="Type column (income or expense)"
-                value={kindColumn}
-                onChange={setKindColumn}
-                header={header}
-                count={columnCount}
-                optional
-              />
-              <ColumnSelect
-                label="Category column"
-                value={categoryColumn}
-                onChange={setCategoryColumn}
-                header={header}
-                count={columnCount}
-                optional
-              />
-              <FormField label="Date format">
-                <select
-                  value={dateFormat}
-                  onChange={(event) => setDateFormat(event.target.value as DateFormat)}
-                >
-                  {DATE_FORMATS.map((format) => (
-                    <option key={format} value={format}>
-                      {format}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-              <CategorySelect
-                label="Category for spending"
-                list={expenseCategories}
-                value={expenseCategoryId}
-                onChange={setExpenseChoice}
-              />
-              <CategorySelect
-                label="Category for income"
-                list={incomeCategories}
-                value={incomeCategoryId}
-                onChange={setIncomeChoice}
-              />
-            </div>
-            <label className="import__check">
-              <input
-                type="checkbox"
-                checked={!negativeIsExpense}
-                disabled={kindColumn !== null}
-                onChange={(event) => setNegativeIsExpense(!event.target.checked)}
-              />
-              Positive amounts are spending
-            </label>
-            <p className="muted import__help">
-              {kindColumn === null
-                ? 'By default a negative amount is spending and a positive amount is income. Tick the box for card exports that list purchases as positive numbers.'
-                : 'The type column decides which rows are spending and which are income, so the sign of the amount is ignored.'}
-            </p>
-            {columnCount === MAX_COLUMNS && (
               <p className="muted import__help">
-                Only the first {MAX_COLUMNS} columns of the file can be chosen.
+                {kindColumn === null
+                  ? 'By default a negative amount is spending and a positive amount is income. Tick the box for card exports that list purchases as positive numbers.'
+                  : 'The type column decides which rows are spending and which are income, so the sign of the amount is ignored.'}
               </p>
-            )}
-
-            <p aria-live="polite">{plural(ready, 'row', 'rows')} ready to import</p>
-            {problems > 0 && (
-              <>
-                <p role="alert">
-                  {plural(problems, 'row has a problem', 'rows have problems')} and will be skipped
+              {columnCount === MAX_COLUMNS && (
+                <p className="muted import__help">
+                  Only the first {MAX_COLUMNS} columns of the file can be chosen.
                 </p>
-                <ProblemList problems={mapped.problems} label="Rows that will be skipped" />
-              </>
-            )}
-            {withoutCategory.length > 0 && (
-              <p className="form-error" role="alert">
-                {plural(withoutCategory.length, 'row needs', 'rows need')} a category you do not
-                have ({[...missingKinds].join(' and ')}). Add one in Manage categories first.
-              </p>
-            )}
-            {existing.isError && (
-              <p className="muted">
-                Could not check for duplicates. The rows can still be imported.
-              </p>
-            )}
-            {duplicates > 0 && (
-              <p className="muted">
-                {plural(
-                  duplicates,
-                  'row looks like a transaction you already have',
-                  'rows look like transactions you already have',
-                )}
-                . They will still be imported.
-              </p>
-            )}
-            {checkMayBeIncomplete && (
-              <p className="muted">
-                Possible duplicates were checked against your first {checkedCount} transactions in
-                this date range, so some may not have been found.
-              </p>
-            )}
-
-            {ready > 0 && (
-              <PreviewTable
-                valid={mapped.valid}
-                lines={mapped.lines}
-                total={ready}
-                currency={currency}
-                categoryNames={categoryNames}
-              />
-            )}
-
-            <div className="form-actions">
-              {ready > 0 && (
-                <Button
-                  variant="primary"
-                  onClick={onImport}
-                  loading={importing}
-                  disabled={withoutCategory.length > 0}
-                >
-                  {`Import ${plural(ready, 'transaction', 'transactions')}`}
-                </Button>
               )}
-            </div>
-          </>
-        )}
-      </fieldset>
-      {run?.status === 'running' && (
-        <div role="status" className="import__progress">
-          <p>
-            Importing batch {run.next + 1} of {run.plan.batches.length}:{' '}
-            {countBefore(run.plan, run.next)} of {countAll(run.plan)} transactions imported
-          </p>
-          <progress
-            aria-label="Import progress"
-            value={countBefore(run.plan, run.next)}
-            max={countAll(run.plan)}
-          />
-        </div>
+
+              <p aria-live="polite">{plural(ready, 'row', 'rows')} ready to import</p>
+              {problems > 0 && (
+                <>
+                  <p role="alert">
+                    {plural(problems, 'row has a problem', 'rows have problems')} and will be
+                    skipped
+                  </p>
+                  <ProblemList problems={mapped.problems} label="Rows that will be skipped" />
+                </>
+              )}
+              {withoutCategory.length > 0 && (
+                <p className="form-error" role="alert">
+                  {plural(withoutCategory.length, 'row needs', 'rows need')} a category you do not
+                  have ({[...missingKinds].join(' and ')}). Add one in Manage categories first.
+                </p>
+              )}
+              {existing.isError && (
+                <p className="muted">
+                  Could not check for duplicates. The rows can still be imported.
+                </p>
+              )}
+              {duplicates > 0 && (
+                <p className="muted">
+                  {plural(
+                    duplicates,
+                    'row looks like a transaction you already have',
+                    'rows look like transactions you already have',
+                  )}
+                  . They will still be imported.
+                </p>
+              )}
+              {checkMayBeIncomplete && (
+                <p className="muted">
+                  Possible duplicates were checked against your first {checkedCount} transactions in
+                  this date range, so some may not have been found.
+                </p>
+              )}
+
+              {ready > 0 && (
+                <PreviewTable
+                  valid={mapped.valid}
+                  lines={mapped.lines}
+                  total={ready}
+                  currency={currency}
+                  categoryNames={categoryNames}
+                />
+              )}
+
+              <div className="form-actions">
+                {ready > 0 && (
+                  <Button
+                    variant="primary"
+                    onClick={onImport}
+                    loading={importing}
+                    disabled={withoutCategory.length > 0}
+                  >
+                    {`Import ${plural(ready, 'transaction', 'transactions')}`}
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </fieldset>
       )}
+    </div>
+  )
+}
+
+function Progress({ plan, next }: { plan: Plan; next: number }) {
+  return (
+    <div className="import__progress">
+      <p>
+        Importing batch {next + 1} of {plan.batches.length}: {countBefore(plan, next)} of{' '}
+        {countAll(plan)} transactions imported
+      </p>
+      <progress aria-label="Import progress" value={countBefore(plan, next)} max={countAll(plan)} />
     </div>
   )
 }
@@ -681,12 +686,11 @@ function lineRange(plan: Plan, from: number, to: number): string {
 
 interface ImportResultProps {
   run: Extract<Run, { status: 'done' | 'failed' }>
-  resultRef: RefObject<HTMLDivElement | null>
   onRetry: () => void
   onClose: () => void
 }
 
-function ImportResult({ run, resultRef, onRetry, onClose }: ImportResultProps) {
+function ImportResult({ run, onRetry, onClose }: ImportResultProps) {
   const { plan } = run
   const batches = plan.batches.length
   const imported = countBefore(plan, run.next)
@@ -694,15 +698,8 @@ function ImportResult({ run, resultRef, onRetry, onClose }: ImportResultProps) {
   const skipped = plan.problems.length
 
   return (
-    <div
-      className="import import__result"
-      ref={resultRef}
-      tabIndex={-1}
-      data-testid="import-result"
-    >
-      {run.status === 'done' ? (
-        <p role="status">Imported {plural(imported, 'transaction', 'transactions')}</p>
-      ) : (
+    <>
+      {run.status === 'failed' && (
         <>
           <p role="alert">
             Stopped early: {imported} of {total} were imported.
@@ -755,6 +752,6 @@ function ImportResult({ run, resultRef, onRetry, onClose }: ImportResultProps) {
           {run.status === 'failed' ? 'Close' : 'Done'}
         </Button>
       </div>
-    </div>
+    </>
   )
 }

@@ -605,6 +605,25 @@ describe('ImportDialog: importing', () => {
     expect(financeApi.bulkCreateTransactions).toHaveBeenCalledTimes(1)
   })
 
+  it('has one live region from the start and announces progress and the result in it', async () => {
+    let release: () => void = () => {}
+    vi.mocked(financeApi.bulkCreateTransactions).mockImplementation(
+      (rows) => new Promise((resolve) => (release = () => resolve({ created: rows.length }))),
+    )
+    await open()
+    const status = screen.getByRole('status')
+    expect(status).toBeEmptyDOMElement()
+    await upload(CSV)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 3 transactions' }))
+
+    await waitFor(() => expect(status).toHaveTextContent(/Importing batch 1 of 1/))
+    release()
+    await waitFor(() => expect(status).toHaveTextContent('Imported 3 transactions'))
+    expect(status.isConnected).toBe(true)
+    expect(screen.getAllByRole('status')).toEqual([status])
+  })
+
   it('locks the settings while importing', async () => {
     vi.mocked(financeApi.bulkCreateTransactions).mockImplementation(() => new Promise(() => {}))
     await open()
