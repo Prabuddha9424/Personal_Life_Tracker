@@ -619,6 +619,33 @@ describe('ImportDialog: a batch fails', () => {
     expect(screen.queryByText(/Row 3/)).not.toBeInTheDocument()
   })
 
+  it('tells the user what to remove from the file before importing it again', async () => {
+    vi.mocked(financeApi.bulkCreateTransactions)
+      .mockImplementationOnce(async (rows) => ({ created: rows.length }))
+      .mockRejectedValueOnce(new Error('Network Error'))
+    await open()
+    await upload(bigCsv(700))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 700 transactions' }))
+
+    expect(
+      await screen.findByText(
+        'If you import this file again, remove lines 3 to 202 (already saved) first, or they will be added twice.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('gives no such advice when nothing was saved', async () => {
+    vi.mocked(financeApi.bulkCreateTransactions).mockRejectedValueOnce(new Error('Network Error'))
+    await open()
+    await upload(CSV)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 3 transactions' }))
+
+    await screen.findByText(/Stopped early/)
+    expect(screen.queryByText(/If you import this file again/)).not.toBeInTheDocument()
+  })
+
   it('retries from the failed batch without sending the batches that succeeded again', async () => {
     vi.mocked(financeApi.bulkCreateTransactions)
       .mockImplementationOnce(async (rows) => ({ created: rows.length }))

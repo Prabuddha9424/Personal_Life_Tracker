@@ -724,6 +724,12 @@ function ImportResult({ run, resultRef, onRetry, onClose }: ImportResultProps) {
               </li>
             )}
           </ul>
+          {run.next > 0 && (
+            <p>
+              If you import this file again, remove {lineRange(plan, 0, run.next)} (already saved)
+              first, or they will be added twice.
+            </p>
+          )}
         </>
       )}
       {skipped > 0 ? (
