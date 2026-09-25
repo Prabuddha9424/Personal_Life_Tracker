@@ -13,6 +13,7 @@ export interface TransactionDto {
   kind: CategoryKind
   amountMinor: number
   currency: string
+  /** Empty when the stored row has no category (legacy or hand-edited data). */
   categoryId: string
   date: string
   note: string
@@ -28,7 +29,7 @@ export function toTransactionDto(tx: TransactionRecord): TransactionDto {
     kind: tx.kind,
     amountMinor: tx.amountMinor,
     currency: tx.currency,
-    categoryId: tx.categoryId.toString(),
+    categoryId: (tx.categoryId as TransactionRecord['categoryId'] | undefined)?.toString() ?? '',
     date: formatCalendarDate(tx.date),
     note: tx.note,
   }

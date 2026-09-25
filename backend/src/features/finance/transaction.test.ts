@@ -1,3 +1,4 @@
+import { Types } from 'mongoose'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { app } from '../../app.ts'
 import { testUser } from '../../test/auth.ts'
@@ -208,6 +209,24 @@ describe('GET /api/transactions', () => {
       await list(query).expect(400)
     },
   )
+})
+
+describe('a transaction without a category (legacy or hand-edited data)', () => {
+  it('is listed with an empty categoryId instead of failing', async () => {
+    await Transaction.collection.insertOne({
+      userId: new Types.ObjectId(alice.id),
+      kind: 'expense',
+      amountMinor: 900,
+      currency: 'USD',
+      date: new Date('2026-09-02T00:00:00.000Z'),
+      note: 'orphan',
+    })
+
+    const res = await list()
+
+    expect(res.status).toBe(200)
+    expect(res.body.items).toEqual([expect.objectContaining({ note: 'orphan', categoryId: '' })])
+  })
 })
 
 describe('PATCH /api/transactions/:id', () => {

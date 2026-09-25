@@ -52,6 +52,24 @@ describe('finance public API', () => {
     })
   })
 
+  it('exports a transaction that has no category with an empty categoryId', async () => {
+    const alice = testUser()
+    await Transaction.collection.insertOne({
+      userId: new Types.ObjectId(alice.id),
+      kind: 'expense',
+      amountMinor: 900,
+      currency: 'USD',
+      date: new Date('2026-09-02T00:00:00.000Z'),
+      note: 'orphan',
+    })
+
+    const exported = await exportFinanceForUser(alice.id)
+
+    expect(exported.transactions).toEqual([
+      expect.objectContaining({ note: 'orphan', categoryId: '' }),
+    ])
+  })
+
   it('exports empty lists for a user without finance data', async () => {
     await insertTransaction(testUser().id)
 
