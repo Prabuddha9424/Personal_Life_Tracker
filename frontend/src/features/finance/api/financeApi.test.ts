@@ -81,7 +81,8 @@ describe('financeApi', () => {
 
     const found = await listAllTransactionsInRange('2026-09-01', '2026-09-30')
 
-    expect(found.map((item) => item.id)).toEqual(['a', 'b'])
+    expect(found.items.map((item) => item.id)).toEqual(['a', 'b'])
+    expect(found.truncated).toBe(false)
     expect(httpClient.get).toHaveBeenCalledTimes(2)
     expect(httpClient.get).toHaveBeenNthCalledWith(1, '/transactions', {
       params: { from: '2026-09-01', to: '2026-09-30', page: 1, limit: 200 },
@@ -91,15 +92,29 @@ describe('financeApi', () => {
   it('never asks for more than maxPages pages', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: page([tx('a')], 1, 100_000) })
 
-    await listAllTransactionsInRange('2026-09-01', '2026-09-30', 3)
+    const found = await listAllTransactionsInRange('2026-09-01', '2026-09-30', 3)
 
     expect(httpClient.get).toHaveBeenCalledTimes(3)
+    expect(found.truncated).toBe(true)
+  })
+
+  it('is not truncated when the last page it may read is also the last page there is', async () => {
+    vi.mocked(httpClient.get)
+      .mockResolvedValueOnce({ data: page([tx('a')], 1, 400) })
+      .mockResolvedValueOnce({ data: page([tx('b')], 2, 400) })
+
+    const found = await listAllTransactionsInRange('2026-09-01', '2026-09-30', 2)
+
+    expect(found.truncated).toBe(false)
   })
 
   it('stops at once when there is nothing in the range', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: page([], 1, 0) })
 
-    await expect(listAllTransactionsInRange('2026-09-01', '2026-09-30')).resolves.toEqual([])
+    await expect(listAllTransactionsInRange('2026-09-01', '2026-09-30')).resolves.toEqual({
+      items: [],
+      truncated: false,
+    })
     expect(httpClient.get).toHaveBeenCalledTimes(1)
   })
 })

@@ -65,7 +65,10 @@ beforeEach(() => {
   vi.resetAllMocks()
   session.currency = 'USD'
   vi.mocked(financeApi.listCategories).mockResolvedValue(categories)
-  vi.mocked(financeApi.listAllTransactionsInRange).mockResolvedValue([])
+  vi.mocked(financeApi.listAllTransactionsInRange).mockResolvedValue({
+    items: [],
+    truncated: false,
+  })
   vi.mocked(financeApi.bulkCreateTransactions).mockImplementation(async (rows) => ({
     created: rows.length,
   }))
@@ -354,7 +357,10 @@ describe('ImportDialog: duplicates', () => {
   }
 
   it('warns about rows that already exist, without blocking the import', async () => {
-    vi.mocked(financeApi.listAllTransactionsInRange).mockResolvedValue([existing])
+    vi.mocked(financeApi.listAllTransactionsInRange).mockResolvedValue({
+      items: [existing],
+      truncated: false,
+    })
     await open()
 
     await upload(CSV)
@@ -372,7 +378,10 @@ describe('ImportDialog: duplicates', () => {
       id: `t${i}`,
       note: `n${i}`,
     }))
-    vi.mocked(financeApi.listAllTransactionsInRange).mockResolvedValue(many)
+    vi.mocked(financeApi.listAllTransactionsInRange).mockResolvedValue({
+      items: many,
+      truncated: true,
+    })
     await open()
 
     await upload(CSV)
@@ -383,6 +392,25 @@ describe('ImportDialog: duplicates', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Import 3 transactions' })).toBeEnabled()
+  })
+
+  it('does not warn about a large range when every transaction in it was checked', async () => {
+    const many = Array.from({ length: 1000 }, (_, i) => ({
+      ...existing,
+      id: `t${i}`,
+      note: `n${i}`,
+    }))
+    vi.mocked(financeApi.listAllTransactionsInRange).mockResolvedValue({
+      items: many,
+      truncated: false,
+    })
+    await open()
+
+    await upload(CSV)
+
+    await screen.findByText('3 rows ready to import')
+    await waitFor(() => expect(financeApi.listAllTransactionsInRange).toHaveBeenCalled())
+    expect(screen.queryByText(/first 1000 transactions/)).not.toBeInTheDocument()
   })
 
   it('says when the check could not be made, and still lets the user import', async () => {

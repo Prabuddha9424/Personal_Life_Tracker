@@ -45,19 +45,22 @@ export async function listTransactions(params: ListTransactionsParams): Promise<
   return data
 }
 
-/** Every transaction in a date range, up to `maxPages` pages of 200. Used to spot duplicates. */
+/**
+ * The transactions in a date range, up to `maxPages` pages of 200, in the order the API lists them.
+ * `truncated` is true when the range holds more than were read. Used to spot duplicates.
+ */
 export async function listAllTransactionsInRange(
   from: string,
   to: string,
   maxPages = 5,
-): Promise<Transaction[]> {
-  const found: Transaction[] = []
+): Promise<{ items: Transaction[]; truncated: boolean }> {
+  const items: Transaction[] = []
   for (let page = 1; page <= maxPages; page += 1) {
     const result = await listTransactions({ from, to, page, limit: 200 })
-    found.push(...result.items)
-    if (page * result.limit >= result.total) break
+    items.push(...result.items)
+    if (page * result.limit >= result.total) return { items, truncated: false }
   }
-  return found
+  return { items, truncated: true }
 }
 
 export async function createTransaction(input: TransactionInput): Promise<Transaction> {

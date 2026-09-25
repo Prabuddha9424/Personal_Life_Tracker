@@ -32,7 +32,6 @@ const MAX_COLUMN_NAME = 30
 
 // The duplicate check reads at most this many pages of 200, so it can miss older transactions.
 const DUPLICATE_CHECK_PAGES = 5
-const DUPLICATE_CHECK_LIMIT = DUPLICATE_CHECK_PAGES * 200
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
@@ -203,10 +202,11 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
     enabled: dateRange !== null && run === null,
   })
   const duplicates = useMemo(
-    () => (existing.data ? countExistingDuplicates(mapped.valid, existing.data) : 0),
+    () => (existing.data ? countExistingDuplicates(mapped.valid, existing.data.items) : 0),
     [existing.data, mapped.valid],
   )
-  const checkMayBeIncomplete = (existing.data?.length ?? 0) >= DUPLICATE_CHECK_LIMIT
+  const checkedCount = existing.data?.items.length ?? 0
+  const checkMayBeIncomplete = existing.data?.truncated === true
 
   const categoryNames = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -461,8 +461,8 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
             )}
             {checkMayBeIncomplete && (
               <p className="muted">
-                Possible duplicates were checked against your first {DUPLICATE_CHECK_LIMIT}{' '}
-                transactions in this date range, so some may not have been found.
+                Possible duplicates were checked against your first {checkedCount} transactions in
+                this date range, so some may not have been found.
               </p>
             )}
 
