@@ -460,6 +460,9 @@ function ImportForm({
               )}
 
               <p aria-live="polite">{plural(ready, 'row', 'rows')} ready to import</p>
+              {hasHeader && dataRows.length === 1 && (
+                <p role="alert">The file has a header but no rows</p>
+              )}
               {problems > 0 && (
                 <>
                   <p role="alert">

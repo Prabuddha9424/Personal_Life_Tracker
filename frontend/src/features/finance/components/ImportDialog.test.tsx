@@ -271,6 +271,24 @@ describe('ImportDialog: the preview', () => {
     expect(screen.queryByRole('button', { name: /^Import \d/ })).not.toBeInTheDocument()
   })
 
+  it('says a file that has a header but no rows is empty, and only then', async () => {
+    await open()
+    await upload('Date,Description,Amount\n')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('The file has a header but no rows')
+
+    await userEvent.click(screen.getByLabelText('First row is a header'))
+    expect(screen.queryByText('The file has a header but no rows')).not.toBeInTheDocument()
+  })
+
+  it('does not call a file with rows empty', async () => {
+    await open()
+    await upload(CSV)
+
+    await screen.findByText('3 rows ready to import')
+    expect(screen.queryByText('The file has a header but no rows')).not.toBeInTheDocument()
+  })
+
   it('gives every column and category control its own name', async () => {
     await open()
     await upload(CSV)
