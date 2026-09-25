@@ -43,6 +43,12 @@ describe('moneyScales', () => {
     expect(color({ tick: { value: 0 } } as never)).toBe(colors.muted)
     expect(color({ tick: { value: 5 } } as never)).toBe(colors.grid)
   })
+
+  it('falls back to the grid colour for gridlines that have no tick', () => {
+    const color = moneyScales(colors, 'USD').y.grid.color
+
+    expect(color({} as never)).toBe(colors.grid)
+  })
 })
 
 describe('axisMoney', () => {

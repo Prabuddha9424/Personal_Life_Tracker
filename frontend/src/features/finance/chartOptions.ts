@@ -41,7 +41,8 @@ export function moneyScales(colors: ChartColors, currency: string) {
         precision: minorUnitDigits(currency),
         callback: (value) => axisMoney(Number(value), currency),
       },
-      grid: { color: (context) => (context.tick.value === 0 ? colors.muted : colors.grid) },
+      // Extra gridlines come with a scale-level context that has no tick.
+      grid: { color: (context) => (context.tick?.value === 0 ? colors.muted : colors.grid) },
     },
   } satisfies ChartOptions<'bar'>['scales']
 }
