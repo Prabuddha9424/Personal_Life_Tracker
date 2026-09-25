@@ -50,6 +50,11 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req, res, _next)
   } else if (err instanceof mongoose.Error.CastError) {
     status = 400
     body.message = `Invalid ${err.path}`
+  } else if (err instanceof mongoose.Error.ValidationError) {
+    // Its messages quote the offending value, so only the paths are reported.
+    status = 400
+    body.message = 'Validation failed'
+    body.errors = Object.keys(err.errors).map((path) => ({ path, message: 'Invalid value' }))
   } else if (isDuplicateKeyError(err)) {
     status = 409
     body.message = 'Resource already exists'

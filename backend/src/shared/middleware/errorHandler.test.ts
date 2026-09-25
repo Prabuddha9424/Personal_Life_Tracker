@@ -1,6 +1,7 @@
 import express from 'express'
 import { pino } from 'pino'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import mongoose from 'mongoose'
 import { app } from '../../app.ts'
 import { request } from '../../test/http.ts'
 import { errorHandler } from './errorHandler.ts'
@@ -133,5 +134,33 @@ describe('duplicate key errors', () => {
 
     expect(res.status).toBe(500)
     expect(errorLines()).toHaveLength(1)
+  })
+})
+
+describe('Mongoose validation errors', () => {
+  const SECRET = 'SECRET-LONG-NOTE'
+
+  async function validationError() {
+    const Note = mongoose.model(
+      'ErrorHandlerNote',
+      new mongoose.Schema({ note: { type: String, maxlength: 3 } }),
+    )
+    return Note.create({ note: SECRET }).catch((err: unknown) => err)
+  }
+
+  it('answers with a 400 that names the path but never the value, and logs no error', async () => {
+    const err = await validationError()
+    expect(err).toBeInstanceOf(mongoose.Error.ValidationError)
+
+    const res = await failWith(err)
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({
+      message: 'Validation failed',
+      errors: [{ path: 'note', message: 'Invalid value' }],
+    })
+    expect(JSON.stringify(res.body)).not.toContain(SECRET)
+    expect(logged.lines.join('')).not.toContain(SECRET)
+    expect(errorLines()).toHaveLength(0)
   })
 })
