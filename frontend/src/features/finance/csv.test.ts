@@ -1,6 +1,169 @@
 import { describe, expect, it } from 'vitest'
 import { readCsv } from './csv'
 
+/** Just the cells of each row, which is all most of these tests care about. */
+function cellsOf(text: string): string[][] {
+  return readCsv(text).rows.map((row) => row.cells)
+}
+
+describe('readCsv: cells and delimiters', () => {
+  it('parses plain rows', () => {
+    expect(cellsOf('a,b,c\n1,2,3\n')).toEqual([
+      ['a', 'b', 'c'],
+      ['1', '2', '3'],
+    ])
+  })
+
+  it('does not need a trailing newline', () => {
+    expect(cellsOf('a,b\n1,2')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+    ])
+  })
+
+  it('reads quoted fields with commas, doubled quotes and line breaks', () => {
+    const text = 'name,note\n"Smith, Jo","said ""hi"""\n"two\nlines",x\n'
+
+    expect(cellsOf(text)).toEqual([
+      ['name', 'note'],
+      ['Smith, Jo', 'said "hi"'],
+      ['two\nlines', 'x'],
+    ])
+    expect(readCsv(text).rows.map(({ line, endLine }) => [line, endLine])).toEqual([
+      [1, 1],
+      [2, 2],
+      [3, 4],
+    ])
+  })
+
+  it('handles CRLF and lone CR line endings', () => {
+    expect(cellsOf('a,b\r\n1,2\r\n')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+    ])
+    expect(cellsOf('a,b\r1,2\r')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+    ])
+  })
+
+  it('reads a line break inside quotes as a single newline whatever its style', () => {
+    expect(cellsOf('a\n"x\r\ny",1\n"p\rq",2\n')).toEqual([['a'], ['x\ny', '1'], ['p\nq', '2']])
+  })
+
+  it('drops a byte-order mark', () => {
+    expect(cellsOf('﻿date,amount\n1,2')[0]).toEqual(['date', 'amount'])
+  })
+
+  it('skips blank lines and lines with only empty cells', () => {
+    expect(cellsOf('a,b\n\n1,2\n,\n   ,  \n3,4\n')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+      ['3', '4'],
+    ])
+  })
+
+  it('keeps empty fields, including a trailing one', () => {
+    expect(cellsOf('a,,c\n1,2,\n')).toEqual([
+      ['a', '', 'c'],
+      ['1', '2', ''],
+    ])
+    expect(cellsOf('1,2,')).toEqual([['1', '2', '']])
+  })
+
+  it('keeps ragged rows as they are', () => {
+    expect(cellsOf('a,b,c\n1\n1,2,3,4\n')).toEqual([['a', 'b', 'c'], ['1'], ['1', '2', '3', '4']])
+  })
+
+  it('detects semicolon and tab delimiters', () => {
+    expect(cellsOf('a;b;c\n1;2,5;3')).toEqual([
+      ['a', 'b', 'c'],
+      ['1', '2,5', '3'],
+    ])
+    expect(cellsOf('a\tb\n1\t2')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+    ])
+  })
+
+  it('does not mistake commas inside quotes for the delimiter', () => {
+    expect(cellsOf('"a,b,c";d\n1;2')).toEqual([
+      ['a,b,c', 'd'],
+      ['1', '2'],
+    ])
+  })
+
+  it('detects the delimiter from the first non-blank line and prefers a comma on a tie', () => {
+    expect(cellsOf('\n\na;b\n1;2\n')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+    ])
+    expect(cellsOf('a,b;c\n')).toEqual([['a', 'b;c']])
+    expect(cellsOf('single\nvalue\n')).toEqual([['single'], ['value']])
+  })
+
+  it('ignores a lead row that holds only delimiters', () => {
+    expect(cellsOf(';;;\nDate;Amount\n1;2')).toEqual([
+      ['Date', 'Amount'],
+      ['1', '2'],
+    ])
+    expect(readCsv(';;;\nDate;Amount\n1;2').delimiter).toBe(';')
+    expect(readCsv(',\t;\n \t\nDate\tAmount\n1\t2\n').delimiter).toBe('\t')
+  })
+
+  it('is not fooled by a title line above the header', () => {
+    expect(readCsv('Account statement\nDate;Amount;Note\n1;2;a\n3;4;b\n').delimiter).toBe(';')
+    expect(
+      readCsv(
+        'Statement for Jo, January 2026\nDate;Amount;Note\n2026-01-01;-5,50;Coffee\n2026-01-02;-3,10;Tea\n',
+      ).delimiter,
+    ).toBe(';')
+    expect(readCsv('Account statement\nDate\tAmount\n1\t2\n').delimiter).toBe('\t')
+  })
+
+  it('prefers the delimiter that holds the same count on the most lines', () => {
+    expect(readCsv('Date;Amount\n1;2,5\n3;4,5\n5;6,5\n').delimiter).toBe(';')
+    expect(readCsv('Date,Amount,Note\n1,2,"a;b;c;d"\n3,4,x\n').delimiter).toBe(',')
+    expect(readCsv('a;b;c;d\n1;2;3;4\nnote, with, commas,,\n').delimiter).toBe(';')
+  })
+
+  it('keeps a quote in the middle of an unquoted field literally', () => {
+    expect(cellsOf('5" pipe,ok\n')).toEqual([['5" pipe', 'ok']])
+    expect(cellsOf('5" pipe;a,b;c\n1;2;3\n')).toEqual([
+      ['5" pipe', 'a,b', 'c'],
+      ['1', '2', '3'],
+    ])
+  })
+
+  it('returns no rows for empty input and one row for a header-only file', () => {
+    expect(cellsOf('')).toEqual([])
+    expect(cellsOf('\n\n')).toEqual([])
+    expect(cellsOf('date,amount,note\n')).toEqual([['date', 'amount', 'note']])
+  })
+
+  it('recovers from an unterminated quote instead of running to the end', () => {
+    expect(readCsv('a,"b\nc').rows).toEqual([
+      {
+        line: 1,
+        endLine: 1,
+        cells: ['a', '"b'],
+        problem: 'The quote opened on line 1 is never closed',
+      },
+      { line: 2, endLine: 2, cells: ['c'] },
+    ])
+    expect(readCsv('x,y\n1,"unclosed\n2,3\n4,5').rows.map((row) => row.cells)).toEqual([
+      ['x', 'y'],
+      ['1', '"unclosed'],
+      ['2', '3'],
+      ['4', '5'],
+    ])
+  })
+
+  it('treats cells that look like formulas as plain text', () => {
+    expect(cellsOf('=1+1,+SUM(A1),-5,@x\n')).toEqual([['=1+1', '+SUM(A1)', '-5', '@x']])
+  })
+})
+
 describe('readCsv', () => {
   it('numbers rows by their first physical line and reports the delimiter', () => {
     const { rows, delimiter } = readCsv('a;b\n1;2\n3;4\n')
