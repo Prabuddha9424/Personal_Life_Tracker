@@ -183,8 +183,8 @@ describe('TransactionList', () => {
   it('offers only categories of the chosen type and drops a category that no longer fits', async () => {
     vi.mocked(financeApi.listTransactions).mockResolvedValue(page([tx('1')]))
     renderWithProviders(<TransactionList onEdit={() => {}} />)
-    await screen.findByRole('option', { name: 'Groceries' })
-    await userEvent.selectOptions(screen.getByLabelText(/^category/i), 'Groceries')
+    await screen.findByRole('option', { name: 'Groceries (expense)' })
+    await userEvent.selectOptions(screen.getByLabelText(/^category/i), 'Groceries (expense)')
 
     await userEvent.selectOptions(screen.getByLabelText(/^type/i), 'income')
 
@@ -307,7 +307,9 @@ describe('TransactionList', () => {
     const onEdit = vi.fn()
     renderWithProviders(<TransactionList onEdit={onEdit} />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit note 1' }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Edit note 1, 2026-09-15, -$12.50' }),
+    )
 
     expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: '1' }))
   })
@@ -317,8 +319,61 @@ describe('TransactionList', () => {
     renderWithProviders(<TransactionList onEdit={() => {}} />)
 
     expect(
-      await screen.findByRole('button', { name: 'Edit Groceries on Sep 15, 2026' }),
+      await screen.findByRole('button', { name: 'Edit Groceries, 2026-09-15, -$12.50' }),
     ).toBeInTheDocument()
+  })
+
+  it('names two rows with the same note apart by date and amount', async () => {
+    vi.mocked(financeApi.listTransactions).mockResolvedValue(
+      page([
+        tx('1', { note: 'Lunch', date: '2026-09-01', amountMinor: 1250 }),
+        tx('2', { note: 'Lunch', date: '2026-09-02', amountMinor: 1250 }),
+        tx('3', { note: 'Lunch', date: '2026-09-02', kind: 'income', categoryId: 'i1' }),
+      ]),
+    )
+    const onEdit = vi.fn()
+    renderWithProviders(<TransactionList onEdit={onEdit} />)
+
+    const buttons = await screen.findAllByRole('button', { name: /^Edit Lunch/ })
+
+    expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Edit Lunch, 2026-09-01, -$12.50',
+      'Edit Lunch, 2026-09-02, -$12.50',
+      'Edit Lunch, 2026-09-02, +$12.50',
+    ])
+    await userEvent.click(buttons[1] as HTMLElement)
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: '2' }))
+  })
+
+  it('formats the amount in the row currency in the button name', async () => {
+    vi.mocked(financeApi.listTransactions).mockResolvedValue(
+      page([tx('1', { currency: 'JPY', amountMinor: 500, note: 'Bus' })]),
+    )
+    renderWithProviders(<TransactionList onEdit={() => {}} />)
+
+    expect(
+      await screen.findByRole('button', { name: 'Edit Bus, 2026-09-15, -¥500' }),
+    ).toBeInTheDocument()
+  })
+
+  it('tells same-named categories of different types apart while the type filter is All', async () => {
+    vi.mocked(financeApi.listCategories).mockResolvedValue([
+      { id: 'e1', name: 'Other', kind: 'expense' },
+      { id: 'i1', name: 'Other', kind: 'income' },
+      { id: 'i2', name: 'Salary', kind: 'income' },
+    ])
+    vi.mocked(financeApi.listTransactions).mockResolvedValue(page([tx('1')]))
+    renderWithProviders(<TransactionList onEdit={() => {}} />)
+
+    expect(await screen.findByRole('option', { name: 'Other (expense)' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Other (income)' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Salary (income)' })).toBeInTheDocument()
+
+    await userEvent.selectOptions(screen.getByLabelText(/^type/i), 'income')
+
+    expect(screen.getByRole('option', { name: 'Other' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Salary' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /\(income\)/ })).not.toBeInTheDocument()
   })
 
   it('has one interactive control per row, so none is nested inside another', async () => {

@@ -111,7 +111,7 @@ export function TransactionList({ onEdit }: TransactionListProps) {
             <option value="">All</option>
             {categoryOptions.map((category) => (
               <option key={category.id} value={category.id}>
-                {category.name}
+                {kind ? category.name : `${category.name} (${category.kind})`}
               </option>
             ))}
           </select>
@@ -187,23 +187,21 @@ export function TransactionList({ onEdit }: TransactionListProps) {
                 {items.map((transaction) => {
                   const income = transaction.kind === 'income'
                   const name = categoryName(transaction.categoryId)
+                  const amount = `${income ? '+' : '-'}${formatMinorUnits(transaction.amountMinor, transaction.currency)}`
                   return (
                     <tr key={transaction.id}>
                       <td>{formatDate(transaction.date)}</td>
                       <td className="tx-table__text">{name}</td>
                       <td className="tx-table__text">{transaction.note}</td>
                       <td className="tx-table__amount">
-                        <span className={income ? 'is-positive' : undefined}>
-                          {income ? '+' : '-'}
-                          {formatMinorUnits(transaction.amountMinor, transaction.currency)}
-                        </span>
+                        <span className={income ? 'is-positive' : undefined}>{amount}</span>
                         <span className="tx-table__kind">{income ? 'Income' : 'Expense'}</span>
                       </td>
                       <td>
                         <Button
                           variant="ghost"
                           className="tx-table__edit"
-                          aria-label={`Edit ${transaction.note || `${name} on ${formatDate(transaction.date)}`}`}
+                          aria-label={`Edit ${transaction.note || name}, ${transaction.date}, ${amount}`}
                           onClick={() => onEdit(transaction)}
                         >
                           Edit
