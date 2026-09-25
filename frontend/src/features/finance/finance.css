@@ -349,3 +349,7 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+.import .import__warning {
+  color: var(--warning);
+}

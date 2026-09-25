@@ -108,7 +108,9 @@ describe('ImportDialog: choosing a file', () => {
     ['an empty file', new File([''], 'empty.csv', { type: 'text/csv' }), /That file has no rows/],
     [
       'a binary file',
-      new File(['PK\u0000\u0000'], 'data.csv', { type: 'text/csv' }),
+      new File(['PK\u0003\u0004\u0000\u0000 some binary content'], 'data.csv', {
+        type: 'text/csv',
+      }),
       /does not look like a text file/,
     ],
   ])('says so for %s', async (_name, file, message) => {
@@ -129,6 +131,28 @@ describe('ImportDialog: choosing a file', () => {
     fireEvent.change(screen.getByLabelText('CSV file'), { target: { files: [big] } })
 
     expect(await screen.findByRole('alert')).toHaveTextContent('larger than 5 MB')
+  })
+
+  it('warns about characters that could not be read, and still lets the user import', async () => {
+    await open()
+    // "Caf\xe9" in Windows-1252 is not valid UTF-8.
+    const bytes = new Uint8Array([
+      ...new TextEncoder().encode('Date,Description,Amount\n2026-09-01,Caf'),
+      0xe9,
+      ...new TextEncoder().encode(',-4.50\n'),
+    ])
+
+    await userEvent.upload(
+      screen.getByLabelText('CSV file'),
+      new File([bytes], 'bank.csv', { type: 'text/csv' }),
+    )
+
+    expect(
+      await screen.findByText(
+        'Some characters could not be read \u2014 save the file as CSV UTF-8.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Import 1 transaction' })).toBeEnabled()
   })
 
   it('drops the previous preview when the next file is refused', async () => {

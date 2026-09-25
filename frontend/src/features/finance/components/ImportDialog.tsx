@@ -108,6 +108,7 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
 
   const [rows, setRows] = useState<CsvRow[] | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [fileWarning, setFileWarning] = useState<string | null>(null)
   const [skip, setSkip] = useState(0)
   const [hasHeader, setHasHeader] = useState(true)
   const [dateColumn, setDateColumn] = useState(0)
@@ -236,10 +237,12 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
 
     if ('error' in result) {
       setRows(null)
+      setFileWarning(null)
       setFileError(result.error)
       return
     }
     setFileError(null)
+    setFileWarning(result.warning ?? null)
     setRows(result.rows)
     setSkip(0)
     setHasHeader(true)
@@ -314,6 +317,8 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
         <FormField label="CSV file" error={fileError ?? undefined}>
           <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={onFile} />
         </FormField>
+
+        {fileWarning && <p className="import__warning">{fileWarning}</p>}
 
         {rows && (
           <>
