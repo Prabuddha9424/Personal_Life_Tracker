@@ -630,6 +630,42 @@ describe('ImportDialog: a batch fails', () => {
     expect(screen.getByText(/Imported: nothing yet/)).toBeInTheDocument()
   })
 
+  it('sends multibyte notes in batches under the size the API accepts, and maps errors across uneven batches', async () => {
+    const note = '\u0d85'.repeat(200)
+    const csv = [
+      'Date,Description,Amount',
+      'not a date,Broken,-1.00',
+      ...Array.from({ length: 400 }, () => `2026-09-01,${note},-1.00`),
+    ].join('\n')
+    vi.mocked(financeApi.bulkCreateTransactions)
+      .mockImplementationOnce(async (rows) => ({ created: rows.length }))
+      .mockImplementationOnce(async (rows) => ({ created: rows.length }))
+      .mockRejectedValueOnce(apiError(400, { message: 'Row 5: unknown category' }))
+    await open()
+    await upload(csv)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 400 transactions' }))
+
+    // The valid row with index i is on file line i + 3.
+    await screen.findByText(/Stopped early/)
+    const sizes = sentBatches().map((rows) => rows.length)
+    for (const rows of sentBatches()) {
+      expect(new TextEncoder().encode(JSON.stringify({ rows })).length).toBeLessThanOrEqual(
+        90 * 1024,
+      )
+    }
+    expect(sizes[0]).toBeLessThan(200)
+    const start = (sizes[0] ?? 0) + (sizes[1] ?? 0)
+    expect(screen.getByText(`Line ${start + 5 + 2}: unknown category`)).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        new RegExp(
+          `Failed: batch 3 of \\d \\(lines ${start + 3} to ${start + (sizes[2] ?? 0) + 2}\\)`,
+        ),
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('keeps the dialog open after a failure until the user closes it', async () => {
     vi.mocked(financeApi.bulkCreateTransactions).mockRejectedValueOnce(new Error('Network Error'))
     const onClose = vi.fn()

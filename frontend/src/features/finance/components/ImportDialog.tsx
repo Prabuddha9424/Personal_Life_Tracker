@@ -11,7 +11,6 @@ import { financeKeys } from '../api/financeKeys'
 import { useBulkCreateTransactions, useCategories } from '../api/hooks'
 import type { CsvRow } from '../csv'
 import {
-  chunk,
   countExistingDuplicates,
   DATE_FORMATS,
   guessColumns,
@@ -20,14 +19,12 @@ import {
   type ImportMapping,
   type ImportProblem,
 } from '../csvImport'
+import { planBatches, type PlannedBatch } from '../importBatches'
 import { readImportFile } from '../importFile'
 import { describeBatchFailure, type BatchFailure } from '../importFailure'
 import type { Category, TransactionInput } from '../types'
 import '../finance.css'
 
-// 200 rows with 200-character notes is about 70 KB, comfortably under the API's 100 KB body limit
-// and far under its 500-row cap.
-const BATCH_SIZE = 200
 const PREVIEW_ROWS = 20
 const PROBLEMS_SHOWN = 10
 const MAX_COLUMNS = 100
@@ -40,7 +37,8 @@ const DUPLICATE_CHECK_LIMIT = DUPLICATE_CHECK_PAGES * 200
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
 interface Plan {
-  batches: TransactionInput[][]
+  /** Frozen when the import starts: what each request holds and where it starts among the valid rows. */
+  batches: PlannedBatch[]
   /** The file line of each valid row, in the order they were sent. */
   lines: number[]
   problems: ImportProblem[]
@@ -262,9 +260,9 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
         if (index < first) continue
         setRun({ plan, next: index, status: 'running' })
         try {
-          await bulk.mutateAsync(batch)
+          await bulk.mutateAsync(batch.rows)
         } catch (error) {
-          const failure = describeBatchFailure(error, plan.lines, index * BATCH_SIZE)
+          const failure = describeBatchFailure(error, plan.lines, batch.start)
           setRun({ plan, next: index, status: 'failed', failure })
           return
         }
@@ -278,7 +276,7 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
   function onImport() {
     if (inFlightRef.current || ready === 0 || withoutCategory.length > 0) return
     void send(
-      { batches: chunk(mapped.valid, BATCH_SIZE), lines: mapped.lines, problems: mapped.problems },
+      { batches: planBatches(mapped.valid), lines: mapped.lines, problems: mapped.problems },
       0,
     )
   }
@@ -568,7 +566,7 @@ function chosenOrDefault(list: Category[], choice: string): string {
 }
 
 function countBefore(plan: Plan, batchIndex: number): number {
-  return plan.batches.slice(0, batchIndex).reduce((sum, batch) => sum + batch.length, 0)
+  return plan.batches.slice(0, batchIndex).reduce((sum, batch) => sum + batch.rows.length, 0)
 }
 
 function countAll(plan: Plan): number {
@@ -657,8 +655,10 @@ function batchRange(from: number, to: number, count: number): string {
 
 /** "lines 3 to 202" for the valid rows with index `from` up to (not including) `to`. */
 function lineRange(plan: Plan, from: number, to: number): string {
-  const first = plan.lines[from * BATCH_SIZE]
-  const last = plan.lines[Math.min(to * BATCH_SIZE, plan.lines.length) - 1]
+  const firstBatch = plan.batches[from]
+  const lastBatch = plan.batches[to - 1]
+  const first = plan.lines[firstBatch?.start ?? 0]
+  const last = plan.lines[(lastBatch?.start ?? 0) + (lastBatch?.rows.length ?? 0) - 1]
   return first === last ? `line ${first}` : `lines ${first} to ${last}`
 }
 
