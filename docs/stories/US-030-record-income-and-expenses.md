@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E3 Personal finance |
 | **Priority** | Must |
 | **Size** | L |
@@ -27,11 +27,11 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-030-T1 | Add the category and transaction models, default categories, schemas, DTOs and test helpers | [M3 Finance](../plans/04-finance.md), Task 1 | To do |
-| US-030-T2 | Add transaction create, list, update and delete with tests (currency from the profile, category checks) | [M3 Finance](../plans/04-finance.md), Task 3 | To do |
-| US-030-T3 | Add the frontend types, API, keys and hooks | [M3 Finance](../plans/04-finance.md), Task 7 | To do |
-| US-030-T4 | Add the transaction form (currency-aware amount), the list with filters and paging, with tests | [M3 Finance](../plans/04-finance.md), Task 10 (form modal, list) | To do |
-| US-030-T5 | Add the Finance page, route and navigation entry | [M3 Finance](../plans/04-finance.md), Task 12 | To do |
+| US-030-T1 | Add the category and transaction models, default categories, schemas, DTOs and test helpers | [M3 Finance](../plans/04-finance.md), Task 1 | Done |
+| US-030-T2 | Add transaction create, list, update and delete with tests (currency from the profile, category checks) | [M3 Finance](../plans/04-finance.md), Task 3 | Done |
+| US-030-T3 | Add the frontend types, API, keys and hooks | [M3 Finance](../plans/04-finance.md), Task 7 | Done |
+| US-030-T4 | Add the transaction form (currency-aware amount), the list with filters and paging, with tests | [M3 Finance](../plans/04-finance.md), Task 10 (form modal, list) | Done |
+| US-030-T5 | Add the Finance page, route and navigation entry | [M3 Finance](../plans/04-finance.md), Task 12 | Done |
 | US-030-T6 | Walk the flows in a real browser, including a JPY account | [M3 Finance](../plans/04-finance.md), Task 13 | To do |
 
 ## Out of scope
@@ -42,9 +42,9 @@ Recurring transactions, splits, attachments and transfers between accounts.
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
-- [ ] Acceptance criterion 6
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
+- [x] Acceptance criterion 6

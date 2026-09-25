@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E3 Personal finance |
 | **Priority** | Must |
 | **Size** | M |
@@ -26,8 +26,8 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-031-T1 | Add category endpoints with lazily created defaults, case-insensitive uniqueness and the in-use check, with tests (including racing first requests) | [M3 Finance](../plans/04-finance.md), Task 2 | To do |
-| US-031-T2 | Add the category manager dialog (add, inline rename, delete, server messages) with tests | [M3 Finance](../plans/04-finance.md), Task 10 (category manager) | To do |
+| US-031-T1 | Add category endpoints with lazily created defaults, case-insensitive uniqueness and the in-use check, with tests (including racing first requests) | [M3 Finance](../plans/04-finance.md), Task 2 | Done |
+| US-031-T2 | Add the category manager dialog (add, inline rename, delete, server messages) with tests | [M3 Finance](../plans/04-finance.md), Task 10 (category manager) | Done |
 
 ## Out of scope
 
@@ -41,8 +41,8 @@ Defaults are created on first use, not at registration, so the auth slice never 
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5

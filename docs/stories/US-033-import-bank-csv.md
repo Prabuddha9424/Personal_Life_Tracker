@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E3 Personal finance |
 | **Priority** | Should |
 | **Size** | L |
@@ -27,9 +27,9 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-033-T1 | Add the all-or-nothing bulk endpoint (up to 500 rows, category checks, row-numbered errors) with tests | [M3 Finance](../plans/04-finance.md), Task 4 | To do |
-| US-033-T2 | Add the CSV parser and the import mapping (dates, signed amounts, column guess, duplicates, batching) as pure functions with tests | [M3 Finance](../plans/04-finance.md), Task 8 | To do |
-| US-033-T3 | Add the import dialog with tests (preview, duplicates, batches, partial failure) | [M3 Finance](../plans/04-finance.md), Task 11 | To do |
+| US-033-T1 | Add the all-or-nothing bulk endpoint (up to 500 rows, category checks, row-numbered errors) with tests | [M3 Finance](../plans/04-finance.md), Task 4 | Done |
+| US-033-T2 | Add the CSV parser and the import mapping (dates, signed amounts, column guess, duplicates, batching) as pure functions with tests | [M3 Finance](../plans/04-finance.md), Task 8 | Done |
+| US-033-T3 | Add the import dialog with tests (preview, duplicates, batches, partial failure) | [M3 Finance](../plans/04-finance.md), Task 11 | Done |
 | US-033-T4 | Try the sample file from the plan in a real browser and import it twice | [M3 Finance](../plans/04-finance.md), Task 13 | To do |
 
 ## Out of scope
@@ -44,9 +44,9 @@ The browser parses the file; the API only receives JSON rows, so no new backend 
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
-- [ ] Acceptance criterion 6
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
+- [x] Acceptance criterion 6

@@ -28,7 +28,7 @@
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
 | US-070-T1 | Tasks: tenant isolation tests (read, update, delete, move, list, tags, neighbours, planted `userId`) | [M2 Tasks](../plans/03-tasks.md), Task 5 | Done |
-| US-070-T2 | Finance: tenant isolation tests (transactions, categories, bulk, reports) | [M3 Finance](../plans/04-finance.md), Task 6 | To do |
+| US-070-T2 | Finance: tenant isolation tests (transactions, categories, bulk, reports) | [M3 Finance](../plans/04-finance.md), Task 6 | Done |
 | US-070-T3 | Fixed expenses: tenant isolation tests | [M4 Fixed expenses](../plans/05-fixed-expenses.md), Task 7 | To do |
 | US-070-T4 | Account: deletion leaves other users intact and old tokens harmless | [M5 Dashboard and account](../plans/06-dashboard-account.md), Task 3 (delete tests) | To do |
 | US-070-T5 | Frontend: cache cleared on login, logout and failed refresh | [M1 Auth](../plans/02-auth.md), Tasks 9, 10, 12 (tests) | Done |

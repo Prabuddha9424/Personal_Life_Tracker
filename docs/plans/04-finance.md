@@ -43,13 +43,13 @@
 **Interfaces:**
 - Produces: `Category` model, `CategoryKind = 'income' | 'expense'`, `type CategoryAttrs`, `type CategoryRecord`; `Transaction` model, `type TransactionAttrs`, `type TransactionRecord`; `DEFAULT_CATEGORIES: { name: string; kind: CategoryKind }[]`; `CategoryDto`, `TransactionDto`, `toCategoryDto`, `toTransactionDto`; schemas `categoryBodySchema`, `renameCategorySchema`, `listCategoriesQuerySchema`, `createTransactionSchema`, `updateTransactionSchema`, `bulkTransactionsSchema`, `listTransactionsQuerySchema`, `monthQuerySchema`, `rangeQuerySchema` with inferred input types; test helpers `insertCategory(userId, overrides?)`, `insertTransaction(userId, overrides?)`.
 
-- [ ] **Step 0: Create the branch**
+- [x] **Step 0: Create the branch**
 
 ```bash
 git switch main && git switch -c feature/finance-charts
 ```
 
-- [ ] **Step 1: Write the models**
+- [x] **Step 1: Write the models**
 
 `backend/src/features/finance/category.model.ts`:
 
@@ -128,7 +128,7 @@ transactionSchema.index({ userId: 1, kind: 1, date: -1 })
 export const Transaction = model<TransactionAttrs>('Transaction', transactionSchema)
 ```
 
-- [ ] **Step 2: Write the defaults, DTOs and schemas**
+- [x] **Step 2: Write the defaults, DTOs and schemas**
 
 `backend/src/features/finance/default-categories.ts`:
 
@@ -271,7 +271,7 @@ export type MonthQuery = z.infer<typeof monthQuerySchema>
 export type RangeQuery = z.infer<typeof rangeQuerySchema>
 ```
 
-- [ ] **Step 3: Write the test helpers**
+- [x] **Step 3: Write the test helpers**
 
 `backend/src/features/finance/finance.test-helpers.ts`:
 
@@ -316,7 +316,7 @@ export async function insertTransaction(
 }
 ```
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 cd backend && npm run lint && npm run typecheck && npm test
@@ -335,7 +335,7 @@ git commit -m "feat(finance): add category and transaction models, schemas and D
 **Interfaces:**
 - Produces: `listCategories(userId, kind?): Promise<CategoryDto[]>` (creates the default set on first use), `createCategory(userId, body)`, `renameCategory(userId, id, name)`, `deleteCategory(userId, id)`; routes `GET/POST /api/categories`, `PATCH/DELETE /api/categories/:id`; `financeRouter` (mounted at `/api`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `backend/src/features/finance/category.test.ts`:
 
@@ -492,7 +492,7 @@ Run: `npx vitest run src/features/finance/category.test.ts` → FAIL (404 on `/a
 
 The `vi.mock('../auth/index.ts', ...)` line replaces the auth slice's public API for finance tests. Finance tests must not need a real user row, and only `getUserProfile` is used.
 
-- [ ] **Step 2: Implement the category service**
+- [x] **Step 2: Implement the category service**
 
 `backend/src/features/finance/category.service.ts`:
 
@@ -585,7 +585,7 @@ export async function deleteCategory(userId: string, id: string): Promise<void> 
 
 The test regex `/2 transactions/` matches "2 transactions use this category…" as written.
 
-- [ ] **Step 3: Implement controller, routes and the slice entry**
+- [x] **Step 3: Implement controller, routes and the slice entry**
 
 `backend/src/features/finance/category.controller.ts`:
 
@@ -662,7 +662,7 @@ In `backend/src/app.ts` add `import { financeRouter } from './features/finance/i
 
 Run: `npx vitest run src/features/finance/category.test.ts` → PASS.
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -682,7 +682,7 @@ git commit -m "feat(finance): add category endpoints with lazily created default
 - Consumes: `getUserProfile` from `../auth/index.ts`, the models and schemas.
 - Produces: `createTransaction(userId, input): Promise<TransactionDto>`, `listTransactions(userId, query): Promise<Paginated<TransactionDto>>`, `updateTransaction(userId, id, input)`, `deleteTransaction(userId, id)`, `requireProfile(userId): Promise<UserProfile>` (throws 401 for a deleted user); routes `GET/POST /api/transactions`, `PATCH/DELETE /api/transactions/:id`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `backend/src/features/finance/transaction.test.ts`:
 
@@ -919,7 +919,7 @@ describe('DELETE /api/transactions/:id', () => {
 
 Run → FAIL (404 on `/api/transactions`).
 
-- [ ] **Step 2: Implement the service**
+- [x] **Step 2: Implement the service**
 
 `backend/src/features/finance/transaction.service.ts`:
 
@@ -1031,7 +1031,7 @@ export async function deleteTransaction(userId: string, id: string): Promise<voi
 }
 ```
 
-- [ ] **Step 3: Controller, routes, wiring**
+- [x] **Step 3: Controller, routes, wiring**
 
 `backend/src/features/finance/transaction.controller.ts`:
 
@@ -1102,7 +1102,7 @@ financeRouter.use('/transactions', requireAuth, transactionRouter)
 
 Run: `npx vitest run src/features/finance` → PASS.
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1121,7 +1121,7 @@ git commit -m "feat(finance): add transaction CRUD and filtered, paginated list"
 **Interfaces:**
 - Produces: `bulkCreateTransactions(userId, input: BulkTransactionsInput): Promise<{ created: number }>`; route `POST /api/transactions/bulk` (`201 { created }`). The whole request is validated first and inserted only if every row is valid (all or nothing). Row errors name the row: `Row 3: unknown category`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `backend/src/features/finance/transaction.bulk.test.ts`:
 
@@ -1248,7 +1248,7 @@ describe('POST /api/transactions/bulk', () => {
 
 Run → FAIL (404 or 400 because `/bulk` matches `/:id`-less routes; the route does not exist yet).
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 `backend/src/features/finance/transaction.bulk.ts`:
 
@@ -1315,7 +1315,7 @@ transactionRouter.post('/bulk', validate({ body: bulkTransactionsSchema }), bulk
 
 Run: `npx vitest run src/features/finance/transaction.bulk.test.ts` → PASS.
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1334,7 +1334,7 @@ git commit -m "feat(finance): add all-or-nothing bulk transaction import" -m "Co
 **Interfaces:**
 - Produces: `monthSummary(userId, month)`, `spendingByCategory(userId, month)`, `monthlyTotals(userId, months, to)`, `balanceTrend(userId, months, to)`; routes `GET /api/finance/summary`, `/by-category`, `/monthly`, `/trend` with the response shapes in the overview.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `backend/src/features/finance/report.test.ts`:
 
@@ -1604,7 +1604,7 @@ describe('GET /api/finance/trend', () => {
 
 Run: `npx vitest run src/features/finance/report.test.ts` → FAIL (404).
 
-- [ ] **Step 2: Implement the report service**
+- [x] **Step 2: Implement the report service**
 
 `backend/src/features/finance/report.service.ts`:
 
@@ -1750,7 +1750,7 @@ export async function balanceTrend(userId: string, count: number, to: string) {
 }
 ```
 
-- [ ] **Step 3: Controller, routes, wiring**
+- [x] **Step 3: Controller, routes, wiring**
 
 `backend/src/features/finance/report.controller.ts`:
 
@@ -1805,7 +1805,7 @@ financeRouter.use('/finance', requireAuth, reportRouter)
 
 Run: `npx vitest run src/features/finance/report.test.ts` → PASS.
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -1824,7 +1824,7 @@ git commit -m "feat(finance): add summary, category, monthly and balance-trend r
 **Interfaces:**
 - Produces (from `features/finance/index.ts`): `financeRouter`, `type CategoryDto`, `type TransactionDto`, `exportFinanceForUser(userId): Promise<{ categories: CategoryDto[]; transactions: TransactionDto[] }>`, `deleteFinanceForUser(userId): Promise<void>`, `hasFinanceDataForUser(userId): Promise<boolean>` (true when the user has at least one transaction; categories alone do not count).
 
-- [ ] **Step 1: Write the isolation test (NFR-1)**
+- [x] **Step 1: Write the isolation test (NFR-1)**
 
 `backend/src/features/finance/finance.isolation.test.ts`:
 
@@ -1936,7 +1936,7 @@ describe("another user's finance data looks like it does not exist", () => {
 
 Run: `npx vitest run src/features/finance/finance.isolation.test.ts`. It should PASS. If any assertion fails it is a tenant leak; fix the service, never the test.
 
-- [ ] **Step 2: Write the public API test**
+- [x] **Step 2: Write the public API test**
 
 `backend/src/features/finance/finance.public-api.test.ts`:
 
@@ -1995,7 +1995,7 @@ describe('finance public API', () => {
 })
 ```
 
-- [ ] **Step 3: Implement and export**
+- [x] **Step 3: Implement and export**
 
 `backend/src/features/finance/finance.data.ts`:
 
@@ -2041,7 +2041,7 @@ export type { CategoryDto, TransactionDto } from './finance.dto.ts'
 
 Run: `npx vitest run src/features/finance` → PASS.
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -2067,13 +2067,13 @@ All commands in Part B run from `frontend/`. Imports use `@/`; imports inside `f
 - Produces (API): `listCategories(kind?)`, `createCategory(input)`, `renameCategory(id, name)`, `deleteCategory(id)`, `listTransactions(params)`, `listAllTransactionsInRange(from, to, maxPages?)`, `createTransaction(input)`, `updateTransaction(id, input)`, `deleteTransaction(id)`, `bulkCreateTransactions(rows)`, `fetchSummary(month)`, `fetchSpendingByCategory(month)`, `fetchMonthlyTotals(months)`, `fetchBalanceTrend(months)`.
 - Produces (hooks): `useCategories()`, `useTransactions(params)`, `useCreateTransaction()`, `useUpdateTransaction()`, `useDeleteTransaction()`, `useBulkCreateTransactions()`, `useCreateCategory()`, `useRenameCategory()`, `useDeleteCategory()`, `useMonthSummary(month)`, `useSpendingByCategory(month)`, `useMonthlyTotals(months)`, `useBalanceTrend(months)`.
 
-- [ ] **Step 0: Create the branch** (skip if already on `feature/finance-charts`)
+- [x] **Step 0: Create the branch** (skip if already on `feature/finance-charts`)
 
 ```bash
 git switch main && git switch -c feature/finance-charts
 ```
 
-- [ ] **Step 1: Add the money-input helper with its test**
+- [x] **Step 1: Add the money-input helper with its test**
 
 Append to `frontend/src/shared/lib/money.test.ts`:
 
@@ -2117,7 +2117,7 @@ export function formatMinorForInput(minor: number, currency: string): string {
 
 Run → PASS.
 
-- [ ] **Step 2: Write types, API and keys**
+- [x] **Step 2: Write types, API and keys**
 
 `frontend/src/features/finance/types.ts`:
 
@@ -2329,7 +2329,7 @@ export const financeKeys = {
 }
 ```
 
-- [ ] **Step 3: Implement the hooks**
+- [x] **Step 3: Implement the hooks**
 
 `frontend/src/features/finance/api/hooks.ts`:
 
@@ -2429,7 +2429,7 @@ export function useDeleteCategory() {
 
 `useInvalidateFinance()` is a hook that returns a function and is called during render inside each mutation hook, which is what the rules of hooks require. The `onSuccess` it returns is stable enough for TanStack Query.
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -2447,7 +2447,7 @@ git commit -m "feat(finance): add types, API, query keys, hooks and money-input 
 **Interfaces:**
 - Produces: `parseCsv(text: string): string[][]` (RFC 4180 style, auto-detects `,` `;` or tab, drops a BOM and blank lines); `type DateFormat = 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM/DD/YYYY'`, `DATE_FORMATS`, `parseDate(value, format): string | null`, `parseSignedAmount(value, currency): { minor: number; negative: boolean } | null`, `ImportMapping`, `RowError { row: number; message: string }`, `mapRows(rows, mapping, hasHeader): { valid: TransactionInput[]; errors: RowError[] }`, `guessColumns(header: string[]): { dateColumn: number; amountColumn: number; noteColumn: number | null }`, `duplicateKey(row)`, `countExistingDuplicates(rows, existing): number`, `chunk<T>(items: T[], size: number): T[][]`.
 
-- [ ] **Step 1: Write the failing CSV parser tests**
+- [x] **Step 1: Write the failing CSV parser tests**
 
 `frontend/src/features/finance/csv.test.ts`:
 
@@ -2546,7 +2546,7 @@ describe('parseCsv', () => {
 
 Run: `npx vitest run src/features/finance/csv.test.ts` → FAIL.
 
-- [ ] **Step 2: Implement the parser**
+- [x] **Step 2: Implement the parser**
 
 `frontend/src/features/finance/csv.ts`:
 
@@ -2623,7 +2623,7 @@ export function parseCsv(input: string): string[][] {
 
 Run → PASS.
 
-- [ ] **Step 3: Write the failing mapping tests**
+- [x] **Step 3: Write the failing mapping tests**
 
 `frontend/src/features/finance/csvImport.test.ts`:
 
@@ -2838,7 +2838,7 @@ describe('chunk', () => {
 
 Run: `npx vitest run src/features/finance/csvImport.test.ts` → FAIL.
 
-- [ ] **Step 4: Implement the mapping**
+- [x] **Step 4: Implement the mapping**
 
 `frontend/src/features/finance/csvImport.ts`:
 
@@ -3009,7 +3009,7 @@ export function chunk<T>(items: T[], size: number): T[][] {
 
 Run: `npx vitest run src/features/finance` → PASS.
 
-- [ ] **Step 5: Run all checks and commit**
+- [x] **Step 5: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -3030,7 +3030,7 @@ git commit -m "feat(finance): add CSV parser and import mapping with row-level e
 
 Chart.js draws on a canvas, which jsdom cannot do, so the tests replace `react-chartjs-2` with components that print the `data` they were given. The tests then check what the charts would show (labels and plotted values), with amounts converted from minor units for display only.
 
-- [ ] **Step 1: Write the failing SpendingByCategoryChart test**
+- [x] **Step 1: Write the failing SpendingByCategoryChart test**
 
 `frontend/src/features/finance/components/SpendingByCategoryChart.test.tsx`:
 
@@ -3161,7 +3161,7 @@ describe('SpendingByCategoryChart', () => {
 
 Run → FAIL (module missing).
 
-- [ ] **Step 2: Implement the chart plumbing and the doughnut**
+- [x] **Step 2: Implement the chart plumbing and the doughnut**
 
 `frontend/src/features/finance/chartSetup.ts`:
 
@@ -3351,7 +3351,7 @@ Append to (or create) `frontend/src/features/finance/finance.css`:
 
 Run: `npx vitest run src/features/finance/components/SpendingByCategoryChart.test.tsx` → PASS.
 
-- [ ] **Step 3: Write and implement the bar and line charts**
+- [x] **Step 3: Write and implement the bar and line charts**
 
 `frontend/src/features/finance/components/IncomeExpenseChart.test.tsx`:
 
@@ -3666,7 +3666,7 @@ export function NetTrendChart({ months = 6 }: { months?: RangeMonths }) {
 
 Run: `npx vitest run src/features/finance/components` → PASS.
 
-- [ ] **Step 4: Run all checks and commit**
+- [x] **Step 4: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -3685,7 +3685,7 @@ git commit -m "feat(finance): add theme-aware spending, income/expense and balan
 **Interfaces:**
 - Produces: `makeTransactionFormSchema(currency)`, `type TransactionFormValues`, `toTransactionInput(values, currency): TransactionInput`, `toFormValues(currency, transaction?, today?): TransactionFormValues`; `MonthPicker({ value, onChange })`; `SummaryCards({ month })`; `TransactionFormModal({ mode, onClose })` with `mode: { kind: 'create' } | { kind: 'edit'; transaction: Transaction }` (exported type `TransactionFormMode`); `TransactionList({ onEdit })`; `CategoryManager({ onClose })`.
 
-- [ ] **Step 1: Write the failing form-logic tests**
+- [x] **Step 1: Write the failing form-logic tests**
 
 `frontend/src/features/finance/transactionForm.test.ts`:
 
@@ -3849,7 +3849,7 @@ export function toFormValues(
 
 Run → PASS. (`toTransactionInput` returns `?? 0` only for the impossible case where the schema has not validated; the form always validates first.)
 
-- [ ] **Step 2: Month picker**
+- [x] **Step 2: Month picker**
 
 `frontend/src/features/finance/components/MonthPicker.test.tsx`:
 
@@ -3928,7 +3928,7 @@ export function MonthPicker({ value, onChange }: MonthPickerProps) {
 
 Run its test → PASS.
 
-- [ ] **Step 3: Summary cards**
+- [x] **Step 3: Summary cards**
 
 `frontend/src/features/finance/components/SummaryCards.test.tsx`:
 
@@ -4049,7 +4049,7 @@ export function SummaryCards({ month }: { month: string }) {
 
 Run its test → PASS.
 
-- [ ] **Step 4: Transaction form modal**
+- [x] **Step 4: Transaction form modal**
 
 `frontend/src/features/finance/components/TransactionFormModal.test.tsx`:
 
@@ -4382,7 +4382,7 @@ The `Amount` label is `Amount (USD)`, which is why the tests use `/^amount/i`. T
 
 Run: `npx vitest run src/features/finance/components/TransactionFormModal.test.tsx` → PASS. (`.form-actions`, `.form-error` are already styled by the tasks slice's CSS; the finance slice defines its own copy in Step 6 so it does not depend on another slice's stylesheet.)
 
-- [ ] **Step 5: Transaction list, category manager**
+- [x] **Step 5: Transaction list, category manager**
 
 `frontend/src/features/finance/components/TransactionList.test.tsx`:
 
@@ -4865,7 +4865,7 @@ export function CategoryManager({ onClose }: { onClose: () => void }) {
 
 Run: `npx vitest run src/features/finance/components/CategoryManager.test.tsx` → PASS.
 
-- [ ] **Step 6: Add the styles**
+- [x] **Step 6: Add the styles**
 
 Append to `frontend/src/features/finance/finance.css`:
 
@@ -4998,7 +4998,7 @@ Append to `frontend/src/features/finance/finance.css`:
 }
 ```
 
-- [ ] **Step 7: Run all checks and commit**
+- [x] **Step 7: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -5018,7 +5018,7 @@ git commit -m "feat(finance): add month picker, summary cards, transaction form,
 - Consumes: `parseCsv`, `mapRows`, `guessColumns`, `countExistingDuplicates`, `chunk`, `DATE_FORMATS`, `useCategories`, `useBulkCreateTransactions`, `listAllTransactionsInRange`.
 - Produces: `ImportDialog({ onClose })`. Flow: pick a file, map columns and pick default categories, see a preview (rows ready, rows with problems listed by number, possible duplicates), import in batches of 500 with progress, see the result.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `frontend/src/features/finance/components/ImportDialog.test.tsx`:
 
@@ -5183,7 +5183,7 @@ describe('ImportDialog', () => {
 
 Run: `npx vitest run src/features/finance/components/ImportDialog.test.tsx` → FAIL (module missing).
 
-- [ ] **Step 2: Implement the dialog**
+- [x] **Step 2: Implement the dialog**
 
 `frontend/src/features/finance/components/ImportDialog.tsx`:
 
@@ -5535,7 +5535,7 @@ Append to `finance.css`:
 
 Run: `npx vitest run src/features/finance/components/ImportDialog.test.tsx` → PASS.
 
-- [ ] **Step 3: Run all checks and commit**
+- [x] **Step 3: Run all checks and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test
@@ -5554,7 +5554,7 @@ git commit -m "feat(finance): add CSV import dialog with preview, duplicate warn
 **Interfaces:**
 - Produces (from `@/features/finance`): `financeRoutes: RouteObject[]` (path `finance`), `useMonthSummary`, `SpendingByCategoryChart`, `IncomeExpenseChart`.
 
-- [ ] **Step 1: Write the failing page tests**
+- [x] **Step 1: Write the failing page tests**
 
 `frontend/src/features/finance/pages/FinancePage.test.tsx`:
 
@@ -5660,7 +5660,7 @@ describe('FinancePage', () => {
 
 Run → FAIL (module missing).
 
-- [ ] **Step 2: Implement the page, routes and public API**
+- [x] **Step 2: Implement the page, routes and public API**
 
 `frontend/src/features/finance/pages/FinancePage.tsx`:
 
@@ -5811,7 +5811,7 @@ In `frontend/src/app/navigation.ts` add `{ to: '/finance', label: 'Finance' }` a
 
 Run: `npx vitest run src/features/finance/pages` → PASS.
 
-- [ ] **Step 3: Run all checks**
+- [x] **Step 3: Run all checks**
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build
@@ -5819,7 +5819,7 @@ npm run lint && npm run typecheck && npm test && npm run build
 
 Expected: all pass. The build proves `chart.js`, `react-chartjs-2` and the lazy route bundle correctly.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend

@@ -31,6 +31,17 @@
 5. **One card down.** If the tasks summary fails, the money and bills cards still render and offer a retry for the failed one. [Task 5 test]
 6. **Wrong password on delete** shows an error in the dialog and does not end the session. [Task 7 test]
 
+
+## Carried over from the M3 review
+
+Decisions and gaps found in the whole-branch review of M3 that land in this milestone:
+
+1. **Reports assume one currency per user (change-currency race).** Every finance report `$sum`s ALL of a user's transactions and labels the total with the profile currency. In M3 a user cannot hold two currencies, but `changeCurrency` (Task 3) is check-then-set (`hasFinanceDataForUser`, then `setUserCurrency`): a transaction create or bulk import running at the same moment can read the OLD profile currency after the check passes and leave rows in a currency that no longer matches the labels. Task 3 must re-check `hasFinanceDataForUser` and `hasFixedExpensesForUser` AFTER `setUserCurrency` and revert the currency (409) on conflict, with a test that drives the race deterministically; alternatively make the reports defensive by adding `currency: profile.currency` to each aggregation `$match`. The transaction edit form already uses the transaction's stored currency.
+2. **The dashboard's finance charts must agree on the current month.** The plan's Dashboard renders `<IncomeExpenseChart months={6} />` without `to`, so the server picks the current month in UTC while the spending chart beside it gets the LOCAL `currentMonthIso()`. Pass `to={currentMonthIso()}` to `IncomeExpenseChart` (and `NetTrendChart` if it is used), and add a test that the two charts request the same month near a month boundary.
+3. **Export must neutralise spreadsheet formulas and cope with legacy rows.** `toCsv` neutralises leading `=`, `+`, `-`, `@` in text cells (already planned); the finance export must also tolerate a transaction with no category (`categoryId: ''` in the DTO after the M3 fix).
+4. **Shared `Modal` and `fieldset disabled`.** The shared Modal's focusable selector still matches inputs inside a disabled fieldset, so Tab/Shift+Tab from Close can leave the dialog or do nothing while a save runs. Fix it in the shared Modal (exclude descendants of `fieldset:disabled` and other disabled/hidden elements) with a test; this affects the Settings forms built here.
+5. **Account deletion must purge the finance seed marker too.** `deleteFinanceForUser` already deletes transactions, categories and the per-user `CategorySeed` row; the account-deletion test must assert that no finance document of the deleted user remains and another user's rows and marker are intact.
+
 ---
 
 ## Part A: Backend

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Ready |
+| **Status** | In Review |
 | **Epic** | E3 Personal finance |
 | **Priority** | Must |
 | **Size** | L |
@@ -28,9 +28,9 @@
 
 | ID | Task | Plan reference | Status |
 |---|---|---|---|
-| US-032-T1 | Add the reports (summary, by category, monthly totals, balance trend) with aggregations that always match an ObjectId `userId`, with tests | [M3 Finance](../plans/04-finance.md), Task 5 | To do |
-| US-032-T2 | Add the chart plumbing (Chart.js registration, theme colours, data table) and the three charts, with tests | [M3 Finance](../plans/04-finance.md), Task 9 | To do |
-| US-032-T3 | Add the month picker and the summary cards with tests | [M3 Finance](../plans/04-finance.md), Task 10 (month picker, summary cards) | To do |
+| US-032-T1 | Add the reports (summary, by category, monthly totals, balance trend) with aggregations that always match an ObjectId `userId`, with tests | [M3 Finance](../plans/04-finance.md), Task 5 | Done |
+| US-032-T2 | Add the chart plumbing (Chart.js registration, theme colours, data table) and the three charts, with tests | [M3 Finance](../plans/04-finance.md), Task 9 | Done |
+| US-032-T3 | Add the month picker and the summary cards with tests | [M3 Finance](../plans/04-finance.md), Task 10 (month picker, summary cards) | Done |
 | US-032-T4 | Assemble the Finance page with the range selector and check it in a browser in both themes | [M3 Finance](../plans/04-finance.md), Tasks 12-13 | To do |
 
 ## Out of scope
@@ -45,10 +45,10 @@ Two users with data in the same month must each see only their own totals, and t
 
 The shared [Definition of Done](./README.md#definition-of-done) applies, plus every acceptance criterion demonstrated:
 
-- [ ] Acceptance criterion 1
-- [ ] Acceptance criterion 2
-- [ ] Acceptance criterion 3
-- [ ] Acceptance criterion 4
-- [ ] Acceptance criterion 5
-- [ ] Acceptance criterion 6
-- [ ] Acceptance criterion 7
+- [x] Acceptance criterion 1
+- [x] Acceptance criterion 2
+- [x] Acceptance criterion 3
+- [x] Acceptance criterion 4
+- [x] Acceptance criterion 5
+- [x] Acceptance criterion 6
+- [x] Acceptance criterion 7
