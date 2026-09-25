@@ -123,12 +123,12 @@ function describeProblem(problem: string, first: number, last: number): string {
 }
 
 /**
- * One pass over the text, linear in its length. With `recover`, a quote that is never closed does
+ * One pass over the text, linear in its length. A quote that is never closed does
  * not swallow the rest of the file: the text is read again from just after that quote, which is
  * kept as a literal character, and the row it opened is flagged. This happens at most once, so the
  * work stays at most twice the input.
  */
-function scan(text: string, delimiter: string, recover: boolean): CsvRow[] {
+function scan(text: string, delimiter: string): CsvRow[] {
   const rows: CsvRow[] = []
   let cells: string[] = []
   let field = ''
@@ -222,7 +222,7 @@ function scan(text: string, delimiter: string, recover: boolean): CsvRow[] {
 
     if (!inQuotes) break
     const message = `The quote opened on line ${quoteLine} is never closed`
-    if (!recover || recovered) {
+    if (recovered) {
       problem = problem ?? message
       break
     }
@@ -257,11 +257,5 @@ function prepare(input: string): { text: string; delimiter: string } {
  */
 export function readCsv(input: string): CsvDocument {
   const { text, delimiter } = prepare(input)
-  return { rows: scan(text, delimiter, true), delimiter }
-}
-
-/** Like `readCsv` but only the cells, and a quote that is never closed runs to the end of the input. */
-export function parseCsv(input: string): string[][] {
-  const { text, delimiter } = prepare(input)
-  return scan(text, delimiter, false).map((row) => row.cells)
+  return { rows: scan(text, delimiter), delimiter }
 }

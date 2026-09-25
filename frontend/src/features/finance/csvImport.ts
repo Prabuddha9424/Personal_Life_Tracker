@@ -261,9 +261,9 @@ function cleanNote(text: string): string {
  * (a trailing delimiter) are ignored.
  *
  * The server numbers a rejected row ("Row N") from 1 within the batch it was sent, which holds
- * only valid rows, so it is not a file line. `lines` runs parallel to `valid` for that: send
- * `chunk(valid, size)` and, for a batch that starts at `valid` index `offset`, the file line of
- * "Row N" is `lines[offset + N - 1]`.
+ * only valid rows, so it is not a file line. `lines` runs parallel to `valid` for that: split
+ * `valid` with `planBatches` and, for a batch that starts at `valid` index `offset`, the file line
+ * of "Row N" is `lines[offset + N - 1]`.
  */
 export function mapRows(
   rows: readonly CsvRow[],
@@ -412,13 +412,4 @@ export function countExistingDuplicates(
 ): number {
   const known = new Set(existing.map(duplicateKey))
   return rows.filter((row) => known.has(duplicateKey(row))).length
-}
-
-export function chunk<T>(items: readonly T[], size: number): T[][] {
-  if (!Number.isInteger(size) || size < 1)
-    throw new RangeError('Batch size must be a positive integer')
-  const batches: T[][] = []
-  for (let start = 0; start < items.length; start += size)
-    batches.push(items.slice(start, start + size))
-  return batches
 }

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readCsv, type CsvRow } from './csv'
 import {
-  chunk,
   countExistingDuplicates,
   duplicateKey,
   guessColumns,
@@ -674,24 +673,5 @@ describe('duplicates', () => {
     ]
 
     expect(countExistingDuplicates(rows, existing)).toBe(1)
-  })
-})
-
-describe('chunk', () => {
-  it('splits into batches and keeps the remainder', () => {
-    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]])
-    expect(chunk([], 500)).toEqual([])
-    expect(chunk([1], 500)).toEqual([[1]])
-    expect(chunk([1, 2, 3, 4], 2)).toEqual([
-      [1, 2],
-      [3, 4],
-    ])
-  })
-
-  it('refuses a size that would never advance', () => {
-    expect(() => chunk([1], 0)).toThrow(RangeError)
-    expect(() => chunk([1], -1)).toThrow(RangeError)
-    expect(() => chunk([1], 1.5)).toThrow(RangeError)
-    expect(() => chunk([1], Number.NaN)).toThrow(RangeError)
   })
 })
