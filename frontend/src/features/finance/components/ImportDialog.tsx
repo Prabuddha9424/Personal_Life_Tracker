@@ -273,7 +273,7 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
           await bulk.mutateAsync(batch.rows)
         } catch (error) {
           if (!mountedRef.current) return
-          const failure = describeBatchFailure(error, plan.lines, batch.start)
+          const failure = describeBatchFailure(error, plan.lines, batch.start, batch.rows.length)
           setRun({ plan, next: index, status: 'failed', failure })
           return
         }
