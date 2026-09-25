@@ -17,6 +17,13 @@ function isCalendarDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && z.iso.date().safeParse(value).success
 }
 
+/** A real calendar date (no five-digit years, no 30 February) in the years the server reports on. */
+export function isReportableDate(value: string): boolean {
+  if (!isCalendarDate(value)) return false
+  const year = Number(value.slice(0, 4))
+  return year >= FIRST_YEAR && year <= LAST_YEAR
+}
+
 /**
  * `toMinorUnits` returns null for text that is well formed but does not fit a safe integer. That
  * is "too large", not "invalid", so the person is told what to fix.
@@ -60,11 +67,10 @@ export function makeTransactionFormSchema(currency: string) {
     date: z
       .string()
       .refine(isCalendarDate, 'Choose a date')
-      .refine((value) => {
-        if (!isCalendarDate(value)) return true
-        const year = Number(value.slice(0, 4))
-        return year >= FIRST_YEAR && year <= LAST_YEAR
-      }, `Choose a date between ${FIRST_YEAR} and ${LAST_YEAR}`),
+      .refine(
+        (value) => !isCalendarDate(value) || isReportableDate(value),
+        `Choose a date between ${FIRST_YEAR} and ${LAST_YEAR}`,
+      ),
     note: z.string().trim().max(200, 'Use at most 200 characters'),
   })
 }

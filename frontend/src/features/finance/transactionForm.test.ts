@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { makeTransactionFormSchema, toFormValues, toTransactionInput } from './transactionForm'
+import {
+  isReportableDate,
+  makeTransactionFormSchema,
+  toFormValues,
+  toTransactionInput,
+} from './transactionForm'
 import type { Transaction } from './types'
 
 const valid = {
@@ -82,6 +87,27 @@ describe('makeTransactionFormSchema', () => {
     for (const currency of ['', 'us', 'USDX', '12$']) {
       expect(messages(currency, {})).toContain('Your profile currency is missing or invalid')
     }
+  })
+})
+
+describe('isReportableDate', () => {
+  it.each(['2000-01-01', '2026-09-15', '2024-02-29', '2100-12-31'])('accepts %s', (value) => {
+    expect(isReportableDate(value)).toBe(true)
+  })
+
+  it.each([
+    '',
+    '20000-01-01',
+    '02026-01-01',
+    '2026-02-30',
+    '2026-02-29',
+    '2026-13-01',
+    '2026-1-1',
+    '1999-12-31',
+    '2101-01-01',
+    'tomorrow',
+  ])('rejects %s', (value) => {
+    expect(isReportableDate(value)).toBe(false)
   })
 })
 

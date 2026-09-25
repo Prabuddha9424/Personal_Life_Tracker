@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/Button'
 import { EmptyState, ErrorState, LoadingState } from '@/shared/ui/StateViews'
 import type { ListTransactionsParams } from '../api/financeApi'
 import { useCategories, useTransactions } from '../api/hooks'
+import { isReportableDate } from '../transactionForm'
 import type { Transaction, TransactionKind } from '../types'
 import '../finance.css'
 
@@ -23,7 +24,7 @@ interface TransactionListProps {
 }
 
 function dateProblem({ from, to }: DateRange): string | null {
-  if ([from, to].some((value) => value !== '' && (value < FIRST_DATE || value > LAST_DATE))) {
+  if ([from, to].some((value) => value !== '' && !isReportableDate(value))) {
     return 'Use dates from 2000 to 2100'
   }
   if (from !== '' && to !== '' && from > to) return 'The start date must not be after the end date'

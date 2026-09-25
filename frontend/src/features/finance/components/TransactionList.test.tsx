@@ -221,16 +221,43 @@ describe('TransactionList', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
-  it('does not send a date outside the years the server accepts', async () => {
+  it.each([
+    ['a five-digit year', '20000-01-01'],
+    ['a day that does not exist', '2026-02-30'],
+    ['a year before 2000', '1999-12-31'],
+    ['a year after 2100', '2101-01-01'],
+  ])('does not send %s, and says why instead of failing to load', async (_name, typed) => {
     vi.mocked(financeApi.listTransactions).mockResolvedValue(page([tx('1')]))
     renderWithProviders(<TransactionList onEdit={() => {}} />)
     await screen.findByText('note 1')
     const calls = vi.mocked(financeApi.listTransactions).mock.calls.length
 
-    fireEvent.change(screen.getByLabelText('From'), { target: { value: '1999-12-31' } })
+    // Chrome can produce values a date input would normally refuse; jsdom sanitises them away.
+    const from = screen.getByLabelText('From') as HTMLInputElement
+    from.type = 'text'
+    fireEvent.change(from, { target: { value: typed } })
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Use dates from 2000 to 2100')
+    expect(from).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.queryByText('Could not load transactions')).not.toBeInTheDocument()
     expect(vi.mocked(financeApi.listTransactions).mock.calls.length).toBe(calls)
+    for (const [params] of vi.mocked(financeApi.listTransactions).mock.calls) {
+      expect(params.from).toBeUndefined()
+    }
+  })
+
+  it('applies a valid range from the first to the last reportable date', async () => {
+    vi.mocked(financeApi.listTransactions).mockResolvedValue(page([tx('1')]))
+    renderWithProviders(<TransactionList onEdit={() => {}} />)
+    await screen.findByText('note 1')
+
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2000-01-01' } })
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: '2100-12-31' } })
+
+    await vi.waitFor(() =>
+      expect(lastParams()).toMatchObject({ from: '2000-01-01', to: '2100-12-31', page: 1 }),
+    )
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('pages forwards and back and shows where you are', async () => {
