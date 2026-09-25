@@ -122,6 +122,15 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
   const [incomeChoice, setIncomeChoice] = useState('')
   const [run, setRun] = useState<Run | null>(null)
   const resultRef = useRef<HTMLDivElement>(null)
+  // A mutation runs on even when nothing watches it, so the loop must stop itself on unmount.
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const importing = run?.status === 'running'
   const finished = run !== null && run.status !== 'running'
@@ -258,14 +267,17 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
     try {
       for (const [index, batch] of plan.batches.entries()) {
         if (index < first) continue
+        if (!mountedRef.current) return
         setRun({ plan, next: index, status: 'running' })
         try {
           await bulk.mutateAsync(batch.rows)
         } catch (error) {
+          if (!mountedRef.current) return
           const failure = describeBatchFailure(error, plan.lines, batch.start)
           setRun({ plan, next: index, status: 'failed', failure })
           return
         }
+        if (!mountedRef.current) return
       }
       setRun({ plan, next: plan.batches.length, status: 'done' })
     } finally {

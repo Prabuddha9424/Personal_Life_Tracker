@@ -516,6 +516,43 @@ describe('ImportDialog: importing', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it('sends no further batch once the dialog has been unmounted mid-import', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    let release: () => void = () => {}
+    vi.mocked(financeApi.bulkCreateTransactions).mockImplementationOnce(
+      (rows) => new Promise((resolve) => (release = () => resolve({ created: rows.length }))),
+    )
+    const { unmount } = await open()
+    await upload(bigCsv(700))
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 700 transactions' }))
+    await screen.findByText(/Importing batch 1 of 4/)
+
+    unmount()
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    expect(financeApi.bulkCreateTransactions).toHaveBeenCalledTimes(1)
+    expect(errors).not.toHaveBeenCalled()
+    errors.mockRestore()
+  })
+
+  it('sends no further batch when the dialog is unmounted while a batch fails', async () => {
+    let fail: () => void = () => {}
+    vi.mocked(financeApi.bulkCreateTransactions).mockImplementationOnce(
+      () => new Promise((_resolve, reject) => (fail = () => reject(new Error('Network Error')))),
+    )
+    const { unmount } = await open()
+    await upload(bigCsv(700))
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 700 transactions' }))
+    await screen.findByText(/Importing batch 1 of 4/)
+
+    unmount()
+    fail()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    expect(financeApi.bulkCreateTransactions).toHaveBeenCalledTimes(1)
+  })
+
   it('locks the settings while importing', async () => {
     vi.mocked(financeApi.bulkCreateTransactions).mockImplementation(() => new Promise(() => {}))
     await open()
