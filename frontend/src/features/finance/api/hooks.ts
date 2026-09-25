@@ -43,15 +43,18 @@ export function useSpendingByCategory(month: string) {
   })
 }
 
-export function useMonthlyTotals(months: RangeMonths) {
+export function useMonthlyTotals(months: RangeMonths, to?: string) {
   return useQuery({
-    queryKey: financeKeys.monthly(months),
-    queryFn: () => fetchMonthlyTotals(months),
+    queryKey: financeKeys.monthly(months, to),
+    queryFn: () => fetchMonthlyTotals(months, to),
   })
 }
 
-export function useBalanceTrend(months: RangeMonths) {
-  return useQuery({ queryKey: financeKeys.trend(months), queryFn: () => fetchBalanceTrend(months) })
+export function useBalanceTrend(months: RangeMonths, to?: string) {
+  return useQuery({
+    queryKey: financeKeys.trend(months, to),
+    queryFn: () => fetchBalanceTrend(months, to),
+  })
 }
 
 /** Anything that changes money or category names changes every list, chart and total. */

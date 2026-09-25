@@ -79,6 +79,18 @@ describe('IncomeExpenseChart', () => {
     expect([expenses.label, expenses.data]).toEqual(['Expenses', [40, 12.5]])
   })
 
+  it('asks for the window that ends at the given month and says so in its caption', async () => {
+    vi.mocked(financeApi.fetchMonthlyTotals).mockResolvedValue({
+      currency: 'USD',
+      items: [{ month: '2026-05', incomeMinor: 100, expenseMinor: 50, netMinor: 50 }],
+    })
+
+    renderWithProviders(<IncomeExpenseChart months={6} to="2026-05" />)
+
+    expect(await screen.findByRole('table', { name: /6 months to May 2026/i })).toBeInTheDocument()
+    expect(vi.mocked(financeApi.fetchMonthlyTotals).mock.calls[0]).toEqual([6, '2026-05'])
+  })
+
   it('offers the table alternative with formatted amounts', async () => {
     vi.mocked(financeApi.fetchMonthlyTotals).mockResolvedValue({
       currency: 'USD',

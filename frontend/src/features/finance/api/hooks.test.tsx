@@ -122,8 +122,28 @@ describe('read hooks', () => {
     await waitFor(() => expect(trend.result.current.isSuccess).toBe(true))
 
     expect(financeApi.fetchSpendingByCategory).toHaveBeenCalledWith('2026-09')
-    expect(financeApi.fetchMonthlyTotals).toHaveBeenCalledWith(12)
-    expect(financeApi.fetchBalanceTrend).toHaveBeenCalledWith(6)
+    expect(financeApi.fetchMonthlyTotals).toHaveBeenCalledWith(12, undefined)
+    expect(financeApi.fetchBalanceTrend).toHaveBeenCalledWith(6, undefined)
+  })
+
+  it('asks for a range that ends at the chosen month, and keeps each ending apart', async () => {
+    vi.mocked(financeApi.fetchMonthlyTotals).mockResolvedValue({ currency: 'USD', items: [] })
+    vi.mocked(financeApi.fetchBalanceTrend).mockResolvedValue({
+      currency: 'USD',
+      openingMinor: 0,
+      items: [],
+    })
+    const { wrapper } = setup()
+
+    const monthly = renderHook(() => useMonthlyTotals(6, '2026-05'), { wrapper })
+    const trend = renderHook(() => useBalanceTrend(12, '2026-05'), { wrapper })
+    await waitFor(() => expect(monthly.result.current.isSuccess).toBe(true))
+    await waitFor(() => expect(trend.result.current.isSuccess).toBe(true))
+
+    expect(financeApi.fetchMonthlyTotals).toHaveBeenCalledWith(6, '2026-05')
+    expect(financeApi.fetchBalanceTrend).toHaveBeenCalledWith(12, '2026-05')
+    expect(financeKeys.monthly(6, '2026-05')).not.toEqual(financeKeys.monthly(6, '2026-06'))
+    expect(financeKeys.trend(6, '2026-05')).not.toEqual(financeKeys.trend(6))
   })
 
   it('keys a range by its length', () => {

@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { formatDate } from '@/shared/lib/dates'
+import { addDaysIso, formatDate, formatMonth, shiftMonthIso } from '@/shared/lib/dates'
 import { formatMinorUnits } from '@/shared/lib/money'
 import { Button } from '@/shared/ui/Button'
 import { EmptyState, ErrorState, LoadingState } from '@/shared/ui/StateViews'
@@ -20,7 +20,14 @@ interface DateRange {
 }
 
 interface TransactionListProps {
+  /** YYYY-MM. The list starts on the whole of this month; without it, on every date. */
+  month?: string
   onEdit: (transaction: Transaction) => void
+}
+
+function monthRange(month: string | undefined): DateRange {
+  if (month === undefined) return { from: '', to: '' }
+  return { from: `${month}-01`, to: addDaysIso(`${shiftMonthIso(month, 1)}-01`, -1) }
 }
 
 function dateProblem({ from, to }: DateRange): string | null {
@@ -31,13 +38,15 @@ function dateProblem({ from, to }: DateRange): string | null {
   return null
 }
 
-export function TransactionList({ onEdit }: TransactionListProps) {
+export function TransactionList({ month, onEdit }: TransactionListProps) {
   const problemId = useId()
   const [kind, setKind] = useState<TransactionKind | ''>('')
   const [categoryId, setCategoryId] = useState('')
   // What the inputs show, and the last range that was valid to send.
-  const [dates, setDates] = useState<DateRange>({ from: '', to: '' })
-  const [applied, setApplied] = useState<DateRange>({ from: '', to: '' })
+  // A different month is a different list: the page remounts this component with a new key.
+  const [defaultRange] = useState(() => monthRange(month))
+  const [dates, setDates] = useState<DateRange>(defaultRange)
+  const [applied, setApplied] = useState<DateRange>(defaultRange)
   const [page, setPage] = useState(1)
   const categoriesQuery = useCategories()
   const categories = categoriesQuery.data ?? []
@@ -77,7 +86,11 @@ export function TransactionList({ onEdit }: TransactionListProps) {
   // A page can empty from under the reader (its last row was deleted): step back to one that exists.
   if (data && !query.isPlaceholderData && page > pageCount) setPage(pageCount)
 
-  const filtered = kind !== '' || categoryId !== '' || applied.from !== '' || applied.to !== ''
+  const datesChanged = applied.from !== defaultRange.from || applied.to !== defaultRange.to
+  // Clearing the month's dates shows everything, which is the same as no date filter.
+  const dateFiltered = datesChanged && (applied.from !== '' || applied.to !== '')
+  const filtered = kind !== '' || categoryId !== '' || dateFiltered
+  const showingMonth = month !== undefined && !datesChanged
   const items = data?.items ?? []
   const waitingForPage = query.isPlaceholderData && items.length === 0
   const categoryOptions = kind
@@ -156,11 +169,19 @@ export function TransactionList({ onEdit }: TransactionListProps) {
 
       {!problem && query.isSuccess && !waitingForPage && items.length === 0 && (
         <EmptyState
-          title={filtered ? 'No transactions match these filters' : 'No transactions yet'}
+          title={
+            filtered
+              ? 'No transactions match these filters'
+              : showingMonth
+                ? `No transactions in ${formatMonth(month)}`
+                : 'No transactions yet'
+          }
           description={
             filtered
               ? 'Try widening the dates or clearing a filter.'
-              : 'Add your first transaction to get started.'
+              : showingMonth
+                ? 'Add a transaction, or widen the dates to look at other months.'
+                : 'Add your first transaction to get started.'
           }
         />
       )}

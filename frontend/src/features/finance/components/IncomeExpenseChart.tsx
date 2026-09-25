@@ -11,17 +11,20 @@ import { useChartColors } from '../useChartColors'
 import { useReducedMotion } from '../useReducedMotion'
 import '../finance.css'
 import { ChartDataTable } from './ChartDataTable'
+import { windowLabel } from './windowLabel'
 
 interface PlotProps {
   months: RangeMonths
+  /** The last month of the window, when the caller chose one. */
+  to?: string
   currency: string
   items: MonthlyItem[]
 }
 
-function IncomeExpensePlot({ months, currency, items }: PlotProps) {
+function IncomeExpensePlot({ months, to, currency, items }: PlotProps) {
   const colors = useChartColors()
   const reducedMotion = useReducedMotion()
-  const caption = `Income and expenses, last ${months} months`
+  const caption = `Income and expenses, ${windowLabel(months, to)}`
 
   const data = useMemo(
     () => ({
@@ -93,8 +96,8 @@ function IncomeExpensePlot({ months, currency, items }: PlotProps) {
   )
 }
 
-export function IncomeExpenseChart({ months = 6 }: { months?: RangeMonths }) {
-  const query = useMonthlyTotals(months)
+export function IncomeExpenseChart({ months = 6, to }: { months?: RangeMonths; to?: string }) {
+  const query = useMonthlyTotals(months, to)
 
   if (query.isPending) return <LoadingState label="Loading chart…" />
   if (query.isError) {
@@ -111,5 +114,5 @@ export function IncomeExpenseChart({ months = 6 }: { months?: RangeMonths }) {
     )
   }
 
-  return <IncomeExpensePlot months={months} currency={currency} items={items} />
+  return <IncomeExpensePlot months={months} to={to} currency={currency} items={items} />
 }

@@ -11,17 +11,20 @@ import { useChartColors } from '../useChartColors'
 import { useReducedMotion } from '../useReducedMotion'
 import '../finance.css'
 import { ChartDataTable } from './ChartDataTable'
+import { windowLabel } from './windowLabel'
 
 interface PlotProps {
   months: RangeMonths
+  /** The last month of the window, when the caller chose one. */
+  to?: string
   currency: string
   items: BalanceTrend['items']
 }
 
-function NetTrendPlot({ months, currency, items }: PlotProps) {
+function NetTrendPlot({ months, to, currency, items }: PlotProps) {
   const colors = useChartColors()
   const reducedMotion = useReducedMotion()
-  const caption = `Balance, last ${months} months`
+  const caption = `Balance, ${windowLabel(months, to)}`
 
   const data = useMemo(
     () => ({
@@ -88,8 +91,8 @@ function NetTrendPlot({ months, currency, items }: PlotProps) {
   )
 }
 
-export function NetTrendChart({ months = 6 }: { months?: RangeMonths }) {
-  const query = useBalanceTrend(months)
+export function NetTrendChart({ months = 6, to }: { months?: RangeMonths; to?: string }) {
+  const query = useBalanceTrend(months, to)
 
   if (query.isPending) return <LoadingState label="Loading chart…" />
   if (query.isError) {
@@ -109,5 +112,5 @@ export function NetTrendChart({ months = 6 }: { months?: RangeMonths }) {
     )
   }
 
-  return <NetTrendPlot months={months} currency={currency} items={items} />
+  return <NetTrendPlot months={months} to={to} currency={currency} items={items} />
 }

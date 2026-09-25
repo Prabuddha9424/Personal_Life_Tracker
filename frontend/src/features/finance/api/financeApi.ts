@@ -100,12 +100,15 @@ export async function fetchSpendingByCategory(month: string): Promise<SpendingBy
   return data
 }
 
-export async function fetchMonthlyTotals(months: RangeMonths): Promise<MonthlyTotals> {
-  const { data } = await httpClient.get<MonthlyTotals>('/finance/monthly', { params: { months } })
+/** The `months` months ending at `to` (YYYY-MM); the server's current month when `to` is left out. */
+export async function fetchMonthlyTotals(months: RangeMonths, to?: string): Promise<MonthlyTotals> {
+  const { data } = await httpClient.get<MonthlyTotals>('/finance/monthly', {
+    params: { months, to },
+  })
   return data
 }
 
-export async function fetchBalanceTrend(months: RangeMonths): Promise<BalanceTrend> {
-  const { data } = await httpClient.get<BalanceTrend>('/finance/trend', { params: { months } })
+export async function fetchBalanceTrend(months: RangeMonths, to?: string): Promise<BalanceTrend> {
+  const { data } = await httpClient.get<BalanceTrend>('/finance/trend', { params: { months, to } })
   return data
 }

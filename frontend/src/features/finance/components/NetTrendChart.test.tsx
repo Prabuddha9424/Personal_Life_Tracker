@@ -77,6 +77,19 @@ describe('NetTrendChart', () => {
     expect(plotted().datasets[0].data).toEqual([3060, -12.5])
   })
 
+  it('asks for the window that ends at the given month and says so in its caption', async () => {
+    vi.mocked(financeApi.fetchBalanceTrend).mockResolvedValue({
+      currency: 'USD',
+      openingMinor: 0,
+      items: [{ month: '2026-05', balanceMinor: 100 }],
+    })
+
+    renderWithProviders(<NetTrendChart months={12} to="2026-05" />)
+
+    expect(await screen.findByRole('table', { name: /12 months to May 2026/i })).toBeInTheDocument()
+    expect(vi.mocked(financeApi.fetchBalanceTrend).mock.calls[0]).toEqual([12, '2026-05'])
+  })
+
   it('offers the table alternative with formatted balances', async () => {
     vi.mocked(financeApi.fetchBalanceTrend).mockResolvedValue({
       currency: 'USD',

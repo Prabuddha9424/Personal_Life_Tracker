@@ -7,7 +7,8 @@ export const financeKeys = {
   transactions: (params: ListTransactionsParams) => ['finance', 'transactions', params] as const,
   summary: (month: string) => ['finance', 'summary', month] as const,
   byCategory: (month: string) => ['finance', 'by-category', month] as const,
-  monthly: (months: RangeMonths) => ['finance', 'monthly', months] as const,
-  trend: (months: RangeMonths) => ['finance', 'trend', months] as const,
+  monthly: (months: RangeMonths, to?: string) =>
+    ['finance', 'monthly', months, to ?? null] as const,
+  trend: (months: RangeMonths, to?: string) => ['finance', 'trend', months, to ?? null] as const,
   existingInRange: (from: string, to: string) => ['finance', 'existing', from, to] as const,
 }

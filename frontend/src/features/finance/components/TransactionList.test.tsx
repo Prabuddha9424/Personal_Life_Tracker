@@ -126,6 +126,40 @@ describe('TransactionList', () => {
     expect(await screen.findByText('No transactions yet')).toBeInTheDocument()
   })
 
+  it('starts on the whole of the given month, month end included', async () => {
+    vi.mocked(financeApi.listTransactions).mockResolvedValue(page([]))
+
+    renderWithProviders(<TransactionList month="2028-02" onEdit={() => {}} />)
+
+    expect(await screen.findByText('No transactions in February 2028')).toBeInTheDocument()
+    expect(lastParams()).toMatchObject({ from: '2028-02-01', to: '2028-02-29' })
+    expect(screen.getByLabelText('From')).toHaveValue('2028-02-01')
+    expect(screen.getByLabelText('To')).toHaveValue('2028-02-29')
+  })
+
+  it('lets the person widen the range, and then calls an empty result a filter match', async () => {
+    vi.mocked(financeApi.listTransactions).mockResolvedValue(page([]))
+    renderWithProviders(<TransactionList month="2026-09" onEdit={() => {}} />)
+    await screen.findByText('No transactions in September 2026')
+
+    await userEvent.clear(screen.getByLabelText('From'))
+    await userEvent.clear(screen.getByLabelText('To'))
+
+    expect(await screen.findByText('No transactions yet')).toBeInTheDocument()
+    expect(lastParams()?.from).toBeUndefined()
+    expect(lastParams()?.to).toBeUndefined()
+  })
+
+  it('does not treat the month range as a filter the person set', async () => {
+    vi.mocked(financeApi.listTransactions).mockResolvedValue(page([]))
+    renderWithProviders(<TransactionList month="2026-09" onEdit={() => {}} />)
+    await screen.findByText('No transactions in September 2026')
+
+    await userEvent.selectOptions(screen.getByLabelText(/^type/i), 'income')
+
+    expect(await screen.findByText('No transactions match these filters')).toBeInTheDocument()
+  })
+
   it('says so when filters match nothing', async () => {
     vi.mocked(financeApi.listTransactions).mockResolvedValue(page([]))
     renderWithProviders(<TransactionList onEdit={() => {}} />)

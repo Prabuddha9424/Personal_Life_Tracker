@@ -43,8 +43,10 @@ function apiError(status: number, data: unknown) {
   })
 }
 
-async function open(onClose = () => {}) {
-  const view = renderWithProviders(<ImportDialog onClose={onClose} />)
+async function open(onClose = () => {}, onImportingChange?: (importing: boolean) => void) {
+  const view = renderWithProviders(
+    <ImportDialog onClose={onClose} onImportingChange={onImportingChange} />,
+  )
   await screen.findByLabelText('CSV file')
   return view
 }
@@ -568,6 +570,50 @@ describe('ImportDialog: importing', () => {
     await screen.findByText('Imported 3 transactions')
     await userEvent.click(screen.getByRole('button', { name: 'Done' }))
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('tells its parent while batches are being sent, and again when that stops', async () => {
+    let release: () => void = () => {}
+    vi.mocked(financeApi.bulkCreateTransactions).mockImplementation(
+      (rows) => new Promise((resolve) => (release = () => resolve({ created: rows.length }))),
+    )
+    const onImportingChange = vi.fn()
+    await open(() => {}, onImportingChange)
+    expect(onImportingChange).not.toHaveBeenCalledWith(true)
+    await upload(CSV)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 3 transactions' }))
+
+    await waitFor(() => expect(onImportingChange).toHaveBeenLastCalledWith(true))
+    release()
+    await screen.findByText('Imported 3 transactions')
+    expect(onImportingChange).toHaveBeenLastCalledWith(false)
+  })
+
+  it('tells its parent an import has stopped when a batch fails', async () => {
+    vi.mocked(financeApi.bulkCreateTransactions).mockRejectedValue(apiError(500, {}))
+    const onImportingChange = vi.fn()
+    await open(() => {}, onImportingChange)
+    await upload(CSV)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 3 transactions' }))
+
+    await screen.findByText(/Stopped early/)
+    expect(onImportingChange).toHaveBeenCalledWith(true)
+    expect(onImportingChange).toHaveBeenLastCalledWith(false)
+  })
+
+  it('tells its parent the import is over when the dialog goes away mid-import', async () => {
+    vi.mocked(financeApi.bulkCreateTransactions).mockImplementation(() => new Promise(() => {}))
+    const onImportingChange = vi.fn()
+    const { unmount } = await open(() => {}, onImportingChange)
+    await upload(CSV)
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 3 transactions' }))
+    await waitFor(() => expect(onImportingChange).toHaveBeenLastCalledWith(true))
+
+    unmount()
+
+    expect(onImportingChange).toHaveBeenLastCalledWith(false)
   })
 
   it('sends no further batch once the dialog has been unmounted mid-import', async () => {

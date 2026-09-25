@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
 import { describe, expect, it } from 'vitest'
@@ -28,6 +28,41 @@ describe('AppShell', () => {
     renderShell()
 
     expect(screen.getByRole('link', { name: 'Board' })).toHaveAttribute('href', '/board')
+  })
+
+  it('links to finance, after the board, and marks it current on its own page', async () => {
+    renderWithProviders(
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index element={<p>Home content</p>} />
+          <Route path="finance" element={<p>Finance content</p>} />
+        </Route>
+      </Routes>,
+      { route: '/finance' },
+    )
+
+    const finance = screen.getByRole('link', { name: 'Finance' })
+    expect(finance).toHaveAttribute('href', '/finance')
+    expect(finance).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
+    expect(
+      within(screen.getByRole('navigation', { name: 'Main' }))
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Dashboard', 'Board', 'Finance'])
+  })
+
+  it('reaches the finance link with the keyboard', async () => {
+    renderShell()
+
+    await userEvent.tab()
+    let steps = 0
+    while (document.activeElement !== screen.getByRole('link', { name: 'Finance' }) && steps < 20) {
+      await userEvent.tab()
+      steps += 1
+    }
+
+    expect(screen.getByRole('link', { name: 'Finance' })).toHaveFocus()
   })
 
   it('names both landmarks so they are distinguishable', () => {

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { authRoutes, ProtectedRoute } from '@/features/auth'
 import { dashboardRoutes } from '@/features/dashboard'
+import { financeRoutes } from '@/features/finance'
 import { taskRoutes } from '@/features/tasks'
 import { NotFoundPage } from '@/shared/ui/NotFoundPage'
 import { AppShell } from './AppShell'
@@ -14,7 +15,9 @@ export const router = createBrowserRouter([
       ...authRoutes,
       {
         Component: ProtectedRoute,
-        children: [{ Component: AppShell, children: [...dashboardRoutes, ...taskRoutes] }],
+        children: [
+          { Component: AppShell, children: [...dashboardRoutes, ...taskRoutes, ...financeRoutes] },
+        ],
       },
       { path: '*', Component: NotFoundPage },
     ],

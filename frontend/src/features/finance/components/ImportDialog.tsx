@@ -50,6 +50,8 @@ type Run =
 
 interface ImportDialogProps {
   onClose: () => void
+  /** Called with true while batches are being sent and false otherwise (also when the dialog goes away). */
+  onImportingChange?: (importing: boolean) => void
 }
 
 /**
@@ -58,7 +60,7 @@ interface ImportDialogProps {
  *
  * While a batch is being sent the dialog cannot be closed, so a failure is always reported.
  */
-export function ImportDialog({ onClose }: ImportDialogProps) {
+export function ImportDialog({ onClose, onImportingChange }: ImportDialogProps) {
   const currency = useSessionUser()?.currency
   const categories = useCategories()
   // The ref (not state) is the guard: it is set in the same tick as the click.
@@ -80,6 +82,7 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
         categories={categories.data}
         inFlightRef={inFlightRef}
         onClose={onClose}
+        onImportingChange={onImportingChange}
       />
     )
   } else if (categories.isError) {
@@ -100,9 +103,16 @@ interface ImportFormProps {
   categories: Category[]
   inFlightRef: RefObject<boolean>
   onClose: () => void
+  onImportingChange?: (importing: boolean) => void
 }
 
-function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormProps) {
+function ImportForm({
+  currency,
+  categories,
+  inFlightRef,
+  onClose,
+  onImportingChange,
+}: ImportFormProps) {
   const bulk = useBulkCreateTransactions()
   const readToken = useRef(0)
 
@@ -134,6 +144,16 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
 
   const importing = run?.status === 'running'
   const finished = run !== null && run.status !== 'running'
+
+  const importingChangeRef = useRef(onImportingChange)
+  useEffect(() => {
+    importingChangeRef.current = onImportingChange
+  })
+  useEffect(() => {
+    const report = importingChangeRef.current
+    report?.(importing)
+    return () => report?.(false)
+  }, [importing])
 
   useEffect(() => {
     if (finished) resultRef.current?.focus()

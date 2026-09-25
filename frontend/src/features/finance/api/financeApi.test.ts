@@ -4,6 +4,8 @@ import type { Transaction, TransactionPage } from '../types'
 import {
   bulkCreateTransactions,
   createTransaction,
+  fetchBalanceTrend,
+  fetchMonthlyTotals,
   listAllTransactionsInRange,
   listCategories,
 } from './financeApi'
@@ -43,6 +45,20 @@ describe('financeApi', () => {
       { id: 'c1', name: 'Food', kind: 'expense' },
     ])
     expect(httpClient.get).toHaveBeenCalledWith('/categories', { params: { kind: 'expense' } })
+  })
+
+  it('sends the month a range ends at only when one is given', async () => {
+    vi.mocked(httpClient.get).mockResolvedValue({ data: { items: [] } })
+
+    await fetchMonthlyTotals(12, '2026-05')
+    await fetchBalanceTrend(6)
+
+    expect(httpClient.get).toHaveBeenNthCalledWith(1, '/finance/monthly', {
+      params: { months: 12, to: '2026-05' },
+    })
+    expect(httpClient.get).toHaveBeenNthCalledWith(2, '/finance/trend', {
+      params: { months: 6, to: undefined },
+    })
   })
 
   it('sends the amount as the integer it was given, never a float', async () => {
