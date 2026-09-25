@@ -106,8 +106,10 @@ export async function updateTransaction(
     )
   }
 
-  // The write is scoped by owner, and by the kind and category the check above was made against,
-  // so a concurrent change to either cannot slip an inconsistent pair past it.
+  // The write is scoped by owner and, when the kind or category changes, by the kind and category the
+  // transaction had when it was read, so a concurrent change to those makes it fail with 409 instead
+  // of pairing them wrongly. The NEW target category is only checked above, not pinned to the write:
+  // deleting it in between can still leave a stale reference.
   const updated = await Transaction.findOneAndUpdate(
     changesCategoryOrKind
       ? { ...scope, kind: current.kind, categoryId: current.categoryId }
