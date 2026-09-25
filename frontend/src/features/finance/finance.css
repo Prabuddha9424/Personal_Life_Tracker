@@ -56,7 +56,8 @@
   padding: 0;
   border: 0;
 }
-.form-actions__confirm {
+.form-actions__confirm,
+.category-row__confirm {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -218,6 +219,10 @@
   flex: 1 1 8rem;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+.category-row__confirm {
+  flex: 1 1 100%;
+  min-width: 0;
 }
 .category-row form {
   display: flex;

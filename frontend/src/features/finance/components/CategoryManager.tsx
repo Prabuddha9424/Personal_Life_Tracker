@@ -29,16 +29,20 @@ interface CategoryRowProps {
   deleting: boolean
   deleteFailure: string | null
   onDelete: (category: Category) => void
+  onKeep: () => void
 }
 
-function CategoryRow({ category, deleting, deleteFailure, onDelete }: CategoryRowProps) {
+function CategoryRow({ category, deleting, deleteFailure, onDelete, onKeep }: CategoryRowProps) {
   const rename = useRenameCategory()
   const [editing, setEditing] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [name, setName] = useState(category.name)
   const [nameError, setNameError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const rowRef = useRef<HTMLLIElement>(null)
   const wasEditing = useRef(false)
+  const wasConfirming = useRef(false)
+  const questionId = useId()
   const inFlight = useRef(false)
   const messageId = useId()
   const message = nameError ?? (rename.error ? describeSaveError(rename.error) : deleteFailure)
@@ -51,6 +55,24 @@ function CategoryRow({ category, deleting, deleteFailure, onDelete }: CategoryRo
     }
     wasEditing.current = editing
   }, [editing])
+
+  // The button that opened the question unmounts, so hand focus to the safe choice and give it
+  // back to the Delete button when the person keeps the category.
+  useEffect(() => {
+    if (confirming) {
+      rowRef.current?.querySelector<HTMLElement>('.category-row__keep')?.focus()
+    } else if (wasConfirming.current) {
+      rowRef.current?.querySelector<HTMLElement>('.category-row__delete')?.focus()
+    }
+    wasConfirming.current = confirming
+  }, [confirming])
+
+  function keep() {
+    // Cancelling a running request would drop its result and leave the row stuck.
+    if (deleting) return
+    onKeep()
+    setConfirming(false)
+  }
 
   function startEditing() {
     rename.reset()
@@ -105,6 +127,26 @@ function CategoryRow({ category, deleting, deleteFailure, onDelete }: CategoryRo
             Cancel
           </Button>
         </form>
+      ) : confirming ? (
+        <div
+          className="category-row__confirm"
+          role="group"
+          aria-label={`Confirm deletion of ${category.name}`}
+          aria-describedby={questionId}
+        >
+          <span id={questionId}>Delete &quot;{category.name}&quot;? This cannot be undone.</span>
+          <Button className="category-row__keep" onClick={keep} disabled={deleting}>
+            Keep it
+          </Button>
+          <Button
+            variant="danger"
+            aria-label={`Yes, delete ${category.name}`}
+            loading={deleting}
+            onClick={() => onDelete(category)}
+          >
+            Yes, delete
+          </Button>
+        </div>
       ) : (
         <>
           <span className="category-row__name">{category.name}</span>
@@ -112,16 +154,15 @@ function CategoryRow({ category, deleting, deleteFailure, onDelete }: CategoryRo
             className="category-row__rename"
             variant="ghost"
             aria-label={`Rename ${category.name}`}
-            disabled={deleting}
             onClick={startEditing}
           >
             Rename
           </Button>
           <Button
+            className="category-row__delete"
             variant="ghost"
             aria-label={`Delete ${category.name}`}
-            loading={deleting}
-            onClick={() => onDelete(category)}
+            onClick={() => setConfirming(true)}
           >
             Delete
           </Button>
@@ -181,6 +222,10 @@ export function CategoryManager({ onClose }: { onClose: () => void }) {
     })
   }
 
+  function onKeepCategory() {
+    if (!deleting.current) remove.reset()
+  }
+
   return (
     <Modal title="Categories" onClose={onClose}>
       {!query.data && query.isPending && <LoadingState label="Loading categories…" />}
@@ -215,6 +260,7 @@ export function CategoryManager({ onClose }: { onClose: () => void }) {
                           : null
                       }
                       onDelete={onDelete}
+                      onKeep={onKeepCategory}
                     />
                   ))}
                 </ul>

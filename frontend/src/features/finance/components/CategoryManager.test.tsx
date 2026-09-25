@@ -233,17 +233,72 @@ describe('CategoryManager', () => {
   })
 
   describe('deleting', () => {
+    async function confirmDelete(name = 'Groceries') {
+      await userEvent.click(screen.getByRole('button', { name: `Delete ${name}` }))
+      return screen.getByRole('button', { name: `Yes, delete ${name}` })
+    }
+
+    it('asks first, moving focus to the safe choice, and sends nothing yet', async () => {
+      await open()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Delete Groceries' }))
+
+      expect(
+        screen.getByRole('group', { name: 'Confirm deletion of Groceries' }),
+      ).toHaveAccessibleDescription('Delete "Groceries"? This cannot be undone.')
+      expect(screen.getByRole('button', { name: 'Keep it' })).toHaveFocus()
+      expect(screen.queryByRole('button', { name: 'Rename Groceries' })).not.toBeInTheDocument()
+      expect(financeApi.deleteCategory).not.toHaveBeenCalled()
+    })
+
+    it('keeps the category without a request and puts focus back on its Delete button', async () => {
+      await open()
+      await confirmDelete()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Keep it' }))
+
+      expect(financeApi.deleteCategory).not.toHaveBeenCalled()
+      expect(screen.getByRole('button', { name: 'Delete Groceries' })).toHaveFocus()
+      expect(screen.getByText('Groceries')).toBeInTheDocument()
+    })
+
+    it('confirms with the keyboard alone', async () => {
+      vi.mocked(financeApi.deleteCategory).mockReturnValue(new Promise(() => {}))
+      await open()
+      await confirmDelete()
+
+      await userEvent.tab()
+      expect(screen.getByRole('button', { name: 'Yes, delete Groceries' })).toHaveFocus()
+      await userEvent.keyboard('{Enter}')
+
+      await vi.waitFor(() => expect(financeApi.deleteCategory).toHaveBeenCalledTimes(1))
+    })
+
     it('explains inline why a category in use cannot be deleted', async () => {
       vi.mocked(financeApi.deleteCategory).mockRejectedValue(
         apiError(409, '2 transactions use this category. Reassign or delete them first.'),
       )
       await open()
 
-      await userEvent.click(screen.getByRole('button', { name: 'Delete Groceries' }))
+      await userEvent.click(await confirmDelete())
 
       expect(await screen.findByRole('alert')).toHaveTextContent(/2 transactions use this category/)
       expect(vi.mocked(financeApi.deleteCategory).mock.calls[0]?.[0]).toBe('e1')
-      expect(screen.getByText('Groceries')).toBeInTheDocument()
+      expect(
+        screen.getByRole('group', { name: 'Confirm deletion of Groceries' }),
+      ).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Keep it' })).toBeEnabled()
+    })
+
+    it('drops a failure message once the category is kept', async () => {
+      vi.mocked(financeApi.deleteCategory).mockRejectedValue(apiError(409, 'In use'))
+      await open()
+      await userEvent.click(await confirmDelete())
+      await screen.findByRole('alert')
+
+      await userEvent.click(screen.getByRole('button', { name: 'Keep it' }))
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
 
     it('removes the category, refreshes every report and moves focus to its list heading', async () => {
@@ -252,23 +307,24 @@ describe('CategoryManager', () => {
       const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
       vi.mocked(financeApi.listCategories).mockResolvedValue([categories[1] as Category])
 
-      await userEvent.click(screen.getByRole('button', { name: 'Delete Groceries' }))
+      await userEvent.click(await confirmDelete())
 
       await vi.waitFor(() => expect(screen.queryByText('Groceries')).not.toBeInTheDocument())
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['finance'] })
       expect(screen.getByRole('heading', { name: 'Expense' })).toHaveFocus()
     })
 
-    it('sends a double click only once', async () => {
+    it('disables both choices while the request runs and sends a double click only once', async () => {
       vi.mocked(financeApi.deleteCategory).mockReturnValue(new Promise(() => {}))
       await open()
 
-      const button = screen.getByRole('button', { name: 'Delete Groceries' })
-      fireEvent.click(button)
-      fireEvent.click(button)
+      const yes = await confirmDelete()
+      fireEvent.click(yes)
+      fireEvent.click(yes)
 
       await vi.waitFor(() => expect(financeApi.deleteCategory).toHaveBeenCalledTimes(1))
-      expect(screen.getByRole('button', { name: 'Delete Groceries' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Yes, delete Groceries' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Keep it' })).toBeDisabled()
     })
   })
 
