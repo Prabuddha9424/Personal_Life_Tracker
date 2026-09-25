@@ -50,6 +50,10 @@ export interface MonthSummary {
 }
 
 export interface CategorySpend {
+  /**
+   * An empty string is the "Deleted category" bucket: spending on a transaction whose category is
+   * missing or was deleted. It is not a real id, so never use it as a lookup or filter key.
+   */
   categoryId: string
   name: string
   totalMinor: number
