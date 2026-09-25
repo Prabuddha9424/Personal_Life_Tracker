@@ -30,9 +30,19 @@ interface CategoryRowProps {
   deleteFailure: string | null
   onDelete: (category: Category) => void
   onKeep: () => void
+  onWorkStart: () => void
+  onWorkEnd: () => void
 }
 
-function CategoryRow({ category, deleting, deleteFailure, onDelete, onKeep }: CategoryRowProps) {
+function CategoryRow({
+  category,
+  deleting,
+  deleteFailure,
+  onDelete,
+  onKeep,
+  onWorkStart,
+  onWorkEnd,
+}: CategoryRowProps) {
   const rename = useRenameCategory()
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -101,9 +111,16 @@ function CategoryRow({ category, deleting, deleteFailure, onDelete, onKeep }: Ca
       return
     }
     inFlight.current = true
+    onWorkStart()
     rename.mutate(
       { id: category.id, name: next },
-      { onSettled: () => (inFlight.current = false), onSuccess: () => setEditing(false) },
+      {
+        onSettled: () => {
+          inFlight.current = false
+          onWorkEnd()
+        },
+        onSuccess: () => setEditing(false),
+      },
     )
   }
 
@@ -191,6 +208,20 @@ export function CategoryManager({ onClose }: { onClose: () => void }) {
   })
   const adding = useRef(false)
   const deleting = useRef(false)
+  // How many changes are running. Closing mid-request would drop a failure that then goes unreported.
+  const running = useRef(0)
+
+  function startWork() {
+    running.current += 1
+  }
+
+  function endWork() {
+    running.current -= 1
+  }
+
+  function requestClose() {
+    if (running.current === 0) onClose()
+  }
 
   function onAdd(event: FormEvent) {
     event.preventDefault()
@@ -200,10 +231,14 @@ export function CategoryManager({ onClose }: { onClose: () => void }) {
     setNameError(problem)
     if (problem) return
     adding.current = true
+    startWork()
     create.mutate(
       { name: name.trim(), kind },
       {
-        onSettled: () => (adding.current = false),
+        onSettled: () => {
+          adding.current = false
+          endWork()
+        },
         onSuccess: () => {
           setName('')
           nameRef.current?.focus()
@@ -216,8 +251,12 @@ export function CategoryManager({ onClose }: { onClose: () => void }) {
   function onDelete(category: Category) {
     if (deleting.current) return
     deleting.current = true
+    startWork()
     remove.mutate(category.id, {
-      onSettled: () => (deleting.current = false),
+      onSettled: () => {
+        deleting.current = false
+        endWork()
+      },
       onSuccess: () => headings.current[category.kind]?.focus(),
     })
   }
@@ -227,7 +266,7 @@ export function CategoryManager({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Categories" onClose={onClose}>
+    <Modal title="Categories" onClose={requestClose}>
       {!query.data && query.isPending && <LoadingState label="Loading categories…" />}
       {!query.data && query.isError && (
         <ErrorState message="Could not load categories" onRetry={() => query.refetch()} />
@@ -261,6 +300,8 @@ export function CategoryManager({ onClose }: { onClose: () => void }) {
                       }
                       onDelete={onDelete}
                       onKeep={onKeepCategory}
+                      onWorkStart={startWork}
+                      onWorkEnd={endWork}
                     />
                   ))}
                 </ul>

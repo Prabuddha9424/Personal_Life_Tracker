@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -325,6 +325,91 @@ describe('CategoryManager', () => {
       await vi.waitFor(() => expect(financeApi.deleteCategory).toHaveBeenCalledTimes(1))
       expect(screen.getByRole('button', { name: 'Yes, delete Groceries' })).toBeDisabled()
       expect(screen.getByRole('button', { name: 'Keep it' })).toBeDisabled()
+    })
+  })
+
+  describe('closing while a change is running', () => {
+    async function openWithClose() {
+      const onClose = vi.fn()
+      renderWithProviders(<CategoryManager onClose={onClose} />)
+      await screen.findByText('Groceries')
+      return onClose
+    }
+
+    async function ignoresClosing(onClose: () => void) {
+      await userEvent.keyboard('{Escape}')
+      fireEvent.mouseDown(screen.getByRole('dialog').parentElement as HTMLElement)
+      await userEvent.click(screen.getByRole('button', { name: 'Close dialog' }))
+      expect(onClose).not.toHaveBeenCalled()
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+    }
+
+    it('closes on Escape, the backdrop and the close button when nothing is running', async () => {
+      const onClose = await openWithClose()
+
+      await userEvent.keyboard('{Escape}')
+      fireEvent.mouseDown(screen.getByRole('dialog').parentElement as HTMLElement)
+      await userEvent.click(screen.getByRole('button', { name: 'Close dialog' }))
+
+      expect(onClose).toHaveBeenCalledTimes(3)
+    })
+
+    it('ignores closing while a category is being added, then closes normally', async () => {
+      let finish: (category: Category) => void = () => {}
+      vi.mocked(financeApi.createCategory).mockReturnValue(
+        new Promise<Category>((resolve) => (finish = resolve)),
+      )
+      const onClose = await openWithClose()
+      await userEvent.type(screen.getByLabelText('New category name'), 'Pets')
+      await userEvent.click(screen.getByRole('button', { name: 'Add category' }))
+      await vi.waitFor(() => expect(financeApi.createCategory).toHaveBeenCalled())
+
+      await ignoresClosing(onClose)
+      await act(async () => finish({ id: 'e9', name: 'Pets', kind: 'expense' }))
+      await vi.waitFor(() => expect(screen.getByLabelText('New category name')).toHaveValue(''))
+      await userEvent.keyboard('{Escape}')
+
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+
+    it('ignores closing while a rename is running and still shows its failure', async () => {
+      let fail: (error: Error) => void = () => {}
+      vi.mocked(financeApi.renameCategory).mockReturnValue(
+        new Promise<Category>((_resolve, reject) => (fail = reject)),
+      )
+      const onClose = await openWithClose()
+      await userEvent.click(screen.getByRole('button', { name: 'Rename Groceries' }))
+      const field = screen.getByLabelText('New name for Groceries')
+      await userEvent.clear(field)
+      await userEvent.type(field, 'Food')
+      await userEvent.click(screen.getByRole('button', { name: 'Save name' }))
+      await vi.waitFor(() => expect(financeApi.renameCategory).toHaveBeenCalled())
+
+      await ignoresClosing(onClose)
+      await act(async () => fail(apiError(409, 'A category with that name already exists')))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('already exists')
+      await userEvent.keyboard('{Escape}')
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+
+    it('ignores closing while a delete is running', async () => {
+      let finish: () => void = () => {}
+      vi.mocked(financeApi.deleteCategory).mockReturnValue(
+        new Promise<void>((resolve) => (finish = resolve)),
+      )
+      const onClose = await openWithClose()
+      await userEvent.click(screen.getByRole('button', { name: 'Delete Groceries' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Yes, delete Groceries' }))
+      await vi.waitFor(() => expect(financeApi.deleteCategory).toHaveBeenCalled())
+
+      await ignoresClosing(onClose)
+      vi.mocked(financeApi.listCategories).mockResolvedValue([categories[1] as Category])
+      await act(async () => finish())
+      await vi.waitFor(() => expect(screen.queryByText('Groceries')).not.toBeInTheDocument())
+      await userEvent.keyboard('{Escape}')
+
+      expect(onClose).toHaveBeenCalledTimes(1)
     })
   })
 
