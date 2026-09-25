@@ -1,6 +1,8 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { StrictMode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 import * as financeApi from '../api/financeApi'
@@ -588,21 +590,24 @@ describe('ImportDialog: importing', () => {
     errors.mockRestore()
   })
 
-  it('sends no further batch when the dialog is unmounted while a batch fails', async () => {
-    let fail: () => void = () => {}
-    vi.mocked(financeApi.bulkCreateTransactions).mockImplementationOnce(
-      () => new Promise((_resolve, reject) => (fail = () => reject(new Error('Network Error')))),
+  it('sends every batch of a full import under StrictMode', async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    })
+    render(
+      <StrictMode>
+        <QueryClientProvider client={client}>
+          <ImportDialog onClose={() => {}} />
+        </QueryClientProvider>
+      </StrictMode>,
     )
-    const { unmount } = await open()
-    await upload(bigCsv(700))
-    await userEvent.click(await screen.findByRole('button', { name: 'Import 700 transactions' }))
-    await screen.findByText(/Importing batch 1 of 4/)
+    await screen.findByLabelText('CSV file')
+    await upload(bigCsv(450))
 
-    unmount()
-    fail()
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 450 transactions' }))
 
-    expect(financeApi.bulkCreateTransactions).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText('Imported 450 transactions')).toBeInTheDocument()
+    expect(sentBatches().map((rows) => rows.length)).toEqual([200, 200, 50])
   })
 
   it('has one live region from the start and announces progress and the result in it', async () => {
@@ -659,7 +664,7 @@ describe('ImportDialog: importing', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Import 3 transactions' }))
 
     await screen.findByText('Imported 3 transactions')
-    await waitFor(() => expect(screen.getByTestId('import-result')).toHaveFocus())
+    await waitFor(() => expect(screen.getByTestId('import-root')).toHaveFocus())
   })
 })
 

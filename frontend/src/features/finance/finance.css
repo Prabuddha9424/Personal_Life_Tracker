@@ -306,7 +306,7 @@
 .import__progress progress {
   width: 100%;
 }
-.import__result:focus {
+.import__root:focus {
   outline: none;
 }
 

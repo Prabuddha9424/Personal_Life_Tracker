@@ -301,12 +301,7 @@ function ImportForm({ currency, categories, inFlightRef, onClose }: ImportFormPr
       ? 'This column has no name in the header. Check that it holds the descriptions.'
       : undefined
   return (
-    <div
-      className="import import__result"
-      ref={resultRef}
-      tabIndex={-1}
-      data-testid="import-result"
-    >
+    <div className="import import__root" ref={resultRef} tabIndex={-1} data-testid="import-root">
       {/* One live region from the start: text added to a region that already exists is announced reliably. */}
       <div role="status" className="import__status">
         {run?.status === 'running' && <Progress plan={run.plan} next={run.next} />}

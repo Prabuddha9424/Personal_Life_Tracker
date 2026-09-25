@@ -1,6 +1,6 @@
 import type { TransactionInput } from './types'
 
-/** The API reads at most 500 rows per request. */
+/** The most rows in one request. The API accepts up to 500; 200 keeps the progress steps small. */
 const MAX_BATCH_ROWS = 200
 /**
  * The API rejects a body over 100 KB (`express.json({ limit: '100kb' })`) with a 413 that no
