@@ -6,6 +6,7 @@ import { StrictMode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 import * as financeApi from '../api/financeApi'
+import { financeKeys } from '../api/financeKeys'
 import type { Category, Transaction, TransactionInput } from '../types'
 import { ImportDialog } from './ImportDialog'
 
@@ -634,6 +635,97 @@ describe('ImportDialog: importing', () => {
     expect(financeApi.bulkCreateTransactions).toHaveBeenCalledTimes(1)
     expect(errors).not.toHaveBeenCalled()
     errors.mockRestore()
+  })
+
+  describe('refreshing the page data', () => {
+    function watchInvalidation(view: { queryClient: { invalidateQueries: unknown } }) {
+      return vi.spyOn(
+        view.queryClient as unknown as QueryClient,
+        'invalidateQueries',
+      ) as unknown as ReturnType<typeof vi.fn>
+    }
+    const order = (mock: { mock: { invocationCallOrder: number[] } }) =>
+      mock.mock.invocationCallOrder[0] ?? 0
+
+    it('refreshes once, after the last batch, however many batches were sent', async () => {
+      const view = await open()
+      const invalidate = watchInvalidation(view)
+      await upload(bigCsv(450))
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Import 450 transactions' }))
+
+      await screen.findByText('Imported 450 transactions')
+      expect(financeApi.bulkCreateTransactions).toHaveBeenCalledTimes(3)
+      expect(invalidate).toHaveBeenCalledTimes(1)
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: financeKeys.all })
+      const lastBatch =
+        vi.mocked(financeApi.bulkCreateTransactions).mock.invocationCallOrder[2] ?? 0
+      expect(order(invalidate)).toBeGreaterThan(lastBatch)
+    })
+
+    it('still refreshes once when a later batch fails, because earlier ones were saved', async () => {
+      vi.mocked(financeApi.bulkCreateTransactions)
+        .mockImplementationOnce(async (rows) => ({ created: rows.length }))
+        .mockRejectedValueOnce(apiError(500, {}))
+      const view = await open()
+      const invalidate = watchInvalidation(view)
+      await upload(bigCsv(450))
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Import 450 transactions' }))
+
+      await screen.findByText(/Stopped early/)
+      expect(invalidate).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not refresh when nothing was saved', async () => {
+      vi.mocked(financeApi.bulkCreateTransactions).mockRejectedValue(apiError(500, {}))
+      const view = await open()
+      const invalidate = watchInvalidation(view)
+      await upload(CSV)
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Import 3 transactions' }))
+
+      await screen.findByText(/Stopped early/)
+      expect(invalidate).not.toHaveBeenCalled()
+    })
+
+    it('refreshes once when the dialog goes away after a batch was saved', async () => {
+      let release: () => void = () => {}
+      vi.mocked(financeApi.bulkCreateTransactions).mockImplementationOnce(
+        (rows) => new Promise((resolve) => (release = () => resolve({ created: rows.length }))),
+      )
+      const view = await open()
+      const invalidate = watchInvalidation(view)
+      await upload(bigCsv(700))
+      await userEvent.click(await screen.findByRole('button', { name: 'Import 700 transactions' }))
+      await screen.findByText(/Importing batch 1 of 4/)
+
+      view.unmount()
+      release()
+      await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(1))
+      await new Promise((resolve) => setTimeout(resolve, 30))
+
+      expect(financeApi.bulkCreateTransactions).toHaveBeenCalledTimes(1)
+      expect(invalidate).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not refresh when the dialog goes away and the batch in flight then fails', async () => {
+      let fail: () => void = () => {}
+      vi.mocked(financeApi.bulkCreateTransactions).mockImplementationOnce(
+        () => new Promise((_resolve, reject) => (fail = () => reject(apiError(500, {})))),
+      )
+      const view = await open()
+      const invalidate = watchInvalidation(view)
+      await upload(bigCsv(700))
+      await userEvent.click(await screen.findByRole('button', { name: 'Import 700 transactions' }))
+      await screen.findByText(/Importing batch 1 of 4/)
+
+      view.unmount()
+      fail()
+      await new Promise((resolve) => setTimeout(resolve, 30))
+
+      expect(invalidate).not.toHaveBeenCalled()
+    })
   })
 
   it('sends every batch of a full import under StrictMode', async () => {

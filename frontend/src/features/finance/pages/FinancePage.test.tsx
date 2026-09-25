@@ -366,7 +366,8 @@ describe('FinancePage', () => {
 
       release()
       await screen.findByText('Imported 2 transactions')
-      expect(beforeUnload().defaultPrevented).toBe(false)
+      // The dialog reports the end of the import from an effect, which can land just after the text.
+      await waitFor(() => expect(beforeUnload().defaultPrevented).toBe(false))
       await act(() => router.navigate('/other'))
       expect(router.state.location.pathname).toBe('/other')
     })

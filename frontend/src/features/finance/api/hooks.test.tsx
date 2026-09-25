@@ -189,6 +189,19 @@ describe('write hooks', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: financeKeys.all })
   })
 
+  it('bulk create can leave the refresh to its caller', async () => {
+    vi.mocked(financeApi.bulkCreateTransactions).mockResolvedValue({ created: 1 })
+    const { invalidate, wrapper } = setup()
+
+    const { result } = renderHook(() => useBulkCreateTransactions({ invalidate: false }), {
+      wrapper,
+    })
+    result.current.mutate([input])
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(invalidate).not.toHaveBeenCalled()
+  })
+
   it('category create and rename invalidate, because reports show category names', async () => {
     vi.mocked(financeApi.createCategory).mockResolvedValue({
       id: 'c2',

@@ -58,7 +58,7 @@ export function useBalanceTrend(months: RangeMonths, to?: string) {
 }
 
 /** Anything that changes money or category names changes every list, chart and total. */
-function useInvalidateFinance() {
+export function useInvalidateFinance() {
   const client = useQueryClient()
   return () => client.invalidateQueries({ queryKey: financeKeys.all })
 }
@@ -84,8 +84,16 @@ export function useDeleteTransaction() {
   })
 }
 
-export function useBulkCreateTransactions() {
-  return useMutation({ mutationFn: bulkCreateTransactions, onSuccess: useInvalidateFinance() })
+/**
+ * A caller that sends many batches passes `invalidate: false` and refreshes once itself (with
+ * `useInvalidateFinance`): every refresh re-reads all the reports a mounted page shows.
+ */
+export function useBulkCreateTransactions({ invalidate = true }: { invalidate?: boolean } = {}) {
+  const refresh = useInvalidateFinance()
+  return useMutation({
+    mutationFn: bulkCreateTransactions,
+    onSuccess: invalidate ? refresh : undefined,
+  })
 }
 
 export function useCreateCategory() {

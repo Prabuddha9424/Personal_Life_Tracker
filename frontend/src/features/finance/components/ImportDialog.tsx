@@ -8,7 +8,7 @@ import { Modal } from '@/shared/ui/Modal'
 import { ErrorState, LoadingState } from '@/shared/ui/StateViews'
 import { listAllTransactionsInRange } from '../api/financeApi'
 import { financeKeys } from '../api/financeKeys'
-import { useBulkCreateTransactions, useCategories } from '../api/hooks'
+import { useBulkCreateTransactions, useCategories, useInvalidateFinance } from '../api/hooks'
 import type { CsvRow } from '../csv'
 import {
   countExistingDuplicates,
@@ -113,7 +113,9 @@ function ImportForm({
   onClose,
   onImportingChange,
 }: ImportFormProps) {
-  const bulk = useBulkCreateTransactions()
+  // Refreshing after every batch would re-read every report on the page behind the dialog each time.
+  const bulk = useBulkCreateTransactions({ invalidate: false })
+  const refreshFinance = useInvalidateFinance()
   const readToken = useRef(0)
 
   const [rows, setRows] = useState<CsvRow[] | null>(null)
@@ -287,6 +289,7 @@ function ImportForm({
   async function send(plan: Plan, first: number) {
     if (inFlightRef.current) return
     inFlightRef.current = true
+    let saved = false
     try {
       for (const [index, batch] of plan.batches.entries()) {
         if (index < first) continue
@@ -294,6 +297,7 @@ function ImportForm({
         setRun({ plan, next: index, status: 'running' })
         try {
           await bulk.mutateAsync(batch.rows)
+          saved = true
         } catch (error) {
           if (!mountedRef.current) return
           const failure = describeBatchFailure(error, plan.lines, batch.start, batch.rows.length)
@@ -305,6 +309,8 @@ function ImportForm({
       setRun({ plan, next: plan.batches.length, status: 'done' })
     } finally {
       inFlightRef.current = false
+      // One refresh when the run ends, however it ends, if anything was saved.
+      if (saved) void refreshFinance()
     }
   }
 
