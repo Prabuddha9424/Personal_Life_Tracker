@@ -21,6 +21,20 @@ function lineOf(lines: readonly number[], start: number, size: number, index: nu
   return Number.isInteger(index) && index >= 0 && index < size ? lines[start + index] : undefined
 }
 
+const FIELD_LABELS = new Map([
+  ['amountMinor', 'Amount'],
+  ['date', 'Date'],
+  ['categoryId', 'Category'],
+  ['note', 'Note'],
+  ['kind', 'Type'],
+])
+
+/** The name a person knows a field by, and none at all for a field that is not one of a row's. */
+function fieldLabel(field: string | undefined): string {
+  const label = field === undefined ? undefined : FIELD_LABELS.get(field)
+  return label === undefined ? '' : `${label}: `
+}
+
 const unplaced = (reason: string) => `Could not place this error on a line of the file: ${reason}`
 
 /**
@@ -57,7 +71,7 @@ export function describeBatchFailure(
       const match = ROW_PATH.exec(path)
       const line = match ? lineOf(lines, start, size, Number(match[1])) : undefined
       if (line === undefined) return []
-      return [`Line ${line}: ${match?.[2] ? `${match[2]}: ` : ''}${message}`]
+      return [`Line ${line}: ${fieldLabel(match?.[2])}${message}`]
     })
     if (details.length > 0) return { message: details.slice(0, MAX_DETAILS).join('; '), rejected }
     if (body.errors.length > 0) return { message: unplaced(describeSaveError(error)), rejected }

@@ -39,6 +39,26 @@ describe('describeBatchFailure', () => {
     expect(failure.message).toBe('Line 3: that is an income category')
   })
 
+  it.each([
+    ['amountMinor', 'Amount'],
+    ['date', 'Date'],
+    ['categoryId', 'Category'],
+    ['note', 'Note'],
+    ['kind', 'Type'],
+  ])('names the %s field %s, never by its API name', (field, label) => {
+    const failure = describeBatchFailure(
+      apiError(400, {
+        message: 'Validation failed',
+        errors: [{ path: `rows.0.${field}`, message: 'Invalid' }],
+      }),
+      lines,
+      2,
+      5,
+    )
+
+    expect(failure.message).toBe(`Line 7: ${label}: Invalid`)
+  })
+
   it('maps schema failures, whose paths count rows from 0', () => {
     const failure = describeBatchFailure(
       apiError(400, {
@@ -54,7 +74,7 @@ describe('describeBatchFailure', () => {
     )
 
     expect(failure).toEqual({
-      message: 'Line 9: amountMinor: Too big; Line 7: date: Invalid',
+      message: 'Line 9: Amount: Too big; Line 7: Date: Invalid',
       rejected: true,
     })
   })
