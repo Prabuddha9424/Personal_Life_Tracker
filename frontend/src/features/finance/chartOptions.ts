@@ -35,7 +35,12 @@ export function moneyScales(colors: ChartColors, currency: string) {
   return {
     x: { ticks: { color: colors.muted }, grid: { color: colors.grid } },
     y: {
-      ticks: { color: colors.muted, callback: (value) => axisMoney(Number(value), currency) },
+      ticks: {
+        color: colors.muted,
+        // Ticks finer than one minor unit would round to repeated labels ($0.005 and $0.01).
+        precision: minorUnitDigits(currency),
+        callback: (value) => axisMoney(Number(value), currency),
+      },
       grid: { color: (context) => (context.tick.value === 0 ? colors.muted : colors.grid) },
     },
   } satisfies ChartOptions<'bar'>['scales']
