@@ -801,7 +801,38 @@ describe('ImportDialog: a batch fails', () => {
     ).toBeInTheDocument()
   })
 
-  it('keeps the dialog open after a failure until the user closes it', async () => {
+  it('reports a failure of the last batch, with nothing left unsent, and retries only that batch', async () => {
+    vi.mocked(financeApi.bulkCreateTransactions)
+      .mockImplementationOnce(async (rows) => ({ created: rows.length }))
+      .mockImplementationOnce(async (rows) => ({ created: rows.length }))
+      .mockImplementationOnce(async (rows) => ({ created: rows.length }))
+      .mockRejectedValueOnce(apiError(400, { message: 'Row 2: unknown category' }))
+    await open()
+    await upload(bigCsv(700))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Import 700 transactions' }))
+
+    // Batch 4 holds valid rows 600 to 699, so its Row 2 is valid index 601 on file line 604.
+    expect(await screen.findByText('Line 604: unknown category')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Stopped early: 600 of 700 were imported')
+    expect(
+      screen.getByText(/Imported: batches 1 to 3 of 4 \(600 transactions, lines 3 to 602\)/),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Failed: batch 4 of 4 \(lines 603 to 702\)/)).toBeInTheDocument()
+    expect(screen.queryByText(/Not sent/)).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /remove lines 3 to 602 \(already saved\) first, or they will be added twice/,
+      ),
+    ).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Retry from batch 4 of 4' }))
+
+    expect(await screen.findByText('Imported 700 transactions')).toBeInTheDocument()
+    expect(sentBatches().map((rows) => rows.length)).toEqual([200, 200, 200, 100, 100])
+  })
+
+  it('lets the user close the dialog with Escape once a failed import has stopped', async () => {
     vi.mocked(financeApi.bulkCreateTransactions).mockRejectedValueOnce(new Error('Network Error'))
     const onClose = vi.fn()
     await open(onClose)
