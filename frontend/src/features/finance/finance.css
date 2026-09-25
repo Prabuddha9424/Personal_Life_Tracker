@@ -1,0 +1,45 @@
+.chart {
+  margin: 0;
+}
+.chart figcaption {
+  margin-bottom: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.chart__canvas {
+  position: relative;
+  height: 280px;
+}
+
+/* The key beside a doughnut: a swatch, the name and the amount, so colour is never the only cue. */
+.chart-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+.chart-legend__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.chart-legend__swatch {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+}
+.chart-legend__name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.chart-legend__amount {
+  flex: none;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
