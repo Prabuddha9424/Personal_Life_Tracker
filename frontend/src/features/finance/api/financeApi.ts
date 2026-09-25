@@ -77,6 +77,7 @@ export async function deleteTransaction(id: string): Promise<void> {
   await httpClient.delete(`/transactions/${id}`)
 }
 
+/** Creates up to 500 rows, all or nothing: one bad row rejects the batch, and its "Row N" counts from 1 within the batch sent, not the file. */
 export async function bulkCreateTransactions(
   rows: TransactionInput[],
 ): Promise<{ created: number }> {

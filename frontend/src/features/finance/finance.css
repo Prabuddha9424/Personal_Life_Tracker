@@ -261,3 +261,91 @@
     padding-inline: var(--space-1);
   }
 }
+
+.import,
+.import__fields {
+  min-width: 0;
+}
+.import__fields {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.import p {
+  margin: 0 0 var(--space-3);
+  overflow-wrap: anywhere;
+}
+.import__help {
+  font-size: 0.85rem;
+}
+.import__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0 var(--space-3);
+  min-width: 0;
+}
+.import__grid > * {
+  min-width: 0;
+}
+.import__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  margin-bottom: var(--space-3);
+}
+.import__problems,
+.import__batches {
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-4);
+  overflow-wrap: anywhere;
+}
+.import__problems {
+  color: var(--danger);
+}
+.import__progress progress {
+  width: 100%;
+}
+.import__result:focus {
+  outline: none;
+}
+
+/* The wide table scrolls inside its own box, so it never widens the dialog or the page. */
+.import__scroll {
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: var(--space-4);
+  overflow-x: auto;
+}
+.import__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.import__table caption {
+  padding-bottom: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: left;
+}
+.import__table th,
+.import__table td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+.import__table th[scope='row'] {
+  font-weight: normal;
+  color: var(--text-muted);
+}
+.import__table .import__amount {
+  text-align: right;
+}
+.import__table .import__text {
+  min-width: 10rem;
+  max-width: 20rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
